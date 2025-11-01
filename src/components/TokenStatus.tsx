@@ -168,80 +168,103 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
   }, [autoRefreshConfig?.enabled, autoRefreshConfig?.currentRefreshes, accessToken?.expiresAt, selectedToken])
 
   return (
-    <div className="w-1/2">
-      <Card 
-        className={cn(
-          "border cursor-pointer transition-all",
-          isTokenValid ? "border-accent/30 bg-accent/5" : "border-destructive/30 bg-destructive/5"
-        )}
-        onClick={onToggle}
-      >
-        <CardContent className="p-2">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {isTokenValid ? (
-                  <CheckCircle size={14} weight="fill" className="text-accent flex-shrink-0" />
-                ) : (
-                  <Warning size={14} weight="fill" className="text-destructive flex-shrink-0" />
-                )}
-                <span className="text-xs font-medium">
-                  {isTokenValid ? 'Token Active' : 'Token Expired'}
-                </span>
-              </div>
-              <Key size={12} className="text-muted-foreground" />
+    <Card 
+      className={cn(
+        "border cursor-pointer transition-all",
+        isTokenValid ? "border-accent/30 bg-accent/5" : "border-destructive/40 bg-destructive/10"
+      )}
+      onClick={onToggle}
+    >
+      <CardContent className="p-3">
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              {isTokenValid ? (
+                <CheckCircle size={16} weight="fill" className="text-accent flex-shrink-0" />
+              ) : (
+                <Warning size={16} weight="fill" className="text-destructive flex-shrink-0" />
+              )}
+              <span className={cn(
+                "text-sm font-medium",
+                isTokenValid ? "text-foreground" : "text-destructive"
+              )}>
+                {isTokenValid ? 'Token Active' : 'Token Expired'}
+              </span>
             </div>
-
-            {isExpanded && (
-              <div className="space-y-2 pt-0.5" onClick={(e) => e.stopPropagation()}>
-                {isTokenValid && (
-                  <div className="text-[10px] text-muted-foreground">
-                    Expires in {minutes}m {seconds}s
-                  </div>
-                )}
-                
-                {!isTokenValid && !selectedToken && (
-                  <p className="text-[10px] text-muted-foreground">
-                    No token configuration selected
-                  </p>
-                )}
-
-                <Button
-                  onClick={handleGenerateToken}
-                  disabled={isGenerating || !selectedToken}
-                  size="sm"
-                  variant="default"
-                  className="w-full h-7 text-xs"
-                >
-                  {isGenerating ? (
-                    'Generating...'
-                  ) : (
-                    <>
-                      <ArrowsClockwise size={12} className="mr-1" />
-                      Refresh Token
-                    </>
-                  )}
-                </Button>
-
-                {selectedToken && (
-                  <div className="flex items-center justify-between gap-2 pt-0.5">
-                    <Label htmlFor="auto-refresh" className="text-[10px] font-normal cursor-pointer">
-                      Auto-refresh ({autoRefreshConfig?.currentRefreshes || 0}/{autoRefreshConfig?.maxRefreshes || 10})
-                    </Label>
-                    <Switch
-                      id="auto-refresh"
-                      checked={autoRefreshConfig?.enabled || false}
-                      onCheckedChange={handleToggleAutoRefresh}
-                      disabled={isGenerating}
-                      className="scale-75"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+            <Key size={14} className={cn(
+              "transition-colors",
+              isTokenValid ? "text-muted-foreground" : "text-destructive/60"
+            )} />
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          {isExpanded && (
+            <div className="space-y-2.5 pt-0.5" onClick={(e) => e.stopPropagation()}>
+              {isTokenValid && (
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs text-muted-foreground">Time remaining</span>
+                  <span className={cn(
+                    "text-xs font-medium tabular-nums",
+                    minutes < 2 ? "text-destructive" : "text-accent"
+                  )}>
+                    {minutes}m {seconds}s
+                  </span>
+                </div>
+              )}
+              
+              {!isTokenValid && !selectedToken && (
+                <div className="px-2 py-2 bg-destructive/5 border border-destructive/20 rounded-md">
+                  <p className="text-xs text-destructive/90 leading-relaxed">
+                    No token configuration selected. Please set up a token in settings.
+                  </p>
+                </div>
+              )}
+
+              {!isTokenValid && selectedToken && (
+                <div className="px-2 py-2 bg-destructive/5 border border-destructive/20 rounded-md">
+                  <p className="text-xs text-destructive/90 leading-relaxed">
+                    Your token has expired. Click below to generate a new one.
+                  </p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleGenerateToken}
+                disabled={isGenerating || !selectedToken}
+                size="sm"
+                variant={isTokenValid ? "outline" : "default"}
+                className={cn(
+                  "w-full h-8 text-xs",
+                  !isTokenValid && "bg-primary hover:bg-primary/90"
+                )}
+              >
+                {isGenerating ? (
+                  'Generating...'
+                ) : (
+                  <>
+                    <ArrowsClockwise size={14} className="mr-1.5" />
+                    {isTokenValid ? 'Refresh Token' : 'Generate New Token'}
+                  </>
+                )}
+              </Button>
+
+              {selectedToken && (
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <Label htmlFor="auto-refresh" className="text-xs font-normal cursor-pointer text-muted-foreground">
+                    Auto-refresh ({autoRefreshConfig?.currentRefreshes || 0}/{autoRefreshConfig?.maxRefreshes || 10})
+                  </Label>
+                  <Switch
+                    id="auto-refresh"
+                    checked={autoRefreshConfig?.enabled || false}
+                    onCheckedChange={handleToggleAutoRefresh}
+                    disabled={isGenerating}
+                    className="scale-90"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   )
 }
