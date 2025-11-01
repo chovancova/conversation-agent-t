@@ -175,14 +175,14 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
       )}
       onClick={onToggle}
     >
-      <CardContent className="p-3">
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
+      <CardContent className="p-4">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between h-5">
             <div className="flex items-center gap-2.5">
               {isTokenValid ? (
-                <CheckCircle size={16} weight="fill" className="text-accent flex-shrink-0" />
+                <CheckCircle size={18} weight="fill" className="text-accent flex-shrink-0" />
               ) : (
-                <Warning size={16} weight="fill" className="text-destructive flex-shrink-0" />
+                <Warning size={18} weight="fill" className="text-destructive flex-shrink-0" />
               )}
               <span className={cn(
                 "text-sm font-medium",
@@ -191,14 +191,14 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                 {isTokenValid ? 'Token Active' : 'Token Expired'}
               </span>
             </div>
-            <Key size={14} className={cn(
+            <Key size={16} className={cn(
               "transition-colors",
               isTokenValid ? "text-muted-foreground" : "text-destructive/60"
             )} />
           </div>
 
           {isExpanded && (
-            <div className="space-y-2.5 pt-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="space-y-3 pt-0.5" onClick={(e) => e.stopPropagation()}>
               {isTokenValid && (
                 <div className="flex items-center justify-between px-1">
                   <span className="text-xs text-muted-foreground">Time remaining</span>
@@ -233,7 +233,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                 size="sm"
                 variant={isTokenValid ? "outline" : "default"}
                 className={cn(
-                  "w-full h-8 text-xs",
+                  "w-full h-9 text-sm",
                   !isTokenValid && "bg-primary hover:bg-primary/90"
                 )}
               >
@@ -241,7 +241,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                   'Generating...'
                 ) : (
                   <>
-                    <ArrowsClockwise size={14} className="mr-1.5" />
+                    <ArrowsClockwise size={16} className="mr-1.5" />
                     {isTokenValid ? 'Refresh Token' : 'Generate New Token'}
                   </>
                 )}
