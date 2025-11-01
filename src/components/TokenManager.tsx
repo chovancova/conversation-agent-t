@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download } from '@phosphor-icons/react'
+import { Key, X, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { TokenConfig, AccessToken } from '@/lib/types'
 import { useCountdown } from '@/hooks/use-countdown'
 
@@ -179,7 +180,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.success('Token configurations exported')
+    toast.warning('Exported file contains plaintext credentials - handle securely!')
   }
 
   const handleImportTokens = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -226,6 +227,13 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          <Alert className="border-accent/50 bg-accent/5">
+            <ShieldCheck size={18} className="text-accent" />
+            <AlertTitle className="text-sm font-semibold">Encrypted Storage</AlertTitle>
+            <AlertDescription className="text-xs">
+              All credentials are stored encrypted via Spark KV. However, use test credentials only and never store production secrets.
+            </AlertDescription>
+          </Alert>
           {accessToken && (
             <Card className={isTokenValid ? 'border-accent' : 'border-destructive'}>
               <CardHeader className="pb-3">
@@ -293,33 +301,39 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
             )}
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              onClick={handleExportTokens}
-              disabled={!savedTokens || savedTokens.length === 0}
-              variant="outline"
-              size="sm"
-              className="flex-1"
-            >
-              <Export size={16} className="mr-2" />
-              Export All
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={() => document.getElementById('import-tokens')?.click()}
-            >
-              <Download size={16} className="mr-2" />
-              Import
-            </Button>
-            <input
-              id="import-tokens"
-              type="file"
-              accept=".json"
-              onChange={handleImportTokens}
-              className="hidden"
-            />
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Button
+                onClick={handleExportTokens}
+                disabled={!savedTokens || savedTokens.length === 0}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                <Export size={16} className="mr-2" />
+                Export All
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => document.getElementById('import-tokens')?.click()}
+              >
+                <Download size={16} className="mr-2" />
+                Import
+              </Button>
+              <input
+                id="import-tokens"
+                type="file"
+                accept=".json"
+                onChange={handleImportTokens}
+                className="hidden"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground flex items-start gap-1">
+              <Warning size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
+              <span>Export files contain plaintext credentials. Handle securely and delete when no longer needed.</span>
+            </p>
           </div>
 
           <div className="space-y-4">

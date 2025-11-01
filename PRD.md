@@ -20,11 +20,11 @@ A professional testing environment for multiple conversation agents that enables
 - **Success criteria**: Messages send instantly, responses appear with proper error handling, conversation history persists, different agents accessible
 
 ### Token Manager
-- **Functionality**: Generate and manage Bearer authentication tokens with 15-minute expiration via OAuth2-style endpoint
-- **Purpose**: Secure authentication for agent communication with automatic expiry tracking
+- **Functionality**: Generate and manage Bearer authentication tokens with 15-minute expiration via OAuth2-style endpoint, with encrypted storage and security warnings
+- **Purpose**: Secure authentication for agent communication with automatic expiry tracking and user education on credential safety
 - **Trigger**: User clicks Token button in sidebar or when token expires
-- **Progression**: Click token button → Dialog opens → Enter endpoint/credentials → Generate token → Token stored with expiration → Visual countdown displayed → Auto-prompt on expiry
-- **Success criteria**: Token generates successfully, expiration clearly shown, expired tokens prevent message sending with helpful prompt
+- **Progression**: Click token button → Dialog opens → Enter endpoint/credentials → Generate token → Token stored encrypted with expiration → Visual countdown displayed → Security notices shown → Auto-prompt on expiry
+- **Success criteria**: Token generates successfully, expiration clearly shown, expired tokens prevent message sending with helpful prompt, users see encryption status and security warnings
 
 ### Agent Configuration
 - **Functionality**: Configure HTTP POST endpoints for each specialized agent type (Account Opening, Payment, Moderator, Card, RAG)
@@ -48,11 +48,18 @@ A professional testing environment for multiple conversation agents that enables
 - **Success criteria**: Conversations save automatically with agent type, can be resumed at any time, clear visual distinction
 
 ### Message Export
-- **Functionality**: Copy conversation history including agent metadata for analysis or documentation
+- **Functionality**: Copy conversation history including agent metadata for analysis or documentation, with security warnings for export files
 - **Purpose**: Enable testers to extract conversations for reports, bug tracking, or comparison across agents
 - **Trigger**: User clicks export button
 - **Progression**: Click export → Conversation formatted with agent info → Copied to clipboard → Confirmation shown
 - **Success criteria**: All messages captured accurately with timestamps and agent metadata, format is readable, confirmation feedback immediate
+
+### Security & Privacy Information
+- **Functionality**: Display comprehensive security information about data encryption, storage, and best practices with option to clear all data
+- **Purpose**: Educate users on how credentials are protected and provide transparency about data handling
+- **Trigger**: User clicks Security & Privacy button in sidebar
+- **Progression**: Click button → Dialog opens → Shows encryption details, security considerations, stored data list → Option to clear all data → Confirmation and reload
+- **Success criteria**: Clear explanation of encryption, visible warnings about test credentials, successful data clearing when requested
 
 ## Edge Case Handling
 
@@ -66,6 +73,9 @@ A professional testing environment for multiple conversation agents that enables
 - **No Conversations**: Display helpful empty state encouraging user to start first conversation
 - **Rapid Submissions**: Disable input during active agent response to prevent queue buildup
 - **Token Generation Failures**: Show specific error messages from token endpoint with retry option
+- **Export Security**: Warn users that exported files contain plaintext credentials and should be handled securely
+- **Data Privacy**: Display encryption status and security considerations prominently in token manager
+- **Credential Storage**: Inform users that Spark KV provides encryption at rest for all stored credentials
 
 ## Design Direction
 
@@ -144,10 +154,12 @@ Subtle, purposeful animations that reinforce state changes without slowing down 
   - Gear (Agent settings) - configuration
   - Robot (Agent/assistant indicator) - agent identity
   - User (User indicator) - human identity
-  - Warning (Error indicator) - failure states
+  - Warning (Error indicator) - failure states and security warnings
   - Clock (Token expiration) - time-based indicators
   - CheckCircle (Valid status) - success confirmation
   - XCircle (Invalid status) - error indication
+  - ShieldCheck (Security information) - data privacy and encryption status
+  - LockKey (Credential protection) - encrypted storage indicator
 
 - **Spacing**:
   - Container padding: p-6 (24px)

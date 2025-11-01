@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import { ConversationList } from '@/components/ConversationList'
 import { EmptyState } from '@/components/EmptyState'
 import { TokenManager } from '@/components/TokenManager'
 import { AgentSettings } from '@/components/AgentSettings'
+import { SecurityInfo } from '@/components/SecurityInfo'
 import { Conversation, Message, AgentType, AccessToken } from '@/lib/types'
 import { AGENTS, getAgentConfig } from '@/lib/agents'
 
@@ -26,6 +27,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [tokenManagerOpen, setTokenManagerOpen] = useState(false)
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
+  const [securityInfoOpen, setSecurityInfoOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -193,6 +195,7 @@ function App() {
       <Toaster position="top-right" />
       <TokenManager open={tokenManagerOpen} onOpenChange={setTokenManagerOpen} />
       <AgentSettings open={agentSettingsOpen} onOpenChange={setAgentSettingsOpen} />
+      <SecurityInfo open={securityInfoOpen} onOpenChange={setSecurityInfoOpen} />
       
       <div className="flex h-screen bg-background">
         <aside className="w-80 border-r border-border bg-card flex flex-col">
@@ -240,6 +243,16 @@ function App() {
                   Agents
                 </Button>
               </div>
+
+              <Button 
+                onClick={() => setSecurityInfoOpen(true)} 
+                variant="ghost" 
+                size="sm"
+                className="w-full justify-start text-muted-foreground hover:text-foreground"
+              >
+                <ShieldCheck size={14} className="mr-2" />
+                Security & Privacy
+              </Button>
             </div>
           </div>
           <ScrollArea className="flex-1 px-3 py-4">
