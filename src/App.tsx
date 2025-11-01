@@ -471,16 +471,28 @@ function App() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {!sidebarOpen && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleQuickTokenRefresh}
-                      disabled={isLoading}
-                      className={`h-9 w-9 ${isTokenValid ? 'border-accent text-accent hover:bg-accent/10' : 'border-destructive text-destructive hover:bg-destructive/10'}`}
-                      title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
-                    >
-                      <Key size={16} weight="bold" />
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => createNewConversation('account-opening')}
+                        disabled={isLoading}
+                        className="h-9 w-9"
+                        title="New conversation"
+                      >
+                        <Plus size={16} weight="bold" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleQuickTokenRefresh}
+                        disabled={isLoading}
+                        className={`h-9 w-9 ${isTokenValid ? 'border-accent text-accent hover:bg-accent/10' : 'border-destructive text-destructive hover:bg-destructive/10'}`}
+                        title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
+                      >
+                        <Key size={16} weight="bold" />
+                      </Button>
+                    </>
                   )}
                   <Select value={activeConversation.agentType} onValueChange={handleAgentChange}>
                     <SelectTrigger className="w-[200px] h-9">
