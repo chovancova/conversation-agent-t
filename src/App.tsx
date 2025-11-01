@@ -8,11 +8,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ChatMessage } from '@/components/ChatMessage'
 import { TypingIndicator } from '@/components/TypingIndicator'
 import { ConversationList } from '@/components/ConversationList'
 import { EmptyState } from '@/components/EmptyState'
 import { TokenManager } from '@/components/TokenManager'
+import { TokenStatus } from '@/components/TokenStatus'
 import { AgentSettings } from '@/components/AgentSettings'
 import { SecurityInfo } from '@/components/SecurityInfo'
 import { Conversation, Message, AgentType, AccessToken } from '@/lib/types'
@@ -28,6 +30,7 @@ function App() {
   const [tokenManagerOpen, setTokenManagerOpen] = useState(false)
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
   const [securityInfoOpen, setSecurityInfoOpen] = useState(false)
+  const [tokenStatusExpanded, setTokenStatusExpanded] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -200,6 +203,13 @@ function App() {
       <div className="flex h-screen bg-background">
         <aside className="w-80 border-r border-border bg-card flex flex-col">
           <div className="p-6 border-b border-border">
+            <Alert className="mb-4 border-accent/50 bg-accent/5">
+              <ShieldCheck size={16} className="text-accent" />
+              <AlertDescription className="text-xs">
+                All credentials are stored encrypted via Spark KV for your security.
+              </AlertDescription>
+            </Alert>
+
             <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-4">
               Agent Tester
             </h1>
@@ -253,6 +263,12 @@ function App() {
                 <ShieldCheck size={14} className="mr-2" />
                 Security & Privacy
               </Button>
+
+              <TokenStatus 
+                onOpenTokenManager={() => setTokenManagerOpen(true)}
+                isExpanded={tokenStatusExpanded}
+                onToggle={() => setTokenStatusExpanded(!tokenStatusExpanded)}
+              />
             </div>
           </div>
           <ScrollArea className="flex-1 px-3 py-4">
@@ -262,6 +278,11 @@ function App() {
               onSelect={setActiveConversationId}
             />
           </ScrollArea>
+          <div className="p-4 pt-0">
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              This application uses encrypted storage for credentials. Use test credentials only. Never store production secrets. All data stays in your browser and is never transmitted to third parties.
+            </p>
+          </div>
         </aside>
 
         <main className="flex-1 flex flex-col">
@@ -310,19 +331,6 @@ function App() {
 
               <div className="border-t border-border bg-card px-6 py-4">
                 <div className="max-w-4xl mx-auto">
-                  {!isTokenValid && (
-                    <div className="mb-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive flex items-center justify-between">
-                      <span>⚠️ Access token expired or not set</span>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => setTokenManagerOpen(true)}
-                        className="h-7"
-                      >
-                        Generate Token
-                      </Button>
-                    </div>
-                  )}
                   <div className="flex gap-3">
                     <Textarea
                       ref={textareaRef}
