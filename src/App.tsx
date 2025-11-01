@@ -200,65 +200,61 @@ function App() {
       <SecurityInfo open={securityInfoOpen} onOpenChange={setSecurityInfoOpen} />
       
       <div className="flex h-screen bg-background">
-        <aside className="w-80 border-r border-border bg-card/50 backdrop-blur-sm flex flex-col" style={{ height: '50vh', alignSelf: 'flex-start' }}>
-          <div className="p-5 border-b border-border/50">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-xl font-semibold tracking-tight text-foreground">
-                Agent Tester
-              </h1>
-              <div className="flex gap-1">
-                <Button 
-                  onClick={() => setTokenManagerOpen(true)} 
-                  variant="ghost" 
-                  size="icon"
-                  className="h-8 w-8"
-                  title="Manage Token"
-                >
-                  <Key size={16} />
-                </Button>
-                <Button 
-                  onClick={() => setAgentSettingsOpen(true)} 
-                  variant="ghost" 
-                  size="icon"
-                  className="h-8 w-8"
-                  title="Agent Settings"
-                >
-                  <Gear size={16} />
-                </Button>
+        <aside className="w-80 border-r border-border bg-card flex flex-col h-full">
+          <div className="p-6 border-b border-border">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Robot size={20} weight="bold" className="text-primary-foreground" />
+                </div>
+                <h1 className="text-lg font-semibold tracking-tight text-foreground">
+                  Agent Tester
+                </h1>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <TokenStatus 
-                onOpenTokenManager={() => setTokenManagerOpen(true)}
-                isExpanded={tokenStatusExpanded}
-                onToggle={() => setTokenStatusExpanded(!tokenStatusExpanded)}
-              />
+            <Button 
+              onClick={() => createNewConversation('account-opening')}
+              className="w-full h-11 mb-4"
+              size="lg"
+            >
+              <Plus size={20} weight="bold" className="mr-2" />
+              New Conversation
+            </Button>
 
-              <Select onValueChange={(value) => createNewConversation(value as AgentType)}>
-                <SelectTrigger className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90 border-0">
-                  <div className="flex items-center font-medium">
-                    <Plus size={18} weight="bold" className="mr-2" />
-                    <SelectValue placeholder="New Conversation" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {AGENTS.map(agent => (
-                    <SelectItem key={agent.type} value={agent.type}>
-                      <div className="flex items-center gap-2">
-                        <Robot size={16} />
-                        {agent.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setTokenManagerOpen(true)} 
+                variant="outline" 
+                size="sm"
+                className="flex-1 h-9"
+              >
+                <Key size={16} className="mr-2" />
+                Token
+              </Button>
+              <Button 
+                onClick={() => setAgentSettingsOpen(true)} 
+                variant="outline" 
+                size="sm"
+                className="flex-1 h-9"
+              >
+                <Gear size={16} className="mr-2" />
+                Settings
+              </Button>
             </div>
           </div>
+
+          <div className="px-4 py-3 border-b border-border bg-muted/30">
+            <TokenStatus 
+              onOpenTokenManager={() => setTokenManagerOpen(true)}
+              isExpanded={tokenStatusExpanded}
+              onToggle={() => setTokenStatusExpanded(!tokenStatusExpanded)}
+            />
+          </div>
           
-          <ScrollArea className="flex-1 px-3 py-3">
-            <div className="space-y-1">
-              <div className="text-xs font-medium text-muted-foreground px-3 py-2">
+          <ScrollArea className="flex-1">
+            <div className="p-4 space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
                 Recent Conversations
               </div>
               <ConversationList
@@ -269,14 +265,14 @@ function App() {
             </div>
           </ScrollArea>
           
-          <div className="p-3 border-t border-border/50">
+          <div className="p-4 border-t border-border bg-muted/20">
             <Button 
               onClick={() => setSecurityInfoOpen(true)} 
               variant="ghost" 
               size="sm"
-              className="w-full justify-start text-xs text-muted-foreground hover:text-foreground h-8"
+              className="w-full justify-start h-9 text-muted-foreground hover:text-foreground hover:bg-muted"
             >
-              <ShieldCheck size={14} className="mr-2" />
+              <ShieldCheck size={16} className="mr-2" />
               Security Info
             </Button>
           </div>
@@ -285,28 +281,39 @@ function App() {
         <main className="flex-1 flex flex-col">
           {activeConversation ? (
             <>
-              <header className="h-16 border-b border-border px-6 flex items-center justify-between bg-card">
-                <div className="flex items-center gap-4">
-                  <h2 className="font-medium text-foreground">
-                    {activeConversation.title}
-                  </h2>
+              <header className="h-16 border-b border-border px-8 flex items-center justify-between bg-card/80 backdrop-blur-sm">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
+                    <Robot size={16} weight="duotone" className="text-accent" />
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <h2 className="font-medium text-foreground truncate">
+                      {activeConversation.title}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {getAgentConfig(activeConversation.agentType)?.name || activeConversation.agentType}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <Select value={activeConversation.agentType} onValueChange={handleAgentChange}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[200px] h-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {AGENTS.map(agent => (
                         <SelectItem key={agent.type} value={agent.type}>
-                          {agent.name}
+                          <div className="flex items-center gap-2">
+                            <Robot size={16} />
+                            {agent.name}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Separator orientation="vertical" className="h-6" />
-                  <Button variant="ghost" size="sm" onClick={handleExport}>
-                    <Export size={18} />
+                  <Button variant="outline" size="sm" onClick={handleExport} className="h-9">
+                    <Export size={16} className="mr-2" />
+                    Export
                   </Button>
                 </div>
               </header>
