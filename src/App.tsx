@@ -19,6 +19,7 @@ import { AgentSettings } from '@/components/AgentSettings'
 import { SecurityInfo } from '@/components/SecurityInfo'
 import { Conversation, Message, AgentType, AccessToken, TokenConfig } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
+import { ThemeOption, applyTheme } from '@/lib/themes'
 
 function App() {
   const [conversations, setConversations] = useKV<Conversation[]>('conversations', [])
@@ -27,6 +28,7 @@ function App() {
   const [agentEndpoints] = useKV<Record<string, string>>('agent-endpoints', {})
   const [agentNames] = useKV<Record<string, string>>('agent-names', {})
   const [sidebarOpen, setSidebarOpen] = useKV<boolean>('sidebar-open', true)
+  const [selectedTheme] = useKV<ThemeOption>('selected-theme', 'dark')
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [tokenManagerOpen, setTokenManagerOpen] = useState(false)
@@ -40,6 +42,12 @@ function App() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const activeConversation = (conversations || []).find((c) => c.id === activeConversationId)
+
+  useEffect(() => {
+    if (selectedTheme) {
+      applyTheme(selectedTheme)
+    }
+  }, [selectedTheme])
 
   useEffect(() => {
     if (scrollRef.current) {
