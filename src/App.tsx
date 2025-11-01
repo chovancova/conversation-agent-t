@@ -202,11 +202,11 @@ function App() {
             </h1>
             <div className="space-y-2">
               <Select onValueChange={(value) => createNewConversation(value as AgentType)}>
-                <SelectTrigger asChild>
-                  <Button className="w-full" size="sm">
+                <SelectTrigger className="w-full h-9">
+                  <div className="flex items-center">
                     <Plus size={16} weight="bold" className="mr-2" />
-                    New Conversation
-                  </Button>
+                    <SelectValue placeholder="New Conversation" />
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
                   {AGENTS.map(agent => (
