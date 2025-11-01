@@ -18,13 +18,14 @@ import { TokenStatus } from '@/components/TokenStatus'
 import { AgentSettings } from '@/components/AgentSettings'
 import { SecurityInfo } from '@/components/SecurityInfo'
 import { Conversation, Message, AgentType, AccessToken } from '@/lib/types'
-import { AGENTS, getAgentConfig } from '@/lib/agents'
+import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 
 function App() {
   const [conversations, setConversations] = useKV<Conversation[]>('conversations', [])
   const [activeConversationId, setActiveConversationId] = useKV<string | null>('activeConversationId', null)
   const [accessToken] = useKV<AccessToken | null>('access-token', null)
   const [agentEndpoints] = useKV<Record<string, string>>('agent-endpoints', {})
+  const [agentNames] = useKV<Record<string, string>>('agent-names', {})
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [tokenManagerOpen, setTokenManagerOpen] = useState(false)
@@ -166,8 +167,8 @@ function App() {
       return
     }
 
-    const agent = getAgentConfig(activeConversation.agentType)
-    const exportText = `Agent: ${agent?.name || activeConversation.agentType}\n` +
+    const agentName = getAgentName(activeConversation.agentType, agentNames)
+    const exportText = `Agent: ${agentName}\n` +
       `Conversation: ${activeConversation.title}\n` +
       `Created: ${new Date(activeConversation.createdAt).toLocaleString()}\n\n` +
       activeConversation.messages
@@ -335,7 +336,7 @@ function App() {
                       {activeConversation.title}
                     </h2>
                     <p className="text-xs text-muted-foreground">
-                      {getAgentConfig(activeConversation.agentType)?.name || activeConversation.agentType}
+                      {getAgentName(activeConversation.agentType, agentNames)}
                     </p>
                   </div>
                 </div>
@@ -349,7 +350,7 @@ function App() {
                         <SelectItem key={agent.type} value={agent.type}>
                           <div className="flex items-center gap-2">
                             <Robot size={16} />
-                            {agent.name}
+                            {getAgentName(agent.type, agentNames)}
                           </div>
                         </SelectItem>
                       ))}

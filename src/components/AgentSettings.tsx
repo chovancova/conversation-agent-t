@@ -16,14 +16,22 @@ type AgentSettingsProps = {
 }
 
 export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
-  const [agentConfigs, setAgentConfigs] = useKV<Record<string, string>>('agent-endpoints', {})
+  const [agentEndpoints, setAgentEndpoints] = useKV<Record<string, string>>('agent-endpoints', {})
+  const [agentNames, setAgentNames] = useKV<Record<string, string>>('agent-names', {})
   const [endpoints, setEndpoints] = useState<Record<string, string>>({})
+  const [names, setNames] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    if (agentConfigs) {
-      setEndpoints(agentConfigs)
+    if (agentEndpoints) {
+      setEndpoints(agentEndpoints)
     }
-  }, [agentConfigs])
+  }, [agentEndpoints])
+
+  useEffect(() => {
+    if (agentNames) {
+      setNames(agentNames)
+    }
+  }, [agentNames])
 
   const handleEndpointChange = (agentType: string, value: string) => {
     setEndpoints(prev => ({
@@ -32,9 +40,17 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
     }))
   }
 
+  const handleNameChange = (agentType: string, value: string) => {
+    setNames(prev => ({
+      ...prev,
+      [agentType]: value
+    }))
+  }
+
   const handleSave = () => {
-    setAgentConfigs(endpoints)
-    toast.success('Agent endpoints saved')
+    setAgentEndpoints(endpoints)
+    setAgentNames(names)
+    toast.success('Agent settings saved')
     onOpenChange(false)
   }
 
@@ -47,7 +63,7 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
             Agent Configuration
           </DialogTitle>
           <DialogDescription>
-            Configure HTTP POST endpoints for each agent
+            Configure agent names and HTTP POST endpoints for each agent
           </DialogDescription>
         </DialogHeader>
 
@@ -56,7 +72,7 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
             {AGENTS.map(agent => (
               <TabsTrigger key={agent.type} value={agent.type} className="text-xs">
                 <Robot size={14} className="mr-1" />
-                {agent.name.split(' ')[0]}
+                {(names[agent.type] || agent.name).split(' ')[0]}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -64,8 +80,22 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
           {AGENTS.map(agent => (
             <TabsContent key={agent.type} value={agent.type} className="space-y-4 pt-4">
               <div>
-                <h3 className="font-semibold text-lg mb-1">{agent.name}</h3>
+                <h3 className="font-semibold text-lg mb-1">{names[agent.type] || agent.name}</h3>
                 <p className="text-sm text-muted-foreground mb-4">{agent.description}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`name-${agent.type}`}>Custom Agent Name</Label>
+                <Input
+                  id={`name-${agent.type}`}
+                  type="text"
+                  placeholder={agent.name}
+                  value={names[agent.type] || ''}
+                  onChange={(e) => handleNameChange(agent.type, e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Give this agent a custom name (leave empty to use default: {agent.name})
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -101,7 +131,7 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
             Cancel
           </Button>
           <Button onClick={handleSave}>
-            Save Endpoints
+            Save Settings
           </Button>
         </div>
       </DialogContent>
