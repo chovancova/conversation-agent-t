@@ -200,33 +200,35 @@ function App() {
       <SecurityInfo open={securityInfoOpen} onOpenChange={setSecurityInfoOpen} />
       
       <div className="flex h-screen bg-background">
-        <aside className="w-80 border-r border-border bg-card flex flex-col">
-          <div className="p-6 border-b border-border">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-4">
-              Agent Tester
-            </h1>
-            <div className="space-y-2">
-              <div className="flex gap-2">
+        <aside className="w-80 border-r border-border bg-card/50 backdrop-blur-sm flex flex-col" style={{ height: '50vh', alignSelf: 'flex-start' }}>
+          <div className="p-5 border-b border-border/50">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                Agent Tester
+              </h1>
+              <div className="flex gap-1">
                 <Button 
                   onClick={() => setTokenManagerOpen(true)} 
-                  variant="outline" 
-                  size="sm"
-                  className="flex-1"
+                  variant="ghost" 
+                  size="icon"
+                  className="h-8 w-8"
+                  title="Manage Token"
                 >
-                  <Key size={14} className="mr-1" />
-                  Token
+                  <Key size={16} />
                 </Button>
                 <Button 
                   onClick={() => setAgentSettingsOpen(true)} 
-                  variant="outline" 
-                  size="sm"
-                  className="flex-1"
+                  variant="ghost" 
+                  size="icon"
+                  className="h-8 w-8"
+                  title="Agent Settings"
                 >
-                  <Gear size={14} className="mr-1" />
-                  Agents
+                  <Gear size={16} />
                 </Button>
               </div>
+            </div>
 
+            <div className="space-y-3">
               <TokenStatus 
                 onOpenTokenManager={() => setTokenManagerOpen(true)}
                 isExpanded={tokenStatusExpanded}
@@ -234,9 +236,9 @@ function App() {
               />
 
               <Select onValueChange={(value) => createNewConversation(value as AgentType)}>
-                <SelectTrigger className="w-full h-9">
-                  <div className="flex items-center">
-                    <Plus size={16} weight="bold" className="mr-2" />
+                <SelectTrigger className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90 border-0">
+                  <div className="flex items-center font-medium">
+                    <Plus size={18} weight="bold" className="mr-2" />
                     <SelectValue placeholder="New Conversation" />
                   </div>
                 </SelectTrigger>
@@ -244,7 +246,7 @@ function App() {
                   {AGENTS.map(agent => (
                     <SelectItem key={agent.type} value={agent.type}>
                       <div className="flex items-center gap-2">
-                        <Robot size={14} />
+                        <Robot size={16} />
                         {agent.name}
                       </div>
                     </SelectItem>
@@ -253,26 +255,30 @@ function App() {
               </Select>
             </div>
           </div>
-          <ScrollArea className="flex-1 px-3 py-4">
-            <ConversationList
-              conversations={conversations || []}
-              activeId={activeConversationId || null}
-              onSelect={setActiveConversationId}
-            />
+          
+          <ScrollArea className="flex-1 px-3 py-3">
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-muted-foreground px-3 py-2">
+                Recent Conversations
+              </div>
+              <ConversationList
+                conversations={conversations || []}
+                activeId={activeConversationId || null}
+                onSelect={setActiveConversationId}
+              />
+            </div>
           </ScrollArea>
-          <div className="p-4 pt-0 space-y-2">
+          
+          <div className="p-3 border-t border-border/50">
             <Button 
               onClick={() => setSecurityInfoOpen(true)} 
               variant="ghost" 
               size="sm"
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
+              className="w-full justify-start text-xs text-muted-foreground hover:text-foreground h-8"
             >
               <ShieldCheck size={14} className="mr-2" />
-              Security & Privacy
+              Security Info
             </Button>
-            <p className="text-[10px] text-muted-foreground leading-relaxed">
-              This application uses encrypted storage for credentials. Use test credentials only. Never store production secrets. All data stays in your browser and is never transmitted to third parties.
-            </p>
           </div>
         </aside>
 
