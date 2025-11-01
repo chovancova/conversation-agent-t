@@ -61,6 +61,13 @@ A professional testing environment for multiple conversation agents that enables
 - **Progression**: Click button → Dialog opens → Shows encryption details, security considerations, stored data list → Option to clear all data → Confirmation and reload
 - **Success criteria**: Clear explanation of encryption, visible warnings about test credentials, successful data clearing when requested
 
+### Theme Customization
+- **Functionality**: Choose from predefined color palettes (Dark, Light, Commerzbank, Ocean, Forest, Sunset, Midnight) or create custom themes with color pickers
+- **Purpose**: Allow users to personalize the interface and match corporate branding or personal preferences
+- **Trigger**: User clicks Theme button in sidebar
+- **Progression**: Click theme button → Dialog opens with tabs → Browse preset themes or create custom → Select colors → Preview updates → Apply theme → Theme persists across sessions
+- **Success criteria**: Themes apply instantly, color previews accurate, custom theme editor intuitive, themes persist and load on app restart
+
 ## Edge Case Handling
 
 - **Expired Token**: Show warning banner when token expires, disable send button, prompt user to generate new token
@@ -83,19 +90,23 @@ The design should feel like a professional developer tool for API testing, with 
 
 ## Color Selection
 
-Complementary (opposite colors) - A muted blue-gray foundation paired with warm amber accents creates a professional technical feel while the accent provides clear visual hierarchy for interactive elements and agent responses. Additional destructive colors for error states.
+The application supports multiple themes with complementary color schemes. Each theme provides a professional technical feel with clear visual hierarchy. The default theme uses a muted blue-gray foundation paired with warm amber accents.
 
-- **Primary Color**: Deep Blue-Gray (oklch(0.35 0.02 250)) - Conveys technical sophistication and stability, used for primary actions and user messages
-- **Secondary Colors**: Cool Gray (oklch(0.92 0.005 250)) for subtle backgrounds and containers, Light Blue-Gray (oklch(0.75 0.015 250)) for secondary actions
-- **Accent Color**: Warm Amber (oklch(0.75 0.15 65)) - Draws attention to agent responses and key interactive moments, creating warmth in a technical interface
-- **Destructive Color**: Coral Red (oklch(0.55 0.22 25)) - Clear error indication for expired tokens and failed requests
-- **Foreground/Background Pairings**:
-  - Background (Soft White oklch(0.98 0 0)): Dark Gray text (oklch(0.25 0 0)) - Ratio 13.2:1 ✓
-  - Card (White oklch(1 0 0)): Dark Gray text (oklch(0.25 0 0)) - Ratio 14.8:1 ✓
-  - Primary (Deep Blue-Gray oklch(0.35 0.02 250)): White text (oklch(0.99 0 0)) - Ratio 9.5:1 ✓
-  - Secondary (Cool Gray oklch(0.92 0.005 250)): Dark Gray text (oklch(0.25 0 0)) - Ratio 12.5:1 ✓
-  - Accent (Warm Amber oklch(0.75 0.15 65)): Dark Gray text (oklch(0.25 0 0)) - Ratio 5.2:1 ✓
-  - Destructive (Coral Red oklch(0.55 0.22 25)): White text (oklch(0.99 0 0)) - Ratio 5.8:1 ✓
+**Available Themes**:
+- **Dark**: Modern dark theme with high contrast and cyan-green accents
+- **Light**: Clean light theme with soft colors and subtle shadows
+- **Commerzbank**: Official brand colors with yellow accent on dark navy base
+- **Ocean**: Deep blue tones inspired by the sea with aqua accents
+- **Forest**: Rich green tones inspired by nature with emerald highlights
+- **Sunset**: Warm orange and pink tones for a vibrant feel
+- **Midnight**: Deep purple and blue night tones with violet accents
+- **Custom**: User-created themes with personalized color palettes
+
+Default Dark Theme Colors:
+- **Primary Color**: Cyan-Green (oklch(0.65 0.20 160)) - Modern, technical feel for primary actions
+- **Secondary Colors**: Dark Gray (oklch(0.269 0 0)) for containers
+- **Accent Color**: Purple (oklch(0.75 0.15 280)) - Visual interest for highlights and active states
+- **Destructive Color**: Red (oklch(0.704 0.191 22.216)) - Clear error indication
 
 ## Font Selection
 
@@ -160,6 +171,8 @@ Subtle, purposeful animations that reinforce state changes without slowing down 
   - XCircle (Invalid status) - error indication
   - ShieldCheck (Security information) - data privacy and encryption status
   - LockKey (Credential protection) - encrypted storage indicator
+  - Palette (Theme customization) - color and appearance settings
+  - Pencil (Edit custom theme) - theme creation and editing
 
 - **Spacing**:
   - Container padding: p-6 (24px)

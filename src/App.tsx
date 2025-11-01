@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,7 @@ import { TokenManager } from '@/components/TokenManager'
 import { TokenStatus } from '@/components/TokenStatus'
 import { AgentSettings } from '@/components/AgentSettings'
 import { SecurityInfo } from '@/components/SecurityInfo'
+import { ThemeSettings } from '@/components/ThemeSettings'
 import { Conversation, Message, AgentType, AccessToken, TokenConfig } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 import { ThemeOption, applyTheme } from '@/lib/themes'
@@ -29,11 +30,13 @@ function App() {
   const [agentNames] = useKV<Record<string, string>>('agent-names', {})
   const [sidebarOpen, setSidebarOpen] = useKV<boolean>('sidebar-open', true)
   const [selectedTheme] = useKV<ThemeOption>('selected-theme', 'dark')
+  const [customTheme] = useKV<any>('custom-theme', null)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [tokenManagerOpen, setTokenManagerOpen] = useState(false)
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
   const [securityInfoOpen, setSecurityInfoOpen] = useState(false)
+  const [themeSettingsOpen, setThemeSettingsOpen] = useState(false)
   const [tokenStatusExpanded, setTokenStatusExpanded] = useState(true)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null)
@@ -45,9 +48,13 @@ function App() {
 
   useEffect(() => {
     if (selectedTheme) {
-      applyTheme(selectedTheme)
+      if (selectedTheme === 'custom' && customTheme) {
+        applyTheme(selectedTheme, customTheme)
+      } else {
+        applyTheme(selectedTheme)
+      }
     }
-  }, [selectedTheme])
+  }, [selectedTheme, customTheme])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -314,6 +321,7 @@ function App() {
       <TokenManager open={tokenManagerOpen} onOpenChange={setTokenManagerOpen} />
       <AgentSettings open={agentSettingsOpen} onOpenChange={setAgentSettingsOpen} />
       <SecurityInfo open={securityInfoOpen} onOpenChange={setSecurityInfoOpen} />
+      <ThemeSettings open={themeSettingsOpen} onOpenChange={setThemeSettingsOpen} />
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -372,7 +380,7 @@ function App() {
               New Conversation
             </Button>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 mb-2">
               <Button 
                 onClick={() => setTokenManagerOpen(true)} 
                 variant="outline" 
@@ -392,6 +400,16 @@ function App() {
                 Settings
               </Button>
             </div>
+            
+            <Button 
+              onClick={() => setThemeSettingsOpen(true)} 
+              variant="outline" 
+              size="sm"
+              className="w-full h-9"
+            >
+              <Palette size={16} className="mr-2" />
+              Theme
+            </Button>
           </div>
 
           <div className="px-4 py-3 border-b border-border bg-muted/30">
