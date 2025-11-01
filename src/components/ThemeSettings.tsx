@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Palette, Check, Plus, Pencil, Swatches } from '@phosphor-icons/react'
+import { Palette, Check, Plus, Pencil, Swatches, TextAa } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -11,8 +11,9 @@ import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ColorPalettePicker, predefinedPalettes } from '@/components/ColorPalettePicker'
-import { themes, ThemeOption, ThemeColors, applyTheme, hexToOklch } from '@/lib/themes'
+import { themes, ThemeOption, ThemeColors, applyTheme, hexToOklch, fontOptions, TypographySettings, applyTypography } from '@/lib/themes'
 
 type ThemeSettingsProps = {
   open: boolean
@@ -22,6 +23,11 @@ type ThemeSettingsProps = {
 export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
   const [selectedTheme, setSelectedTheme] = useKV<ThemeOption>('selected-theme', 'dark')
   const [customTheme, setCustomTheme] = useKV<ThemeColors | null>('custom-theme', null)
+  const [typography, setTypography] = useKV<TypographySettings>('typography-settings', {
+    fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+    fontSize: 'medium',
+    lineHeight: 'normal'
+  })
   const [editingMode, setEditingMode] = useState<'palette' | 'manual' | null>(null)
   const [customColors, setCustomColors] = useState<Record<string, string>>({
     background: '#252525',
@@ -31,6 +37,12 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
     accent: '#a855f7',
   })
   const [selectedPalette, setSelectedPalette] = useState(predefinedPalettes[0])
+
+  useEffect(() => {
+    if (typography) {
+      applyTypography(typography)
+    }
+  }, [typography])
 
   const handleThemeChange = (theme: ThemeOption) => {
     if (theme === 'custom' && !customTheme) {
@@ -54,6 +66,15 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
 
   const handleCustomColorChange = (key: string, value: string) => {
     setCustomColors((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleTypographyChange = (key: keyof TypographySettings, value: any) => {
+    setTypography((prev = { fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif', fontSize: 'medium', lineHeight: 'normal' }) => {
+      const newTypography: TypographySettings = { ...prev, [key]: value }
+      applyTypography(newTypography)
+      return newTypography
+    })
+    toast.success('Typography updated')
   }
 
   const handleSaveCustomTheme = () => {
@@ -377,9 +398,10 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
         </DialogHeader>
 
         <Tabs defaultValue="presets" className="flex-1">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="presets">Preset Themes</TabsTrigger>
             <TabsTrigger value="custom">Create Custom</TabsTrigger>
+            <TabsTrigger value="typography">Typography</TabsTrigger>
           </TabsList>
 
           <TabsContent value="presets" className="mt-6">
@@ -509,6 +531,174 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                 )}
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="typography" className="mt-6">
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <TextAa size={24} weight="duotone" className="text-primary" />
+                    <h3 className="font-semibold text-lg">Typography Settings</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Customize the appearance of text throughout the application
+                  </p>
+
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="font-family" className="text-base">Font Family</Label>
+                      <Select 
+                        value={typography?.fontFamily || 'Inter, ui-sans-serif, system-ui, sans-serif'} 
+                        onValueChange={(value) => handleTypographyChange('fontFamily', value)}
+                      >
+                        <SelectTrigger id="font-family">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Sans Serif
+                          </div>
+                          {fontOptions.filter(f => f.category === 'sans-serif').map((font) => (
+                            <SelectItem key={font.value} value={font.value}>
+                              <span style={{ fontFamily: font.value }}>{font.name}</span>
+                            </SelectItem>
+                          ))}
+                          <Separator className="my-2" />
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Serif
+                          </div>
+                          {fontOptions.filter(f => f.category === 'serif').map((font) => (
+                            <SelectItem key={font.value} value={font.value}>
+                              <span style={{ fontFamily: font.value }}>{font.name}</span>
+                            </SelectItem>
+                          ))}
+                          <Separator className="my-2" />
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Monospace
+                          </div>
+                          {fontOptions.filter(f => f.category === 'monospace').map((font) => (
+                            <SelectItem key={font.value} value={font.value}>
+                              <span style={{ fontFamily: font.value }}>{font.name}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Choose the primary font for the interface
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-3">
+                      <Label htmlFor="font-size" className="text-base">Font Size</Label>
+                      <RadioGroup 
+                        value={typography?.fontSize || 'medium'} 
+                        onValueChange={(value) => handleTypographyChange('fontSize', value)}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="small" id="size-small" />
+                            <Label htmlFor="size-small" className="cursor-pointer flex-1">
+                              <div className="flex items-center justify-between">
+                                <span>Small</span>
+                                <span className="text-xs text-muted-foreground">14px base</span>
+                              </div>
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="medium" id="size-medium" />
+                            <Label htmlFor="size-medium" className="cursor-pointer flex-1">
+                              <div className="flex items-center justify-between">
+                                <span>Medium</span>
+                                <span className="text-xs text-muted-foreground">16px base</span>
+                              </div>
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="large" id="size-large" />
+                            <Label htmlFor="size-large" className="cursor-pointer flex-1">
+                              <div className="flex items-center justify-between">
+                                <span>Large</span>
+                                <span className="text-xs text-muted-foreground">18px base</span>
+                              </div>
+                            </Label>
+                          </div>
+                        </div>
+                      </RadioGroup>
+                      <p className="text-xs text-muted-foreground">
+                        Adjust the overall text size for better readability
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-3">
+                      <Label htmlFor="line-height" className="text-base">Line Height</Label>
+                      <RadioGroup 
+                        value={typography?.lineHeight || 'normal'} 
+                        onValueChange={(value) => handleTypographyChange('lineHeight', value)}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="compact" id="height-compact" />
+                            <Label htmlFor="height-compact" className="cursor-pointer flex-1">
+                              <div className="flex items-center justify-between">
+                                <span>Compact</span>
+                                <span className="text-xs text-muted-foreground">1.4</span>
+                              </div>
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="normal" id="height-normal" />
+                            <Label htmlFor="height-normal" className="cursor-pointer flex-1">
+                              <div className="flex items-center justify-between">
+                                <span>Normal</span>
+                                <span className="text-xs text-muted-foreground">1.6</span>
+                              </div>
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="relaxed" id="height-relaxed" />
+                            <Label htmlFor="height-relaxed" className="cursor-pointer flex-1">
+                              <div className="flex items-center justify-between">
+                                <span>Relaxed</span>
+                                <span className="text-xs text-muted-foreground">1.8</span>
+                              </div>
+                            </Label>
+                          </div>
+                        </div>
+                      </RadioGroup>
+                      <p className="text-xs text-muted-foreground">
+                        Control the spacing between lines of text
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Preview</h4>
+                  <Card className="p-6">
+                    <div className="space-y-4" style={{ fontFamily: typography?.fontFamily || 'Inter, ui-sans-serif, system-ui, sans-serif' }}>
+                      <h3 className="text-xl font-semibold">Typography Preview</h3>
+                      <p className="text-sm text-muted-foreground">
+                        The quick brown fox jumps over the lazy dog. This preview shows how your selected typography settings will appear throughout the application.
+                      </p>
+                      <p className="text-base">
+                        Typography is the art and technique of arranging type to make written language legible, readable, and appealing when displayed.
+                      </p>
+                      <div className="flex gap-2">
+                        <Button size="sm">Primary Button</Button>
+                        <Button size="sm" variant="outline">Secondary Button</Button>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              </div>
+            </ScrollArea>
           </TabsContent>
         </Tabs>
 

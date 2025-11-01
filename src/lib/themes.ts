@@ -22,6 +22,48 @@ export interface ThemeColors {
   ring: string
 }
 
+export interface TypographySettings {
+  fontFamily: string
+  fontSize: 'small' | 'medium' | 'large'
+  lineHeight: 'compact' | 'normal' | 'relaxed'
+}
+
+export const fontOptions = [
+  { name: 'Inter', value: 'Inter, ui-sans-serif, system-ui, sans-serif', category: 'sans-serif' },
+  { name: 'System UI', value: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif', category: 'sans-serif' },
+  { name: 'Roboto', value: 'Roboto, ui-sans-serif, system-ui, sans-serif', category: 'sans-serif' },
+  { name: 'Open Sans', value: 'Open Sans, ui-sans-serif, system-ui, sans-serif', category: 'sans-serif' },
+  { name: 'Poppins', value: 'Poppins, ui-sans-serif, system-ui, sans-serif', category: 'sans-serif' },
+  { name: 'Lato', value: 'Lato, ui-sans-serif, system-ui, sans-serif', category: 'sans-serif' },
+  { name: 'Lora', value: 'Lora, ui-serif, Georgia, serif', category: 'serif' },
+  { name: 'Merriweather', value: 'Merriweather, ui-serif, Georgia, serif', category: 'serif' },
+  { name: 'Playfair Display', value: 'Playfair Display, ui-serif, Georgia, serif', category: 'serif' },
+  { name: 'JetBrains Mono', value: 'JetBrains Mono, ui-monospace, monospace', category: 'monospace' },
+  { name: 'Fira Code', value: 'Fira Code, ui-monospace, monospace', category: 'monospace' },
+  { name: 'Source Code Pro', value: 'Source Code Pro, ui-monospace, monospace', category: 'monospace' },
+]
+
+export const fontSizeScales = {
+  small: {
+    base: '14px',
+    scale: 0.9
+  },
+  medium: {
+    base: '16px',
+    scale: 1.0
+  },
+  large: {
+    base: '18px',
+    scale: 1.1
+  }
+}
+
+export const lineHeightScales = {
+  compact: '1.4',
+  normal: '1.6',
+  relaxed: '1.8'
+}
+
 export interface ThemeDefinition {
   name: string
   description: string
@@ -300,6 +342,19 @@ export function applyTheme(theme: ThemeOption, customColors?: ThemeColors) {
     const cssVarName = key.replace(/([A-Z])/g, '-$1').toLowerCase()
     root.style.setProperty(`--${cssVarName}`, value)
   })
+}
+
+export function applyTypography(settings: TypographySettings) {
+  const root = document.documentElement
+  const sizeConfig = fontSizeScales[settings.fontSize]
+  
+  root.style.setProperty('--font-family', settings.fontFamily)
+  root.style.setProperty('--font-size-base', sizeConfig.base)
+  root.style.setProperty('--line-height', lineHeightScales[settings.lineHeight])
+  
+  document.body.style.fontFamily = settings.fontFamily
+  document.body.style.fontSize = sizeConfig.base
+  document.body.style.lineHeight = lineHeightScales[settings.lineHeight]
 }
 
 export function hexToOklch(hex: string): string {

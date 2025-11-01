@@ -62,11 +62,11 @@ A professional testing environment for multiple conversation agents that enables
 - **Success criteria**: Clear explanation of encryption, visible warnings about test credentials, successful data clearing when requested
 
 ### Theme Customization
-- **Functionality**: Choose from predefined color palettes (Dark, Light, Commerzbank, Ocean, Forest, Sunset, Midnight) or create custom themes with color pickers
-- **Purpose**: Allow users to personalize the interface and match corporate branding or personal preferences
+- **Functionality**: Choose from predefined color palettes or create custom themes with color pickers, plus customize typography with font family, size, and line height controls
+- **Purpose**: Allow users to personalize the interface appearance and text rendering to match preferences, corporate branding, or accessibility needs
 - **Trigger**: User clicks Theme button in sidebar
-- **Progression**: Click theme button → Dialog opens with tabs → Browse preset themes or create custom → Select colors → Preview updates → Apply theme → Theme persists across sessions
-- **Success criteria**: Themes apply instantly, color previews accurate, custom theme editor intuitive, themes persist and load on app restart
+- **Progression**: Click theme button → Dialog opens with tabs (Preset Themes, Create Custom, Typography) → Browse presets or create custom colors → Adjust font family (Inter, Roboto, Lora, etc.) → Set font size (Small/Medium/Large) → Choose line height (Compact/Normal/Relaxed) → Preview updates live → Apply theme → Settings persist across sessions
+- **Success criteria**: Themes apply instantly, color previews accurate, custom theme editor intuitive with palette picker and manual mode, typography changes visible immediately, all settings persist and load on app restart
 
 ## Edge Case Handling
 
@@ -95,11 +95,13 @@ The application supports multiple themes with complementary color schemes. Each 
 **Available Themes**:
 - **Dark**: Modern dark theme with high contrast and cyan-green accents
 - **Light**: Clean light theme with soft colors and subtle shadows
-- **Commerzbank**: Official brand colors with yellow accent on dark navy base
+- **Corporate Gold**: Professional dark theme with golden accents (formerly Commerzbank, more universal branding)
 - **Ocean**: Deep blue tones inspired by the sea with aqua accents
 - **Forest**: Rich green tones inspired by nature with emerald highlights
 - **Sunset**: Warm orange and pink tones for a vibrant feel
 - **Midnight**: Deep purple and blue night tones with violet accents
+- **Lavender Dream**: Soft purple and lavender tones for a calming aesthetic
+- **Rose Garden**: Elegant pink and rose tones for a warm feel
 - **Custom**: User-created themes with personalized color palettes
 
 Default Dark Theme Colors:
@@ -110,9 +112,24 @@ Default Dark Theme Colors:
 
 ## Font Selection
 
-Clean, highly legible sans-serif typography that emphasizes readability for extended testing sessions, using Inter for its excellent rendering at all sizes and neutral professional character.
+Clean, highly legible typography system that emphasizes readability for extended testing sessions. Users can choose from multiple font families across three categories (sans-serif, serif, monospace), adjust base font size, and control line height for optimal reading comfort.
 
-- **Typographic Hierarchy**:
+**Font Options**:
+- **Sans Serif**: Inter (default), System UI, Roboto, Open Sans, Poppins, Lato
+- **Serif**: Lora, Merriweather, Playfair Display
+- **Monospace**: JetBrains Mono, Fira Code, Source Code Pro
+
+**Font Size Options**:
+- **Small**: 14px base (0.9x scale) - Compact for dense information
+- **Medium**: 16px base (1.0x scale) - Standard comfortable reading
+- **Large**: 18px base (1.1x scale) - Enhanced readability
+
+**Line Height Options**:
+- **Compact**: 1.4 - Dense text for maximum content
+- **Normal**: 1.6 - Balanced readability (default)
+- **Relaxed**: 1.8 - Spacious for easier scanning
+
+- **Typographic Hierarchy** (using default settings):
   - H1 (App Title): Inter SemiBold/24px/tight letter-spacing (-0.02em)
   - H2 (Section Headers): Inter Medium/16px/normal letter-spacing
   - Body (Messages): Inter Regular/15px/relaxed line-height (1.6)
@@ -173,6 +190,8 @@ Subtle, purposeful animations that reinforce state changes without slowing down 
   - LockKey (Credential protection) - encrypted storage indicator
   - Palette (Theme customization) - color and appearance settings
   - Pencil (Edit custom theme) - theme creation and editing
+  - TextAa (Typography settings) - font and text size controls
+  - Swatches (Color palette picker) - choosing color schemes
 
 - **Spacing**:
   - Container padding: p-6 (24px)
