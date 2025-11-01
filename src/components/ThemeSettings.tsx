@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Palette, Check, Plus, Pencil } from '@phosphor-icons/react'
+import { Palette, Check, Plus, Pencil, Swatches } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { ColorPalettePicker, predefinedPalettes } from '@/components/ColorPalettePicker'
 import { themes, ThemeOption, ThemeColors, applyTheme, hexToOklch } from '@/lib/themes'
 
 type ThemeSettingsProps = {
@@ -21,7 +22,7 @@ type ThemeSettingsProps = {
 export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
   const [selectedTheme, setSelectedTheme] = useKV<ThemeOption>('selected-theme', 'dark')
   const [customTheme, setCustomTheme] = useKV<ThemeColors | null>('custom-theme', null)
-  const [editingCustom, setEditingCustom] = useState(false)
+  const [editingMode, setEditingMode] = useState<'palette' | 'manual' | null>(null)
   const [customColors, setCustomColors] = useState<Record<string, string>>({
     background: '#252525',
     foreground: '#fafafa',
@@ -29,10 +30,11 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
     primary: '#3b82f6',
     accent: '#a855f7',
   })
+  const [selectedPalette, setSelectedPalette] = useState(predefinedPalettes[0])
 
   const handleThemeChange = (theme: ThemeOption) => {
     if (theme === 'custom' && !customTheme) {
-      setEditingCustom(true)
+      setEditingMode('palette')
       return
     }
     
@@ -43,6 +45,11 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
       applyTheme(theme)
     }
     toast.success(`${themes[theme].name} theme applied`)
+  }
+
+  const handlePaletteSelect = (palette: typeof predefinedPalettes[0]) => {
+    setSelectedPalette(palette)
+    setCustomColors(palette.colors)
   }
 
   const handleCustomColorChange = (key: string, value: string) => {
@@ -75,7 +82,7 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
     setCustomTheme(newCustomTheme)
     setSelectedTheme('custom')
     applyTheme('custom', newCustomTheme)
-    setEditingCustom(false)
+    setEditingMode(null)
     toast.success('Custom theme saved and applied')
   }
 
@@ -93,9 +100,95 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
     nature: 'Nature-Inspired',
   }
 
-  if (editingCustom) {
+  if (editingMode === 'palette') {
     return (
-      <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); setEditingCustom(false) }}>
+      <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); setEditingMode(null) }}>
+        <DialogContent className="max-w-3xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Swatches size={24} weight="duotone" />
+              Choose Color Palette
+            </DialogTitle>
+            <DialogDescription>
+              Select a predefined palette or switch to manual mode for full control
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[500px] pr-4">
+            <div className="space-y-6 py-4">
+              <ColorPalettePicker 
+                selectedPalette={selectedPalette}
+                onSelect={handlePaletteSelect}
+              />
+              
+              <Separator />
+              
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Preview</h4>
+                <Card 
+                  className="p-6 border-2"
+                  style={{ 
+                    backgroundColor: customColors.card,
+                    color: customColors.foreground,
+                    borderColor: customColors.primary + '40'
+                  }}
+                >
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold" style={{ color: customColors.foreground }}>
+                      {selectedPalette.name} Theme
+                    </h3>
+                    <p className="text-sm" style={{ color: customColors.foreground + 'bb' }}>
+                      This is how your theme will look with these colors
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm"
+                        style={{ 
+                          backgroundColor: customColors.primary,
+                          color: customColors.background
+                        }}
+                      >
+                        Primary Button
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        style={{ 
+                          borderColor: customColors.accent,
+                          color: customColors.accent
+                        }}
+                      >
+                        Accent Button
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </ScrollArea>
+
+          <div className="flex justify-between gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setEditingMode('manual')}>
+              <Pencil size={16} className="mr-2" />
+              Manual Mode
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditingMode(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveCustomTheme}>
+                Save & Apply Theme
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  if (editingMode === 'manual') {
+    return (
+      <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); setEditingMode(null) }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -258,7 +351,7 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
           </ScrollArea>
 
           <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => setEditingCustom(false)}>
+            <Button variant="outline" onClick={() => setEditingMode(null)}>
               Cancel
             </Button>
             <Button onClick={handleSaveCustomTheme}>
@@ -286,7 +379,7 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
         <Tabs defaultValue="presets" className="flex-1">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="presets">Preset Themes</TabsTrigger>
-            <TabsTrigger value="custom">Custom Theme</TabsTrigger>
+            <TabsTrigger value="custom">Create Custom</TabsTrigger>
           </TabsList>
 
           <TabsContent value="presets" className="mt-6">
@@ -329,31 +422,34 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                                           </div>
                                         )}
                                       </div>
-                                      <p className="text-sm text-muted-foreground mb-3">
+                                      <p className="text-sm text-muted-foreground mb-4">
                                         {theme.description}
                                       </p>
                                       
-                                      <div className="flex gap-2">
-                                        <div 
-                                          className="w-10 h-10 rounded-lg border-2 border-border shadow-sm"
-                                          style={{ backgroundColor: theme.colors.background }}
-                                          title="Background"
-                                        />
-                                        <div 
-                                          className="w-10 h-10 rounded-lg border-2 border-border shadow-sm"
-                                          style={{ backgroundColor: theme.colors.primary }}
-                                          title="Primary"
-                                        />
-                                        <div 
-                                          className="w-10 h-10 rounded-lg border-2 border-border shadow-sm"
-                                          style={{ backgroundColor: theme.colors.accent }}
-                                          title="Accent"
-                                        />
-                                        <div 
-                                          className="w-10 h-10 rounded-lg border-2 border-border shadow-sm"
-                                          style={{ backgroundColor: theme.colors.card }}
-                                          title="Card"
-                                        />
+                                      <div className="space-y-2">
+                                        <div className="text-xs text-muted-foreground font-medium">Color Palette</div>
+                                        <div className="flex gap-1.5">
+                                          <div 
+                                            className="w-12 h-12 rounded-lg border-2 border-border/60 shadow-sm transition-transform hover:scale-105"
+                                            style={{ backgroundColor: theme.colors.background }}
+                                            title="Background"
+                                          />
+                                          <div 
+                                            className="w-12 h-12 rounded-lg border-2 border-border/60 shadow-sm transition-transform hover:scale-105"
+                                            style={{ backgroundColor: theme.colors.card }}
+                                            title="Card"
+                                          />
+                                          <div 
+                                            className="w-12 h-12 rounded-lg border-2 border-border/60 shadow-sm transition-transform hover:scale-105"
+                                            style={{ backgroundColor: theme.colors.primary }}
+                                            title="Primary"
+                                          />
+                                          <div 
+                                            className="w-12 h-12 rounded-lg border-2 border-border/60 shadow-sm transition-transform hover:scale-105"
+                                            style={{ backgroundColor: theme.colors.accent }}
+                                            title="Accent"
+                                          />
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -387,7 +483,7 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                         <Button onClick={() => handleThemeChange('custom')}>
                           Apply Custom Theme
                         </Button>
-                        <Button variant="outline" onClick={() => setEditingCustom(true)}>
+                        <Button variant="outline" onClick={() => setEditingMode('palette')}>
                           <Pencil size={16} className="mr-2" />
                           Edit Theme
                         </Button>
@@ -404,7 +500,7 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                       <p className="text-sm text-muted-foreground mb-4 max-w-sm">
                         Design a unique theme with your own color palette
                       </p>
-                      <Button onClick={() => setEditingCustom(true)}>
+                      <Button onClick={() => setEditingMode('palette')}>
                         <Plus size={16} weight="bold" className="mr-2" />
                         Create Custom Theme
                       </Button>
