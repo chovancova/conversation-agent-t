@@ -3,31 +3,31 @@ import { AgentConfig } from './types'
 export const AGENTS: AgentConfig[] = [
   {
     type: 'account-opening',
-    name: 'Account Opening Agent',
+    name: 'Agent 1',
     endpoint: '',
     description: 'Handles account opening requests and onboarding'
   },
   {
     type: 'payment',
-    name: 'Payment Agent',
+    name: 'Agent 2',
     endpoint: '',
     description: 'Processes payments and transaction queries'
   },
   {
     type: 'moderator',
-    name: 'Moderator Agent',
+    name: 'Agent 3',
     endpoint: '',
     description: 'Content moderation and compliance checks'
   },
   {
     type: 'card',
-    name: 'Card Agent',
+    name: 'Agent 4',
     endpoint: '',
     description: 'Card management and operations'
   },
   {
     type: 'rag',
-    name: 'RAG Agent',
+    name: 'Agent 5',
     endpoint: '',
     description: 'Retrieval-augmented generation for knowledge queries'
   }
