@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X, CheckCircle, XCircle, Clock, FloppyDisk, Trash } from '@phosphor-icons/react'
+import { Key, X, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [name, setName] = useState('')
   const [endpoint, setEndpoint] = useState('')
   const [clientId, setClientId] = useState('')
+  const [clientSecret, setClientSecret] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -35,6 +36,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       setName(selectedToken.name)
       setEndpoint(selectedToken.endpoint)
       setClientId(selectedToken.clientId)
+      setClientSecret(selectedToken.clientSecret)
       setUsername(selectedToken.username)
       setPassword(selectedToken.password)
     }
@@ -44,7 +46,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const { minutes: minutesRemaining, seconds: secondsRemaining } = useCountdown(accessToken?.expiresAt || null)
 
   const handleGenerateToken = async () => {
-    if (!endpoint || !clientId || !username || !password) {
+    if (!endpoint || !clientId || !clientSecret || !username || !password) {
       toast.error('All fields are required')
       return
     }
@@ -59,6 +61,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         },
         body: JSON.stringify({
           client_id: clientId,
+          client_secret: clientSecret,
           username,
           password
         })
@@ -92,7 +95,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   }
 
   const handleSaveToken = () => {
-    if (!name || !endpoint || !clientId || !username || !password) {
+    if (!name || !endpoint || !clientId || !clientSecret || !username || !password) {
       toast.error('All fields are required to save')
       return
     }
@@ -103,6 +106,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       name,
       endpoint,
       clientId,
+      clientSecret,
       username,
       password
     }
@@ -127,6 +131,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     setName('')
     setEndpoint('')
     setClientId('')
+    setClientSecret('')
     setUsername('')
     setPassword('')
     toast.success('Token configuration deleted')
@@ -137,6 +142,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     setName('')
     setEndpoint('')
     setClientId('')
+    setClientSecret('')
     setUsername('')
     setPassword('')
   }
@@ -148,6 +154,62 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const handleClearToken = () => {
     setAccessToken(null)
     toast.success('Token cleared')
+  }
+
+  const handleExportTokens = () => {
+    if (!savedTokens || savedTokens.length === 0) {
+      toast.error('No saved tokens to export')
+      return
+    }
+
+    const exportData = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      tokens: savedTokens
+    }
+
+    const dataStr = JSON.stringify(exportData, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `token-configs-${Date.now()}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    toast.success('Token configurations exported')
+  }
+
+  const handleImportTokens = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string
+        const data = JSON.parse(content)
+        
+        if (!data.tokens || !Array.isArray(data.tokens)) {
+          throw new Error('Invalid token configuration file')
+        }
+
+        setSavedTokens((current = []) => {
+          const existingIds = new Set(current.map(t => t.id))
+          const newTokens = data.tokens.filter((t: TokenConfig) => !existingIds.has(t.id))
+          return [...current, ...newTokens]
+        })
+
+        toast.success(`Imported ${data.tokens.length} token configuration(s)`)
+      } catch (error) {
+        toast.error('Failed to import token configurations')
+        console.error('Import error:', error)
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = ''
   }
 
   return (
@@ -231,6 +293,35 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
             )}
           </div>
 
+          <div className="flex gap-2">
+            <Button
+              onClick={handleExportTokens}
+              disabled={!savedTokens || savedTokens.length === 0}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              <Export size={16} className="mr-2" />
+              Export All
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => document.getElementById('import-tokens')?.click()}
+            >
+              <Download size={16} className="mr-2" />
+              Import
+            </Button>
+            <input
+              id="import-tokens"
+              type="file"
+              accept=".json"
+              onChange={handleImportTokens}
+              className="hidden"
+            />
+          </div>
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="token-name">Configuration Name</Label>
@@ -265,6 +356,17 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="client-secret">Client Secret</Label>
+              <Input
+                id="client-secret"
+                type="password"
+                placeholder="your-client-secret"
+                value={clientSecret}
+                onChange={(e) => setClientSecret(e.target.value)}
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
@@ -292,7 +394,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
             <div className="flex gap-2">
               <Button
                 onClick={handleSaveToken}
-                disabled={!name || !endpoint || !clientId || !username || !password}
+                disabled={!name || !endpoint || !clientId || !clientSecret || !username || !password}
                 variant="outline"
                 className="flex-1"
               >
@@ -302,7 +404,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
               
               <Button
                 onClick={handleGenerateToken}
-                disabled={isGenerating || !endpoint || !clientId || !username || !password}
+                disabled={isGenerating || !endpoint || !clientId || !clientSecret || !username || !password}
                 className="flex-1"
               >
                 {isGenerating ? 'Generating...' : 'Generate Token'}

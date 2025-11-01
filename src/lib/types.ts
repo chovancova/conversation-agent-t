@@ -29,6 +29,7 @@ export type TokenConfig = {
   name: string
   endpoint: string
   clientId: string
+  clientSecret: string
   username: string
   password: string
 }
