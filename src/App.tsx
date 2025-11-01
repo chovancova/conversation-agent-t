@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ function App() {
   const [accessToken] = useKV<AccessToken | null>('access-token', null)
   const [agentEndpoints] = useKV<Record<string, string>>('agent-endpoints', {})
   const [agentNames] = useKV<Record<string, string>>('agent-names', {})
+  const [sidebarOpen, setSidebarOpen] = useKV<boolean>('sidebar-open', true)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [tokenManagerOpen, setTokenManagerOpen] = useState(false)
@@ -284,7 +285,7 @@ function App() {
       </AlertDialog>
       
       <div className="flex h-screen bg-background">
-        <aside className="w-80 border-r border-border bg-card flex flex-col h-full">
+        <aside className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-r border-border bg-card flex flex-col h-full overflow-hidden`}>
           <div className="p-6 border-b border-border">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -381,6 +382,14 @@ function App() {
             <>
               <header className="h-16 border-b border-border px-8 flex items-center justify-between bg-card/80 backdrop-blur-sm">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSidebarOpen((current) => !current)}
+                    className="flex-shrink-0"
+                  >
+                    <List size={20} weight="bold" />
+                  </Button>
                   <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
                     <Robot size={16} weight="duotone" className="text-accent" />
                   </div>
@@ -467,7 +476,21 @@ function App() {
               </div>
             </>
           ) : (
-            <EmptyState />
+            <div className="flex flex-col h-full">
+              <header className="h-16 border-b border-border px-8 flex items-center bg-card/80 backdrop-blur-sm">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSidebarOpen((current) => !current)}
+                  className="flex-shrink-0"
+                >
+                  <List size={20} weight="bold" />
+                </Button>
+              </header>
+              <div className="flex-1">
+                <EmptyState />
+              </div>
+            </div>
           )}
         </main>
       </div>
