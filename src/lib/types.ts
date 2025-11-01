@@ -15,6 +15,7 @@ export type Conversation = {
   messages: Message[]
   createdAt: number
   updatedAt: number
+  sessionId?: string
 }
 
 export type AgentConfig = {

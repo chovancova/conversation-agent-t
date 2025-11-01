@@ -112,15 +112,21 @@ function App() {
     setIsLoading(true)
 
     try {
+      const requestBody: { message: string; sessionId?: string } = {
+        message: input.trim()
+      }
+
+      if (activeConversation.sessionId) {
+        requestBody.sessionId = activeConversation.sessionId
+      }
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken!.token}`
         },
-        body: JSON.stringify({
-          message: input.trim()
-        })
+        body: JSON.stringify(requestBody)
       })
 
       if (!response.ok) {
@@ -130,6 +136,7 @@ function App() {
       const data = await response.json()
       
       const responseContent = data.response || data.message || data.content || JSON.stringify(data)
+      const sessionId = data.sessionId || data.session_id || activeConversation.sessionId
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -138,9 +145,15 @@ function App() {
         timestamp: Date.now(),
       }
 
-      updateConversation(activeConversation.id, {
+      const updatePayload: Partial<Conversation> = {
         messages: [...updatedMessages, assistantMessage],
-      })
+      }
+
+      if (sessionId && !activeConversation.sessionId) {
+        updatePayload.sessionId = sessionId
+      }
+
+      updateConversation(activeConversation.id, updatePayload)
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -170,7 +183,9 @@ function App() {
     const agentName = getAgentName(activeConversation.agentType, agentNames)
     const exportText = `Agent: ${agentName}\n` +
       `Conversation: ${activeConversation.title}\n` +
-      `Created: ${new Date(activeConversation.createdAt).toLocaleString()}\n\n` +
+      `Created: ${new Date(activeConversation.createdAt).toLocaleString()}\n` +
+      (activeConversation.sessionId ? `Session ID: ${activeConversation.sessionId}\n` : '') +
+      `\n` +
       activeConversation.messages
         .map((m) => {
           const time = new Date(m.timestamp).toLocaleString()
@@ -335,9 +350,19 @@ function App() {
                     <h2 className="font-medium text-foreground truncate">
                       {activeConversation.title}
                     </h2>
-                    <p className="text-xs text-muted-foreground">
-                      {getAgentName(activeConversation.agentType, agentNames)}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-muted-foreground">
+                        {getAgentName(activeConversation.agentType, agentNames)}
+                      </p>
+                      {activeConversation.sessionId && (
+                        <>
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <p className="text-xs text-muted-foreground font-mono">
+                            Session: {activeConversation.sessionId.slice(0, 8)}...
+                          </p>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
