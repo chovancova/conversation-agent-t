@@ -17,7 +17,7 @@ import { TokenManager } from '@/components/TokenManager'
 import { TokenStatus } from '@/components/TokenStatus'
 import { AgentSettings } from '@/components/AgentSettings'
 import { SecurityInfo } from '@/components/SecurityInfo'
-import { Conversation, Message, AgentType, AccessToken } from '@/lib/types'
+import { Conversation, Message, AgentType, AccessToken, TokenConfig } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 
 function App() {
@@ -210,6 +210,63 @@ function App() {
   const handleAgentChange = (agentType: AgentType) => {
     if (activeConversation) {
       updateConversation(activeConversation.id, { agentType })
+    }
+  }
+
+  const handleQuickTokenRefresh = async () => {
+    const [savedTokens, selectedTokenId] = await Promise.all([
+      window.spark.kv.get<TokenConfig[]>('saved-tokens'),
+      window.spark.kv.get<string | null>('selected-token-id')
+    ])
+
+    const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
+    
+    if (!selectedToken) {
+      toast.error('No saved token configuration found. Please configure in Token Manager.')
+      setTokenManagerOpen(true)
+      return
+    }
+
+    setIsLoading(true)
+    toast.info('Generating new token...')
+
+    try {
+      const response = await fetch(selectedToken.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          client_id: selectedToken.clientId,
+          client_secret: selectedToken.clientSecret,
+          username: selectedToken.username,
+          password: selectedToken.password
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Token generation failed: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      
+      const token = data.access_token || data.token
+      if (!token) {
+        throw new Error('No access token in response')
+      }
+
+      const newAccessToken: AccessToken = {
+        token,
+        expiresAt: Date.now() + (15 * 60 * 1000)
+      }
+
+      await window.spark.kv.set('access-token', newAccessToken)
+      toast.success('Access token refreshed successfully')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to generate token')
+      console.error('Token generation error:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -413,6 +470,18 @@ function App() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  {!sidebarOpen && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleQuickTokenRefresh}
+                      disabled={isLoading}
+                      className={`h-9 w-9 ${isTokenValid ? 'border-accent text-accent hover:bg-accent/10' : 'border-destructive text-destructive hover:bg-destructive/10'}`}
+                      title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
+                    >
+                      <Key size={16} weight="bold" />
+                    </Button>
+                  )}
                   <Select value={activeConversation.agentType} onValueChange={handleAgentChange}>
                     <SelectTrigger className="w-[200px] h-9">
                       <SelectValue />
