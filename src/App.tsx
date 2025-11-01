@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { ChatMessage } from '@/components/ChatMessage'
 import { TypingIndicator } from '@/components/TypingIndicator'
 import { ConversationList } from '@/components/ConversationList'
@@ -30,6 +31,8 @@ function App() {
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
   const [securityInfoOpen, setSecurityInfoOpen] = useState(false)
   const [tokenStatusExpanded, setTokenStatusExpanded] = useState(true)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -192,12 +195,52 @@ function App() {
     }
   }
 
+  const handleDeleteRequest = (id: string) => {
+    setConversationToDelete(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (!conversationToDelete) return
+
+    setConversations((current = []) =>
+      current.filter((conv) => conv.id !== conversationToDelete)
+    )
+
+    if (activeConversationId === conversationToDelete) {
+      setActiveConversationId(null)
+    }
+
+    toast.success('Conversation deleted')
+    setDeleteDialogOpen(false)
+    setConversationToDelete(null)
+  }
+
+  const conversationToDeleteData = conversations?.find((c) => c.id === conversationToDelete)
+
   return (
     <>
       <Toaster position="top-right" />
       <TokenManager open={tokenManagerOpen} onOpenChange={setTokenManagerOpen} />
       <AgentSettings open={agentSettingsOpen} onOpenChange={setAgentSettingsOpen} />
       <SecurityInfo open={securityInfoOpen} onOpenChange={setSecurityInfoOpen} />
+      
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{conversationToDeleteData?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConversationToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
       <div className="flex h-screen bg-background">
         <aside className="w-80 border-r border-border bg-card flex flex-col h-full">
@@ -261,6 +304,7 @@ function App() {
                 conversations={conversations || []}
                 activeId={activeConversationId || null}
                 onSelect={setActiveConversationId}
+                onDelete={handleDeleteRequest}
               />
             </div>
           </ScrollArea>
