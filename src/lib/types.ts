@@ -37,4 +37,13 @@ export type TokenConfig = {
 export type AccessToken = {
   token: string
   expiresAt: number
+  refreshCount?: number
+  generatedAt?: number
+}
+
+export type AutoRefreshConfig = {
+  enabled: boolean
+  maxRefreshes: number
+  currentRefreshes: number
+  startTime: number | null
 }

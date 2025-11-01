@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ChatMessage } from '@/components/ChatMessage'
 import { TypingIndicator } from '@/components/TypingIndicator'
 import { ConversationList } from '@/components/ConversationList'
@@ -203,36 +202,10 @@ function App() {
       <div className="flex h-screen bg-background">
         <aside className="w-80 border-r border-border bg-card flex flex-col">
           <div className="p-6 border-b border-border">
-            <Alert className="mb-4 border-accent/50 bg-accent/5">
-              <ShieldCheck size={16} className="text-accent" />
-              <AlertDescription className="text-xs">
-                All credentials are stored encrypted via Spark KV for your security.
-              </AlertDescription>
-            </Alert>
-
             <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-4">
               Agent Tester
             </h1>
             <div className="space-y-2">
-              <Select onValueChange={(value) => createNewConversation(value as AgentType)}>
-                <SelectTrigger className="w-full h-9">
-                  <div className="flex items-center">
-                    <Plus size={16} weight="bold" className="mr-2" />
-                    <SelectValue placeholder="New Conversation" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {AGENTS.map(agent => (
-                    <SelectItem key={agent.type} value={agent.type}>
-                      <div className="flex items-center gap-2">
-                        <Robot size={14} />
-                        {agent.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
               <div className="flex gap-2">
                 <Button 
                   onClick={() => setTokenManagerOpen(true)} 
@@ -254,21 +227,30 @@ function App() {
                 </Button>
               </div>
 
-              <Button 
-                onClick={() => setSecurityInfoOpen(true)} 
-                variant="ghost" 
-                size="sm"
-                className="w-full justify-start text-muted-foreground hover:text-foreground"
-              >
-                <ShieldCheck size={14} className="mr-2" />
-                Security & Privacy
-              </Button>
-
               <TokenStatus 
                 onOpenTokenManager={() => setTokenManagerOpen(true)}
                 isExpanded={tokenStatusExpanded}
                 onToggle={() => setTokenStatusExpanded(!tokenStatusExpanded)}
               />
+
+              <Select onValueChange={(value) => createNewConversation(value as AgentType)}>
+                <SelectTrigger className="w-full h-9">
+                  <div className="flex items-center">
+                    <Plus size={16} weight="bold" className="mr-2" />
+                    <SelectValue placeholder="New Conversation" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {AGENTS.map(agent => (
+                    <SelectItem key={agent.type} value={agent.type}>
+                      <div className="flex items-center gap-2">
+                        <Robot size={14} />
+                        {agent.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <ScrollArea className="flex-1 px-3 py-4">
@@ -278,7 +260,16 @@ function App() {
               onSelect={setActiveConversationId}
             />
           </ScrollArea>
-          <div className="p-4 pt-0">
+          <div className="p-4 pt-0 space-y-2">
+            <Button 
+              onClick={() => setSecurityInfoOpen(true)} 
+              variant="ghost" 
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+            >
+              <ShieldCheck size={14} className="mr-2" />
+              Security & Privacy
+            </Button>
             <p className="text-[10px] text-muted-foreground leading-relaxed">
               This application uses encrypted storage for credentials. Use test credentials only. Never store production secrets. All data stays in your browser and is never transmitted to third parties.
             </p>

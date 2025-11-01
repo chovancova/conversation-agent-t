@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, Warning, CheckCircle } from '@phosphor-icons/react'
+import { Key, Warning, CheckCircle, ArrowsClockwise } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { AccessToken, TokenConfig } from '@/lib/types'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { AccessToken, TokenConfig, AutoRefreshConfig } from '@/lib/types'
 import { useCountdown } from '@/hooks/use-countdown'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 type TokenStatusProps = {
   onOpenTokenManager: () => void
@@ -17,16 +20,25 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
   const [accessToken, setAccessToken] = useKV<AccessToken | null>('access-token', null)
   const [savedTokens] = useKV<TokenConfig[]>('saved-tokens', [])
   const [selectedTokenId] = useKV<string | null>('selected-token-id', null)
+  const [autoRefreshConfig, setAutoRefreshConfig] = useKV<AutoRefreshConfig>('auto-refresh-config', {
+    enabled: false,
+    maxRefreshes: 10,
+    currentRefreshes: 0,
+    startTime: null
+  })
   const [isGenerating, setIsGenerating] = useState(false)
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const isTokenValid = accessToken && accessToken.expiresAt > Date.now()
   const { minutes, seconds } = useCountdown(accessToken?.expiresAt || null)
   const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
 
-  const handleGenerateToken = async () => {
+  const generateToken = async (isAutoRefresh = false) => {
     if (!selectedToken) {
-      onOpenTokenManager()
-      return
+      if (!isAutoRefresh) {
+        onOpenTokenManager()
+      }
+      return false
     }
 
     setIsGenerating(true)
@@ -58,17 +70,102 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
 
       const newAccessToken: AccessToken = {
         token,
-        expiresAt: Date.now() + (15 * 60 * 1000)
+        expiresAt: Date.now() + (15 * 60 * 1000),
+        refreshCount: (accessToken?.refreshCount || 0) + (isAutoRefresh ? 1 : 0),
+        generatedAt: Date.now()
       }
 
       setAccessToken(newAccessToken)
+      
+      if (isAutoRefresh) {
+        setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+          ...current,
+          currentRefreshes: current.currentRefreshes + 1
+        }))
+      }
+
+      if (!isAutoRefresh) {
+        toast.success('Token generated successfully')
+      }
+      
+      return true
     } catch (error) {
       console.error('Token generation error:', error)
-      onOpenTokenManager()
+      if (!isAutoRefresh) {
+        toast.error('Failed to generate token')
+        onOpenTokenManager()
+      } else {
+        setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+          ...current,
+          enabled: false
+        }))
+        toast.error('Auto-refresh failed. Please generate token manually.')
+      }
+      return false
     } finally {
       setIsGenerating(false)
     }
   }
+
+  const handleGenerateToken = () => generateToken(false)
+
+  const handleToggleAutoRefresh = (enabled: boolean) => {
+    if (enabled && !selectedToken) {
+      toast.error('Please select a token configuration first')
+      return
+    }
+
+    setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+      ...current,
+      enabled,
+      currentRefreshes: 0,
+      startTime: enabled ? Date.now() : null
+    }))
+
+    if (enabled && !isTokenValid) {
+      generateToken(false)
+    }
+  }
+
+  useEffect(() => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current)
+      refreshIntervalRef.current = null
+    }
+
+    if (autoRefreshConfig?.enabled && selectedToken) {
+      if (autoRefreshConfig.currentRefreshes >= autoRefreshConfig.maxRefreshes) {
+        setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+          ...current,
+          enabled: false
+        }))
+        toast.warning(`Auto-refresh stopped after ${autoRefreshConfig.maxRefreshes} refreshes`)
+        return
+      }
+
+      refreshIntervalRef.current = setInterval(() => {
+        const timeUntilExpiry = (accessToken?.expiresAt || 0) - Date.now()
+        
+        if (timeUntilExpiry <= 60000 && timeUntilExpiry > 0) {
+          if (autoRefreshConfig.currentRefreshes < autoRefreshConfig.maxRefreshes) {
+            generateToken(true)
+          } else {
+            setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+              ...current,
+              enabled: false
+            }))
+            toast.warning(`Auto-refresh stopped after ${autoRefreshConfig.maxRefreshes} refreshes`)
+          }
+        }
+      }, 10000)
+    }
+
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current)
+      }
+    }
+  }, [autoRefreshConfig?.enabled, autoRefreshConfig?.currentRefreshes, accessToken?.expiresAt, selectedToken])
 
   return (
     <Card 
@@ -95,7 +192,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
           </div>
 
           {isExpanded && (
-            <div className="space-y-2 pt-1" onClick={(e) => e.stopPropagation()}>
+            <div className="space-y-3 pt-1" onClick={(e) => e.stopPropagation()}>
               {isTokenValid && (
                 <div className="text-xs text-muted-foreground">
                   Expires in {minutes}m {seconds}s
@@ -109,16 +206,35 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
               )}
 
               <Button
-                onClick={selectedToken && !isTokenValid ? handleGenerateToken : onOpenTokenManager}
-                disabled={isGenerating}
+                onClick={handleGenerateToken}
+                disabled={isGenerating || !selectedToken}
                 size="sm"
-                variant={isTokenValid ? "outline" : "default"}
+                variant="default"
                 className="w-full h-8"
               >
-                {isGenerating ? 'Generating...' : 
-                 isTokenValid ? 'Refresh Token' : 
-                 selectedToken ? 'Generate Token' : 'Configure Token'}
+                {isGenerating ? (
+                  'Generating...'
+                ) : (
+                  <>
+                    <ArrowsClockwise size={14} className="mr-1" />
+                    Refresh Token
+                  </>
+                )}
               </Button>
+
+              {selectedToken && (
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <Label htmlFor="auto-refresh" className="text-xs font-normal cursor-pointer">
+                    Auto-refresh ({autoRefreshConfig?.currentRefreshes || 0}/{autoRefreshConfig?.maxRefreshes || 10})
+                  </Label>
+                  <Switch
+                    id="auto-refresh"
+                    checked={autoRefreshConfig?.enabled || false}
+                    onCheckedChange={handleToggleAutoRefresh}
+                    disabled={isGenerating}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
