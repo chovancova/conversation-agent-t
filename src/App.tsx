@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -32,6 +32,7 @@ function App() {
   const [agentEndpoints] = useKV<Record<string, string>>('agent-endpoints', {})
   const [agentNames] = useKV<Record<string, string>>('agent-names', {})
   const [sidebarOpen, setSidebarOpen] = useKV<boolean>('sidebar-open', true)
+  const [conversationsVisible, setConversationsVisible] = useKV<boolean>('conversations-visible', true)
   const [selectedTheme] = useKV<ThemeOption>('selected-theme', 'dark')
   const [customTheme] = useKV<any>('custom-theme', null)
   const [isLoading, setIsLoading] = useState(false)
@@ -348,10 +349,10 @@ function App() {
       
       <div className="flex h-screen bg-background">
         <aside className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-r border-border bg-card flex flex-col h-full overflow-hidden`}>
-          <div className="p-6 border-b border-border">
+          <div className="p-6 border-b border-border flex-shrink-0">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
                   <Robot size={20} weight="bold" className="text-primary-foreground" />
                 </div>
                 <h1 className="text-lg font-semibold tracking-tight text-foreground">
@@ -369,23 +370,23 @@ function App() {
               New Conversation
             </Button>
 
-            <div className="flex gap-2 mb-2">
+            <div className="grid grid-cols-2 gap-2 mb-2">
               <Button 
                 onClick={() => setTokenManagerOpen(true)} 
                 variant="outline" 
                 size="sm"
-                className="flex-1 h-9"
+                className="h-9"
               >
-                <Key size={16} className="mr-2" />
+                <Key size={16} className="mr-1.5" />
                 Token
               </Button>
               <Button 
                 onClick={() => setAgentSettingsOpen(true)} 
                 variant="outline" 
                 size="sm"
-                className="flex-1 h-9"
+                className="h-9"
               >
-                <Gear size={16} className="mr-2" />
+                <Gear size={16} className="mr-1.5" />
                 Settings
               </Button>
             </div>
@@ -396,12 +397,12 @@ function App() {
               size="sm"
               className="w-full h-9"
             >
-              <Palette size={16} className="mr-2" />
+              <Palette size={16} className="mr-1.5" />
               Theme
             </Button>
           </div>
 
-          <div className="px-4 py-3 border-b border-border bg-muted/30">
+          <div className="px-4 py-3 border-b border-border bg-muted/30 flex-shrink-0">
             <TokenStatus 
               onOpenTokenManager={() => setTokenManagerOpen(true)}
               isExpanded={tokenStatusExpanded}
@@ -409,37 +410,52 @@ function App() {
             />
           </div>
           
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-2">
-              <div className="flex items-center justify-between px-2 py-1">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Recent Conversations
-                </div>
-                {(conversations?.length || 0) > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setClearAllDialogOpen(true)}
-                    className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash size={14} className="mr-1" />
-                    Clear All
-                  </Button>
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="px-4 py-3 border-b border-border flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setConversationsVisible((current) => !current)}
+                className="w-full h-8 justify-between px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground"
+              >
+                <span>Recent Conversations</span>
+                {conversationsVisible ? (
+                  <CaretUp size={14} weight="bold" />
+                ) : (
+                  <CaretDown size={14} weight="bold" />
                 )}
-              </div>
-              <ConversationList
-                conversations={conversations || []}
-                activeId={activeConversationId || null}
-                splitId={splitConversationId || null}
-                onSelect={setActiveConversationId}
-                onDelete={handleDeleteRequest}
-                onSelectForSplit={setSplitConversationId}
-                splitMode={splitMode}
-              />
+              </Button>
+              {conversationsVisible && (conversations?.length || 0) > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setClearAllDialogOpen(true)}
+                  className="w-full h-7 mt-2 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash size={14} className="mr-1.5" />
+                  Clear All ({conversations?.length || 0})
+                </Button>
+              )}
             </div>
-          </ScrollArea>
+
+            {conversationsVisible && (
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="p-4 space-y-2">
+                  <ConversationList
+                    conversations={conversations || []}
+                    activeId={activeConversationId || null}
+                    splitId={splitConversationId || null}
+                    onSelect={setActiveConversationId}
+                    onDelete={handleDeleteRequest}
+                    onSelectForSplit={setSplitConversationId}
+                    splitMode={splitMode}
+                  />
+                </div>
+              </ScrollArea>
+            )}
+          </div>
           
-          <div className="p-4 border-t border-border bg-muted/20">
+          <div className="p-4 border-t border-border bg-muted/20 flex-shrink-0">
             <Button 
               onClick={() => setSecurityInfoOpen(true)} 
               variant="ghost" 
@@ -456,13 +472,13 @@ function App() {
           {activeConversation ? (
             <div className="flex flex-1 overflow-hidden">
               <div className={`${splitMode && splitConversation ? 'w-1/2 border-r border-border' : 'w-full'} flex flex-col`}>
-                <div className="h-16 border-b border-border px-6 flex items-center justify-between bg-card/80 backdrop-blur-sm">
-                  <div className="flex items-center gap-3">
+                <div className="h-16 border-b border-border px-6 flex items-center justify-between bg-card/80 backdrop-blur-sm flex-shrink-0">
+                  <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setSidebarOpen((current) => !current)}
-                      className="flex-shrink-0"
+                      className="h-9 w-9"
                     >
                       <List size={20} weight="bold" />
                     </Button>
@@ -520,12 +536,12 @@ function App() {
             </div>
           ) : (
             <div className="flex flex-col h-full">
-              <header className="h-16 border-b border-border px-8 flex items-center bg-card/80 backdrop-blur-sm">
+              <header className="h-16 border-b border-border px-6 flex items-center bg-card/80 backdrop-blur-sm flex-shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setSidebarOpen((current) => !current)}
-                  className="flex-shrink-0"
+                  className="h-9 w-9"
                 >
                   <List size={20} weight="bold" />
                 </Button>

@@ -87,24 +87,24 @@ export function ConversationPane({
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full">
-      <header className="h-16 border-b border-border px-6 flex items-center justify-between bg-card/80 backdrop-blur-sm">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+    <div className="flex-1 flex flex-col h-full min-h-0">
+      <header className="h-16 border-b border-border px-6 flex items-center justify-between bg-card/80 backdrop-blur-sm flex-shrink-0">
+        <div className="flex items-center gap-3 flex-1 min-w-0 mr-4">
           <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
             <Robot size={16} weight="duotone" className="text-accent" />
           </div>
           <div className="flex flex-col min-w-0 flex-1">
-            <h2 className="font-medium text-foreground truncate">
+            <h2 className="font-medium text-sm text-foreground truncate">
               {conversation.title}
             </h2>
             <div className="flex items-center gap-2">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground truncate">
                 {getAgentName(conversation.agentType, agentNames)}
               </p>
               {conversation.sessionId && (
                 <>
                   <span className="text-xs text-muted-foreground">•</span>
-                  <p className="text-xs text-muted-foreground font-mono">
+                  <p className="text-xs text-muted-foreground font-mono truncate">
                     Session: {conversation.sessionId.slice(0, 8)}...
                   </p>
                 </>
@@ -114,15 +114,15 @@ export function ConversationPane({
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <Select value={conversation.agentType} onValueChange={(value) => onAgentChange(conversation.id, value as AgentType)}>
-            <SelectTrigger className="w-[180px] h-9">
+            <SelectTrigger className="w-[160px] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {AGENTS.map(agent => (
                 <SelectItem key={agent.type} value={agent.type}>
                   <div className="flex items-center gap-2">
-                    <Robot size={16} />
-                    {getAgentName(agent.type, agentNames)}
+                    <Robot size={14} />
+                    <span className="text-sm">{getAgentName(agent.type, agentNames)}</span>
                   </div>
                 </SelectItem>
               ))}
@@ -130,8 +130,8 @@ export function ConversationPane({
           </Select>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9">
-                <Export size={16} className="mr-2" />
+              <Button variant="outline" size="sm" className="h-9 px-3">
+                <Export size={16} className="mr-1.5" />
                 Export
               </Button>
             </DropdownMenuTrigger>
@@ -160,10 +160,10 @@ export function ConversationPane({
               variant="outline" 
               size="sm" 
               onClick={onOpenSplit} 
-              className="h-9"
+              className="h-9 px-3"
               title="Open split view"
             >
-              <Columns size={16} className="mr-2" />
+              <Columns size={16} className="mr-1.5" />
               Split
             </Button>
           )}
@@ -181,8 +181,8 @@ export function ConversationPane({
         </div>
       </header>
 
-      <ScrollArea className="flex-1 px-6" ref={scrollRef}>
-        <div className="py-6 flex flex-col gap-4 max-w-4xl mx-auto w-full">
+      <ScrollArea className="flex-1" ref={scrollRef}>
+        <div className="py-6 px-6 flex flex-col gap-4 max-w-4xl mx-auto w-full">
           {conversation.messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-center text-muted-foreground text-sm py-12">
               Send a message to start the conversation
@@ -196,7 +196,7 @@ export function ConversationPane({
         </div>
       </ScrollArea>
 
-      <div className="border-t border-border bg-card px-6 py-4">
+      <div className="border-t border-border bg-card px-6 py-4 flex-shrink-0">
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-3">
             <Textarea
