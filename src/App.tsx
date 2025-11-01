@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -12,13 +12,20 @@ import { ChatMessage } from '@/components/ChatMessage'
 import { TypingIndicator } from '@/components/TypingIndicator'
 import { ConversationList } from '@/components/ConversationList'
 import { EmptyState } from '@/components/EmptyState'
-import { Conversation, Message, ModelType } from '@/lib/types'
+import { TokenManager } from '@/components/TokenManager'
+import { AgentSettings } from '@/components/AgentSettings'
+import { Conversation, Message, AgentType, AccessToken } from '@/lib/types'
+import { AGENTS, getAgentConfig } from '@/lib/agents'
 
 function App() {
   const [conversations, setConversations] = useKV<Conversation[]>('conversations', [])
   const [activeConversationId, setActiveConversationId] = useKV<string | null>('activeConversationId', null)
+  const [accessToken] = useKV<AccessToken | null>('access-token', null)
+  const [agentEndpoints] = useKV<Record<string, string>>('agent-endpoints', {})
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [tokenManagerOpen, setTokenManagerOpen] = useState(false)
+  const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -30,11 +37,13 @@ function App() {
     }
   }, [activeConversation?.messages, isLoading])
 
-  const createNewConversation = (model: ModelType = 'gpt-4o') => {
+  const isTokenValid = accessToken && accessToken.expiresAt > Date.now()
+
+  const createNewConversation = (agentType: AgentType = 'account-opening') => {
     const newConversation: Conversation = {
       id: Date.now().toString(),
       title: 'New Conversation',
-      model,
+      agentType,
       messages: [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -62,6 +71,19 @@ function App() {
       return
     }
 
+    if (!isTokenValid) {
+      toast.error('Access token expired. Please generate a new token.')
+      setTokenManagerOpen(true)
+      return
+    }
+
+    const endpoint = agentEndpoints?.[activeConversation.agentType]
+    if (!endpoint) {
+      toast.error('Agent endpoint not configured. Please set it in Agent Settings.')
+      setAgentSettingsOpen(true)
+      return
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -82,22 +104,29 @@ function App() {
     setIsLoading(true)
 
     try {
-      const conversationHistory = updatedMessages
-        .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-        .join('\n\n')
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken!.token}`
+        },
+        body: JSON.stringify({
+          message: input.trim()
+        })
+      })
 
-      const promptText = `You are a helpful AI assistant. Continue this conversation naturally and helpfully.
+      if (!response.ok) {
+        throw new Error(`Agent request failed: ${response.status} ${response.statusText}`)
+      }
 
-${conversationHistory}
-
-Provide a helpful response as the Assistant.`
-
-      const response = await window.spark.llm(promptText, activeConversation.model)
+      const data = await response.json()
+      
+      const responseContent = data.response || data.message || data.content || JSON.stringify(data)
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response,
+        content: responseContent,
         timestamp: Date.now(),
       }
 
@@ -105,8 +134,20 @@ Provide a helpful response as the Assistant.`
         messages: [...updatedMessages, assistantMessage],
       })
     } catch (error) {
-      toast.error('Failed to get response. Please try again.')
-      console.error('Error getting AI response:', error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: error instanceof Error ? error.message : 'Failed to get response from agent',
+        timestamp: Date.now(),
+        error: true
+      }
+
+      updateConversation(activeConversation.id, {
+        messages: [...updatedMessages, errorMessage],
+      })
+
+      toast.error('Failed to get response. Check console for details.')
+      console.error('Error getting agent response:', error)
     } finally {
       setIsLoading(false)
     }
@@ -118,13 +159,17 @@ Provide a helpful response as the Assistant.`
       return
     }
 
-    const exportText = activeConversation.messages
-      .map((m) => {
-        const time = new Date(m.timestamp).toLocaleString()
-        const role = m.role === 'user' ? 'User' : 'Assistant'
-        return `[${time}] ${role}:\n${m.content}\n`
-      })
-      .join('\n')
+    const agent = getAgentConfig(activeConversation.agentType)
+    const exportText = `Agent: ${agent?.name || activeConversation.agentType}\n` +
+      `Conversation: ${activeConversation.title}\n` +
+      `Created: ${new Date(activeConversation.createdAt).toLocaleString()}\n\n` +
+      activeConversation.messages
+        .map((m) => {
+          const time = new Date(m.timestamp).toLocaleString()
+          const role = m.role === 'user' ? 'User' : 'Assistant'
+          return `[${time}] ${role}:\n${m.content}\n`
+        })
+        .join('\n')
 
     navigator.clipboard.writeText(exportText)
     toast.success('Conversation copied to clipboard')
@@ -137,104 +182,162 @@ Provide a helpful response as the Assistant.`
     }
   }
 
-  const handleModelChange = (model: ModelType) => {
+  const handleAgentChange = (agentType: AgentType) => {
     if (activeConversation) {
-      updateConversation(activeConversation.id, { model })
+      updateConversation(activeConversation.id, { agentType })
     }
   }
 
   return (
     <>
       <Toaster position="top-right" />
+      <TokenManager open={tokenManagerOpen} onOpenChange={setTokenManagerOpen} />
+      <AgentSettings open={agentSettingsOpen} onOpenChange={setAgentSettingsOpen} />
+      
       <div className="flex h-screen bg-background">
-      <aside className="w-80 border-r border-border bg-card flex flex-col">
-        <div className="p-6 border-b border-border">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-4">
-            Agent Tester
-          </h1>
-          <Button onClick={() => createNewConversation()} className="w-full" size="sm">
-            <Plus size={16} weight="bold" className="mr-2" />
-            New Conversation
-          </Button>
-        </div>
-        <ScrollArea className="flex-1 px-3 py-4">
-          <ConversationList
-            conversations={conversations || []}
-            activeId={activeConversationId || null}
-            onSelect={setActiveConversationId}
-          />
-        </ScrollArea>
-      </aside>
-
-      <main className="flex-1 flex flex-col">
-        {activeConversation ? (
-          <>
-            <header className="h-16 border-b border-border px-6 flex items-center justify-between bg-card">
-              <div className="flex items-center gap-4">
-                <h2 className="font-medium text-foreground">
-                  {activeConversation.title}
-                </h2>
-              </div>
-              <div className="flex items-center gap-3">
-                <Select value={activeConversation.model} onValueChange={handleModelChange}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                    <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Separator orientation="vertical" className="h-6" />
-                <Button variant="ghost" size="sm" onClick={handleExport}>
-                  <Export size={18} />
-                </Button>
-              </div>
-            </header>
-
-            <ScrollArea className="flex-1 px-6" ref={scrollRef}>
-              <div className="py-6 flex flex-col gap-4 max-w-4xl mx-auto w-full">
-                {activeConversation.messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-center text-muted-foreground text-sm py-12">
-                    Send a message to start the conversation
-                  </div>
-                ) : (
-                  activeConversation.messages.map((message) => (
-                    <ChatMessage key={message.id} message={message} />
-                  ))
-                )}
-                {isLoading && <TypingIndicator />}
-              </div>
-            </ScrollArea>
-
-            <div className="border-t border-border bg-card px-6 py-4">
-              <div className="max-w-4xl mx-auto flex gap-3">
-                <Textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type your message... (Shift+Enter for new line)"
-                  className="resize-none min-h-[52px] max-h-[200px]"
-                  rows={1}
-                  disabled={isLoading}
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!input.trim() || isLoading}
-                  size="icon"
-                  className="h-[52px] w-[52px] flex-shrink-0"
+        <aside className="w-80 border-r border-border bg-card flex flex-col">
+          <div className="p-6 border-b border-border">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-4">
+              Agent Tester
+            </h1>
+            <div className="space-y-2">
+              <Select onValueChange={(value) => createNewConversation(value as AgentType)}>
+                <SelectTrigger asChild>
+                  <Button className="w-full" size="sm">
+                    <Plus size={16} weight="bold" className="mr-2" />
+                    New Conversation
+                  </Button>
+                </SelectTrigger>
+                <SelectContent>
+                  {AGENTS.map(agent => (
+                    <SelectItem key={agent.type} value={agent.type}>
+                      <div className="flex items-center gap-2">
+                        <Robot size={14} />
+                        {agent.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setTokenManagerOpen(true)} 
+                  variant="outline" 
+                  size="sm"
+                  className="flex-1"
                 >
-                  <PaperPlaneRight size={20} weight="bold" />
+                  <Key size={14} className="mr-1" />
+                  Token
+                </Button>
+                <Button 
+                  onClick={() => setAgentSettingsOpen(true)} 
+                  variant="outline" 
+                  size="sm"
+                  className="flex-1"
+                >
+                  <Gear size={14} className="mr-1" />
+                  Agents
                 </Button>
               </div>
             </div>
-          </>
-        ) : (
-          <EmptyState />
-        )}
-      </main>
-    </div>
+          </div>
+          <ScrollArea className="flex-1 px-3 py-4">
+            <ConversationList
+              conversations={conversations || []}
+              activeId={activeConversationId || null}
+              onSelect={setActiveConversationId}
+            />
+          </ScrollArea>
+        </aside>
+
+        <main className="flex-1 flex flex-col">
+          {activeConversation ? (
+            <>
+              <header className="h-16 border-b border-border px-6 flex items-center justify-between bg-card">
+                <div className="flex items-center gap-4">
+                  <h2 className="font-medium text-foreground">
+                    {activeConversation.title}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Select value={activeConversation.agentType} onValueChange={handleAgentChange}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AGENTS.map(agent => (
+                        <SelectItem key={agent.type} value={agent.type}>
+                          {agent.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Separator orientation="vertical" className="h-6" />
+                  <Button variant="ghost" size="sm" onClick={handleExport}>
+                    <Export size={18} />
+                  </Button>
+                </div>
+              </header>
+
+              <ScrollArea className="flex-1 px-6" ref={scrollRef}>
+                <div className="py-6 flex flex-col gap-4 max-w-4xl mx-auto w-full">
+                  {activeConversation.messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-center text-muted-foreground text-sm py-12">
+                      Send a message to start the conversation
+                    </div>
+                  ) : (
+                    activeConversation.messages.map((message) => (
+                      <ChatMessage key={message.id} message={message} />
+                    ))
+                  )}
+                  {isLoading && <TypingIndicator />}
+                </div>
+              </ScrollArea>
+
+              <div className="border-t border-border bg-card px-6 py-4">
+                <div className="max-w-4xl mx-auto">
+                  {!isTokenValid && (
+                    <div className="mb-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive flex items-center justify-between">
+                      <span>⚠️ Access token expired or not set</span>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => setTokenManagerOpen(true)}
+                        className="h-7"
+                      >
+                        Generate Token
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    <Textarea
+                      ref={textareaRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Type your message... (Shift+Enter for new line)"
+                      className="resize-none min-h-[52px] max-h-[200px]"
+                      rows={1}
+                      disabled={isLoading}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!input.trim() || isLoading}
+                      size="icon"
+                      className="h-[52px] w-[52px] flex-shrink-0"
+                    >
+                      <PaperPlaneRight size={20} weight="bold" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <EmptyState />
+          )}
+        </main>
+      </div>
     </>
   )
 }
