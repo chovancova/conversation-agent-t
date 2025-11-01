@@ -176,32 +176,32 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
         )}
         onClick={onToggle}
       >
-        <CardContent className="p-3">
-          <div className="space-y-2">
+        <CardContent className="p-2">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {isTokenValid ? (
-                  <CheckCircle size={16} weight="fill" className="text-accent flex-shrink-0" />
+                  <CheckCircle size={14} weight="fill" className="text-accent flex-shrink-0" />
                 ) : (
-                  <Warning size={16} weight="fill" className="text-destructive flex-shrink-0" />
+                  <Warning size={14} weight="fill" className="text-destructive flex-shrink-0" />
                 )}
-                <span className="text-sm font-medium">
+                <span className="text-xs font-medium">
                   {isTokenValid ? 'Token Active' : 'Token Expired'}
                 </span>
               </div>
-              <Key size={14} className="text-muted-foreground" />
+              <Key size={12} className="text-muted-foreground" />
             </div>
 
             {isExpanded && (
-              <div className="space-y-3 pt-1" onClick={(e) => e.stopPropagation()}>
+              <div className="space-y-2 pt-0.5" onClick={(e) => e.stopPropagation()}>
                 {isTokenValid && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-[10px] text-muted-foreground">
                     Expires in {minutes}m {seconds}s
                   </div>
                 )}
                 
                 {!isTokenValid && !selectedToken && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-muted-foreground">
                     No token configuration selected
                   </p>
                 )}
@@ -211,21 +211,21 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                   disabled={isGenerating || !selectedToken}
                   size="sm"
                   variant="default"
-                  className="w-full h-8"
+                  className="w-full h-7 text-xs"
                 >
                   {isGenerating ? (
                     'Generating...'
                   ) : (
                     <>
-                      <ArrowsClockwise size={14} className="mr-1" />
+                      <ArrowsClockwise size={12} className="mr-1" />
                       Refresh Token
                     </>
                   )}
                 </Button>
 
                 {selectedToken && (
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <Label htmlFor="auto-refresh" className="text-xs font-normal cursor-pointer">
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
+                    <Label htmlFor="auto-refresh" className="text-[10px] font-normal cursor-pointer">
                       Auto-refresh ({autoRefreshConfig?.currentRefreshes || 0}/{autoRefreshConfig?.maxRefreshes || 10})
                     </Label>
                     <Switch
@@ -233,6 +233,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                       checked={autoRefreshConfig?.enabled || false}
                       onCheckedChange={handleToggleAutoRefresh}
                       disabled={isGenerating}
+                      className="scale-75"
                     />
                   </div>
                 )}
