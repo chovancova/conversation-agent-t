@@ -184,30 +184,6 @@ function App() {
     }
   }
 
-  const handleExport = () => {
-    if (!activeConversation || activeConversation.messages.length === 0) {
-      toast.error('No messages to export')
-      return
-    }
-
-    const agentName = getAgentName(activeConversation.agentType, agentNames)
-    const exportText = `Agent: ${agentName}\n` +
-      `Conversation: ${activeConversation.title}\n` +
-      `Created: ${new Date(activeConversation.createdAt).toLocaleString()}\n` +
-      (activeConversation.sessionId ? `Session ID: ${activeConversation.sessionId}\n` : '') +
-      `\n` +
-      activeConversation.messages
-        .map((m) => {
-          const time = new Date(m.timestamp).toLocaleString()
-          const role = m.role === 'user' ? 'User' : 'Assistant'
-          return `[${time}] ${role}:\n${m.content}\n`
-        })
-        .join('\n')
-
-    navigator.clipboard.writeText(exportText)
-    toast.success('Conversation copied to clipboard')
-  }
-
   const handleAgentChange = (conversationId: string, agentType: AgentType) => {
     updateConversation(conversationId, { agentType })
   }
@@ -239,30 +215,6 @@ function App() {
   const handleCloseSplit = () => {
     setSplitMode(false)
     setSplitConversationId(null)
-  }
-
-  const handleExportConversation = (conversation: Conversation) => {
-    if (!conversation || conversation.messages.length === 0) {
-      toast.error('No messages to export')
-      return
-    }
-
-    const agentName = getAgentName(conversation.agentType, agentNames)
-    const exportText = `Agent: ${agentName}\n` +
-      `Conversation: ${conversation.title}\n` +
-      `Created: ${new Date(conversation.createdAt).toLocaleString()}\n` +
-      (conversation.sessionId ? `Session ID: ${conversation.sessionId}\n` : '') +
-      `\n` +
-      conversation.messages
-        .map((m) => {
-          const time = new Date(m.timestamp).toLocaleString()
-          const role = m.role === 'user' ? 'User' : 'Assistant'
-          return `[${time}] ${role}:\n${m.content}\n`
-        })
-        .join('\n')
-
-    navigator.clipboard.writeText(exportText)
-    toast.success('Conversation copied to clipboard')
   }
 
   const handleQuickTokenRefresh = async () => {
@@ -545,7 +497,6 @@ function App() {
                   isLoading={isLoading && loadingConversationId === activeConversation.id}
                   onSendMessage={sendMessageToConversation}
                   onAgentChange={handleAgentChange}
-                  onExport={handleExportConversation}
                   agentNames={agentNames || {}}
                   showSplitButton={!splitMode}
                   onOpenSplit={handleOpenSplit}
@@ -560,7 +511,6 @@ function App() {
                     isLoading={isLoading && loadingConversationId === splitConversation.id}
                     onSendMessage={sendMessageToConversation}
                     onAgentChange={handleAgentChange}
-                    onExport={handleExportConversation}
                     onCloseSplit={handleCloseSplit}
                     agentNames={agentNames || {}}
                     isPaneA={false}

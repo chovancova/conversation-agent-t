@@ -1,23 +1,24 @@
 import { useRef, useState } from 'react'
-import { PaperPlaneRight, Export, Robot, Columns, X } from '@phosphor-icons/react'
+import { PaperPlaneRight, Export, Robot, Columns, X, TextT, FilePdf, Image, ClipboardText } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { ChatMessage } from '@/components/ChatMessage'
 import { TypingIndicator } from '@/components/TypingIndicator'
 import { Conversation, Message, AgentType, AccessToken } from '@/lib/types'
 import { AGENTS, getAgentName } from '@/lib/agents'
+import { exportAsText, exportAsMarkdown, exportAsPDF, exportAsPNG } from '@/lib/exportUtils'
 
 type ConversationPaneProps = {
   conversation: Conversation
   isLoading: boolean
   onSendMessage: (conversationId: string, message: string) => Promise<void>
   onAgentChange: (conversationId: string, agentType: AgentType) => void
-  onExport: (conversation: Conversation) => void
-  onCloseSplit?: () => void
   agentNames: Record<string, string>
+  onCloseSplit?: () => void
   showSplitButton?: boolean
   onOpenSplit?: () => void
   isPaneA?: boolean
@@ -28,9 +29,8 @@ export function ConversationPane({
   isLoading,
   onSendMessage,
   onAgentChange,
-  onExport,
-  onCloseSplit,
   agentNames,
+  onCloseSplit,
   showSplitButton = false,
   onOpenSplit,
   isPaneA = false,
@@ -52,6 +52,37 @@ export function ConversationPane({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
+    }
+  }
+
+  const handleExport = async (format: 'text' | 'markdown' | 'pdf' | 'png') => {
+    if (conversation.messages.length === 0) {
+      toast.error('No messages to export')
+      return
+    }
+
+    try {
+      switch (format) {
+        case 'text':
+          exportAsText(conversation, agentNames)
+          toast.success('Conversation copied to clipboard')
+          break
+        case 'markdown':
+          exportAsMarkdown(conversation, agentNames)
+          toast.success('Markdown file downloaded')
+          break
+        case 'pdf':
+          await exportAsPDF(conversation, agentNames)
+          toast.success('PDF file downloaded')
+          break
+        case 'png':
+          await exportAsPNG(conversation, agentNames)
+          toast.success('PNG image downloaded')
+          break
+      }
+    } catch (error) {
+      toast.error(`Failed to export as ${format.toUpperCase()}`)
+      console.error('Export error:', error)
     }
   }
 
@@ -97,10 +128,33 @@ export function ConversationPane({
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={() => onExport(conversation)} className="h-9">
-            <Export size={16} className="mr-2" />
-            Export
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                <Export size={16} className="mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => handleExport('text')}>
+                <ClipboardText size={16} className="mr-2" />
+                Copy as Text
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleExport('markdown')}>
+                <TextT size={16} className="mr-2" />
+                Download Markdown
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('png')}>
+                <Image size={16} className="mr-2" />
+                Download PNG
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                <FilePdf size={16} className="mr-2" />
+                Download PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {showSplitButton && onOpenSplit && (
             <Button 
               variant="outline" 
