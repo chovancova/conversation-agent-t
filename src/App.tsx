@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,7 @@ import { TokenStatus } from '@/components/TokenStatus'
 import { AgentSettings } from '@/components/AgentSettings'
 import { SecurityInfo } from '@/components/SecurityInfo'
 import { ThemeSettings } from '@/components/ThemeSettings'
+import { ConversationPane } from '@/components/ConversationPane'
 import { Conversation, Message, AgentType, AccessToken, TokenConfig } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 import { ThemeOption, applyTheme } from '@/lib/themes'
@@ -25,14 +26,16 @@ import { ThemeOption, applyTheme } from '@/lib/themes'
 function App() {
   const [conversations, setConversations] = useKV<Conversation[]>('conversations', [])
   const [activeConversationId, setActiveConversationId] = useKV<string | null>('activeConversationId', null)
+  const [splitConversationId, setSplitConversationId] = useKV<string | null>('splitConversationId', null)
+  const [splitMode, setSplitMode] = useKV<boolean>('split-mode', false)
   const [accessToken] = useKV<AccessToken | null>('access-token', null)
   const [agentEndpoints] = useKV<Record<string, string>>('agent-endpoints', {})
   const [agentNames] = useKV<Record<string, string>>('agent-names', {})
   const [sidebarOpen, setSidebarOpen] = useKV<boolean>('sidebar-open', true)
   const [selectedTheme] = useKV<ThemeOption>('selected-theme', 'dark')
   const [customTheme] = useKV<any>('custom-theme', null)
-  const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingConversationId, setLoadingConversationId] = useState<string | null>(null)
   const [tokenManagerOpen, setTokenManagerOpen] = useState(false)
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
   const [securityInfoOpen, setSecurityInfoOpen] = useState(false)
@@ -41,10 +44,9 @@ function App() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null)
   const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const activeConversation = (conversations || []).find((c) => c.id === activeConversationId)
+  const splitConversation = (conversations || []).find((c) => c.id === splitConversationId)
 
   useEffect(() => {
     if (selectedTheme) {
@@ -55,12 +57,6 @@ function App() {
       }
     }
   }, [selectedTheme, customTheme])
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
-  }, [activeConversation?.messages, isLoading])
 
   const isTokenValid = accessToken && accessToken.expiresAt > Date.now()
 
@@ -88,13 +84,9 @@ function App() {
     )
   }
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || isLoading) return
-
-    if (!activeConversation) {
-      createNewConversation()
-      return
-    }
+  const sendMessageToConversation = async (conversationId: string, messageContent: string) => {
+    const conversation = conversations?.find(c => c.id === conversationId)
+    if (!conversation) return
 
     if (!isTokenValid) {
       toast.error('Access token expired. Please generate a new token.')
@@ -102,7 +94,7 @@ function App() {
       return
     }
 
-    const endpoint = agentEndpoints?.[activeConversation.agentType]
+    const endpoint = agentEndpoints?.[conversation.agentType]
     if (!endpoint) {
       toast.error('Agent endpoint not configured. Please set it in Agent Settings.')
       setAgentSettingsOpen(true)
@@ -112,29 +104,29 @@ function App() {
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim(),
+      content: messageContent,
       timestamp: Date.now(),
     }
 
-    const updatedMessages = [...activeConversation.messages, userMessage]
+    const updatedMessages = [...conversation.messages, userMessage]
     
-    updateConversation(activeConversation.id, {
+    updateConversation(conversation.id, {
       messages: updatedMessages,
-      title: activeConversation.messages.length === 0 
-        ? input.trim().slice(0, 50) + (input.trim().length > 50 ? '...' : '')
-        : activeConversation.title,
+      title: conversation.messages.length === 0 
+        ? messageContent.slice(0, 50) + (messageContent.length > 50 ? '...' : '')
+        : conversation.title,
     })
 
-    setInput('')
+    setLoadingConversationId(conversationId)
     setIsLoading(true)
 
     try {
       const requestBody: { message: string; sessionId?: string } = {
-        message: input.trim()
+        message: messageContent
       }
 
-      if (activeConversation.sessionId) {
-        requestBody.sessionId = activeConversation.sessionId
+      if (conversation.sessionId) {
+        requestBody.sessionId = conversation.sessionId
       }
 
       const response = await fetch(endpoint, {
@@ -153,7 +145,7 @@ function App() {
       const data = await response.json()
       
       const responseContent = data.response || data.message || data.content || JSON.stringify(data)
-      const sessionId = data.sessionId || data.session_id || activeConversation.sessionId
+      const sessionId = data.sessionId || data.session_id || conversation.sessionId
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -166,11 +158,11 @@ function App() {
         messages: [...updatedMessages, assistantMessage],
       }
 
-      if (sessionId && !activeConversation.sessionId) {
+      if (sessionId && !conversation.sessionId) {
         updatePayload.sessionId = sessionId
       }
 
-      updateConversation(activeConversation.id, updatePayload)
+      updateConversation(conversation.id, updatePayload)
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -180,7 +172,7 @@ function App() {
         error: true
       }
 
-      updateConversation(activeConversation.id, {
+      updateConversation(conversation.id, {
         messages: [...updatedMessages, errorMessage],
       })
 
@@ -188,6 +180,7 @@ function App() {
       console.error('Error getting agent response:', error)
     } finally {
       setIsLoading(false)
+      setLoadingConversationId(null)
     }
   }
 
@@ -215,17 +208,61 @@ function App() {
     toast.success('Conversation copied to clipboard')
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
+  const handleAgentChange = (conversationId: string, agentType: AgentType) => {
+    updateConversation(conversationId, { agentType })
   }
 
-  const handleAgentChange = (agentType: AgentType) => {
-    if (activeConversation) {
-      updateConversation(activeConversation.id, { agentType })
+  const handleOpenSplit = () => {
+    if (!activeConversation) return
+    
+    const otherConversations = conversations?.filter(c => c.id !== activeConversation.id) || []
+    
+    if (otherConversations.length > 0) {
+      setSplitConversationId(otherConversations[0].id)
+    } else {
+      const newConversation: Conversation = {
+        id: Date.now().toString(),
+        title: 'New Conversation',
+        agentType: 'account-opening',
+        messages: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }
+      
+      setConversations((current = []) => [newConversation, ...current])
+      setSplitConversationId(newConversation.id)
     }
+    
+    setSplitMode(true)
+  }
+
+  const handleCloseSplit = () => {
+    setSplitMode(false)
+    setSplitConversationId(null)
+  }
+
+  const handleExportConversation = (conversation: Conversation) => {
+    if (!conversation || conversation.messages.length === 0) {
+      toast.error('No messages to export')
+      return
+    }
+
+    const agentName = getAgentName(conversation.agentType, agentNames)
+    const exportText = `Agent: ${agentName}\n` +
+      `Conversation: ${conversation.title}\n` +
+      `Created: ${new Date(conversation.createdAt).toLocaleString()}\n` +
+      (conversation.sessionId ? `Session ID: ${conversation.sessionId}\n` : '') +
+      `\n` +
+      conversation.messages
+        .map((m) => {
+          const time = new Date(m.timestamp).toLocaleString()
+          const role = m.role === 'user' ? 'User' : 'Assistant'
+          return `[${time}] ${role}:\n${m.content}\n`
+        })
+        .join('\n')
+
+    navigator.clipboard.writeText(exportText)
+    toast.success('Conversation copied to clipboard')
   }
 
   const handleQuickTokenRefresh = async () => {
@@ -441,8 +478,11 @@ function App() {
               <ConversationList
                 conversations={conversations || []}
                 activeId={activeConversationId || null}
+                splitId={splitConversationId || null}
                 onSelect={setActiveConversationId}
                 onDelete={handleDeleteRequest}
+                onSelectForSplit={setSplitConversationId}
+                splitMode={splitMode}
               />
             </div>
           </ScrollArea>
@@ -462,126 +502,72 @@ function App() {
 
         <main className="flex-1 flex flex-col">
           {activeConversation ? (
-            <>
-              <header className="h-16 border-b border-border px-8 flex items-center justify-between bg-card/80 backdrop-blur-sm">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSidebarOpen((current) => !current)}
-                    className="flex-shrink-0"
-                  >
-                    <List size={20} weight="bold" />
-                  </Button>
-                  <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
-                    <Robot size={16} weight="duotone" className="text-accent" />
-                  </div>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <h2 className="font-medium text-foreground truncate">
-                      {activeConversation.title}
-                    </h2>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-muted-foreground">
-                        {getAgentName(activeConversation.agentType, agentNames)}
-                      </p>
-                      {activeConversation.sessionId && (
-                        <>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <p className="text-xs text-muted-foreground font-mono">
-                            Session: {activeConversation.sessionId.slice(0, 8)}...
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {!sidebarOpen && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => createNewConversation('account-opening')}
-                        disabled={isLoading}
-                        className="h-9 w-9"
-                        title="New conversation"
-                      >
-                        <Plus size={16} weight="bold" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleQuickTokenRefresh}
-                        disabled={isLoading}
-                        className={`h-9 w-9 ${isTokenValid ? 'border-accent text-accent hover:bg-accent/10' : 'border-destructive text-destructive hover:bg-destructive/10'}`}
-                        title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
-                      >
-                        <Key size={16} weight="bold" />
-                      </Button>
-                    </>
-                  )}
-                  <Select value={activeConversation.agentType} onValueChange={handleAgentChange}>
-                    <SelectTrigger className="w-[200px] h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AGENTS.map(agent => (
-                        <SelectItem key={agent.type} value={agent.type}>
-                          <div className="flex items-center gap-2">
-                            <Robot size={16} />
-                            {getAgentName(agent.type, agentNames)}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" size="sm" onClick={handleExport} className="h-9">
-                    <Export size={16} className="mr-2" />
-                    Export
-                  </Button>
-                </div>
-              </header>
-
-              <ScrollArea className="flex-1 px-6" ref={scrollRef}>
-                <div className="py-6 flex flex-col gap-4 max-w-4xl mx-auto w-full">
-                  {activeConversation.messages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-center text-muted-foreground text-sm py-12">
-                      Send a message to start the conversation
-                    </div>
-                  ) : (
-                    activeConversation.messages.map((message) => (
-                      <ChatMessage key={message.id} message={message} />
-                    ))
-                  )}
-                  {isLoading && <TypingIndicator />}
-                </div>
-              </ScrollArea>
-
-              <div className="border-t border-border bg-card px-6 py-4">
-                <div className="max-w-4xl mx-auto">
-                  <div className="flex gap-3">
-                    <Textarea
-                      ref={textareaRef}
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Type your message... (Shift+Enter for new line)"
-                      className="resize-none min-h-[52px] max-h-[200px]"
-                      rows={1}
-                      disabled={isLoading}
-                    />
+            <div className="flex flex-1 overflow-hidden">
+              <div className={`${splitMode && splitConversation ? 'w-1/2 border-r border-border' : 'w-full'} flex flex-col`}>
+                <div className="h-16 border-b border-border px-6 flex items-center justify-between bg-card/80 backdrop-blur-sm">
+                  <div className="flex items-center gap-3">
                     <Button
-                      onClick={handleSendMessage}
-                      disabled={!input.trim() || isLoading}
+                      variant="ghost"
                       size="icon"
-                      className="h-[52px] w-[52px] flex-shrink-0"
+                      onClick={() => setSidebarOpen((current) => !current)}
+                      className="flex-shrink-0"
                     >
-                      <PaperPlaneRight size={20} weight="bold" />
+                      <List size={20} weight="bold" />
                     </Button>
+                    {!sidebarOpen && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => createNewConversation('account-opening')}
+                          disabled={isLoading}
+                          className="h-9 w-9"
+                          title="New conversation"
+                        >
+                          <Plus size={16} weight="bold" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={handleQuickTokenRefresh}
+                          disabled={isLoading}
+                          className={`h-9 w-9 ${isTokenValid ? 'border-accent text-accent hover:bg-accent/10' : 'border-destructive text-destructive hover:bg-destructive/10'}`}
+                          title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
+                        >
+                          <Key size={16} weight="bold" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
+                <ConversationPane
+                  conversation={activeConversation}
+                  isLoading={isLoading && loadingConversationId === activeConversation.id}
+                  onSendMessage={sendMessageToConversation}
+                  onAgentChange={handleAgentChange}
+                  onExport={handleExportConversation}
+                  agentNames={agentNames || {}}
+                  showSplitButton={!splitMode}
+                  onOpenSplit={handleOpenSplit}
+                  isPaneA={true}
+                />
               </div>
-            </>
+              
+              {splitMode && splitConversation && (
+                <div className="w-1/2 flex flex-col">
+                  <ConversationPane
+                    conversation={splitConversation}
+                    isLoading={isLoading && loadingConversationId === splitConversation.id}
+                    onSendMessage={sendMessageToConversation}
+                    onAgentChange={handleAgentChange}
+                    onExport={handleExportConversation}
+                    onCloseSplit={handleCloseSplit}
+                    agentNames={agentNames || {}}
+                    isPaneA={false}
+                  />
+                </div>
+              )}
+            </div>
           ) : (
             <div className="flex flex-col h-full">
               <header className="h-16 border-b border-border px-8 flex items-center bg-card/80 backdrop-blur-sm">

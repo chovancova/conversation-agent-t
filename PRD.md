@@ -41,11 +41,11 @@ A professional testing environment for multiple conversation agents that enables
 - **Success criteria**: Agent switches immediately, selection persists, clear visual indication of active agent in conversation list
 
 ### Conversation Management
-- **Functionality**: Start new conversations with agent selection, view conversation history with agent badges, and switch between sessions
-- **Purpose**: Test multiple scenarios across different agents without losing previous conversation context
-- **Trigger**: User clicks new conversation with agent selection or selects previous conversation
-- **Progression**: Click new conversation → Select agent → Current chat clears → Fresh session begins → Previous conversations accessible in sidebar with agent badges
-- **Success criteria**: Conversations save automatically with agent type, can be resumed at any time, clear visual distinction
+- **Functionality**: Start new conversations with agent selection, view conversation history with agent badges, switch between sessions, and open split-screen view to test two agents simultaneously
+- **Purpose**: Test multiple scenarios across different agents without losing previous conversation context, and compare agent behaviors side-by-side
+- **Trigger**: User clicks new conversation with agent selection or selects previous conversation, or clicks Split button to enable dual conversations
+- **Progression**: Click new conversation → Select agent → Current chat clears → Fresh session begins → Previous conversations accessible in sidebar with agent badges → Click Split button → Second conversation pane opens → Select different conversation for split view → Both conversations active simultaneously → Use Columns icon in sidebar to change split conversation → Click X on split pane to close
+- **Success criteria**: Conversations save automatically with agent type, can be resumed at any time, clear visual distinction, split view shows two conversations independently, each pane can send messages separately, split state persists across sessions
 
 ### Message Export
 - **Functionality**: Copy conversation history including agent metadata for analysis or documentation, with security warnings for export files
@@ -83,6 +83,10 @@ A professional testing environment for multiple conversation agents that enables
 - **Export Security**: Warn users that exported files contain plaintext credentials and should be handled securely
 - **Data Privacy**: Display encryption status and security considerations prominently in token manager
 - **Credential Storage**: Inform users that Spark KV provides encryption at rest for all stored credentials
+- **Split View Same Conversation**: Prevent selecting the same conversation in both panes (active conversation cannot be selected for split)
+- **Split View Auto-Select**: When opening split view, automatically select first available different conversation, or create new one if none exist
+- **Split View Delete**: If active or split conversation is deleted, gracefully handle by closing that pane or switching to another conversation
+- **Split View Independent Loading**: Show loading indicators independently for each pane when sending messages simultaneously
 
 ## Design Direction
 
@@ -192,6 +196,8 @@ Subtle, purposeful animations that reinforce state changes without slowing down 
   - Pencil (Edit custom theme) - theme creation and editing
   - TextAa (Typography settings) - font and text size controls
   - Swatches (Color palette picker) - choosing color schemes
+  - Columns (Split view) - enable side-by-side conversations
+  - X (Close split) - exit split view mode
 
 - **Spacing**:
   - Container padding: p-6 (24px)
@@ -208,3 +214,4 @@ Subtle, purposeful animations that reinforce state changes without slowing down 
   - Single column layout with conversation list accessible via slide-in panel
   - Token/agent buttons stack vertically on small screens
   - Dialog forms use single column layout on mobile
+  - Split view disabled on mobile (screens < 768px) - only single conversation view available for better usability
