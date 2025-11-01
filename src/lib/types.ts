@@ -25,6 +25,8 @@ export type AgentConfig = {
 }
 
 export type TokenConfig = {
+  id: string
+  name: string
   endpoint: string
   clientId: string
   username: string

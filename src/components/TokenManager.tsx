@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X, CheckCircle, XCircle, Clock } from '@phosphor-icons/react'
+import { Key, X, CheckCircle, XCircle, Clock, FloppyDisk, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TokenConfig, AccessToken } from '@/lib/types'
 import { useCountdown } from '@/hooks/use-countdown'
 
@@ -16,28 +17,28 @@ type TokenManagerProps = {
 }
 
 export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
-  const [tokenConfig, setTokenConfig] = useKV<TokenConfig>('token-config', {
-    endpoint: '',
-    clientId: '',
-    username: '',
-    password: ''
-  })
+  const [savedTokens, setSavedTokens] = useKV<TokenConfig[]>('saved-tokens', [])
+  const [selectedTokenId, setSelectedTokenId] = useKV<string | null>('selected-token-id', null)
   const [accessToken, setAccessToken] = useKV<AccessToken | null>('access-token', null)
   
+  const [name, setName] = useState('')
   const [endpoint, setEndpoint] = useState('')
   const [clientId, setClientId] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
 
+  const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
+
   useEffect(() => {
-    if (tokenConfig) {
-      setEndpoint(tokenConfig.endpoint || '')
-      setClientId(tokenConfig.clientId || '')
-      setUsername(tokenConfig.username || '')
-      setPassword(tokenConfig.password || '')
+    if (selectedToken) {
+      setName(selectedToken.name)
+      setEndpoint(selectedToken.endpoint)
+      setClientId(selectedToken.clientId)
+      setUsername(selectedToken.username)
+      setPassword(selectedToken.password)
     }
-  }, [tokenConfig])
+  }, [selectedToken])
 
   const isTokenValid = accessToken && accessToken.expiresAt > Date.now()
   const { minutes: minutesRemaining, seconds: secondsRemaining } = useCountdown(accessToken?.expiresAt || null)
@@ -80,12 +81,6 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       }
 
       setAccessToken(newAccessToken)
-      setTokenConfig({
-        endpoint,
-        clientId,
-        username,
-        password
-      })
 
       toast.success('Access token generated successfully')
     } catch (error) {
@@ -94,6 +89,60 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  const handleSaveToken = () => {
+    if (!name || !endpoint || !clientId || !username || !password) {
+      toast.error('All fields are required to save')
+      return
+    }
+
+    const tokenId = selectedTokenId || Date.now().toString()
+    const newToken: TokenConfig = {
+      id: tokenId,
+      name,
+      endpoint,
+      clientId,
+      username,
+      password
+    }
+
+    setSavedTokens((current = []) => {
+      const existing = current.find(t => t.id === tokenId)
+      if (existing) {
+        return current.map(t => t.id === tokenId ? newToken : t)
+      }
+      return [...current, newToken]
+    })
+
+    setSelectedTokenId(tokenId)
+    toast.success(selectedToken ? 'Token updated' : 'Token saved')
+  }
+
+  const handleDeleteToken = () => {
+    if (!selectedTokenId) return
+
+    setSavedTokens((current = []) => current.filter(t => t.id !== selectedTokenId))
+    setSelectedTokenId(null)
+    setName('')
+    setEndpoint('')
+    setClientId('')
+    setUsername('')
+    setPassword('')
+    toast.success('Token configuration deleted')
+  }
+
+  const handleNewToken = () => {
+    setSelectedTokenId(null)
+    setName('')
+    setEndpoint('')
+    setClientId('')
+    setUsername('')
+    setPassword('')
+  }
+
+  const handleSelectToken = (tokenId: string) => {
+    setSelectedTokenId(tokenId)
   }
 
   const handleClearToken = () => {
@@ -156,7 +205,44 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
             </Card>
           )}
 
+          <div className="flex items-center gap-2">
+            <Select value={selectedTokenId || 'new'} onValueChange={(value) => value === 'new' ? handleNewToken() : handleSelectToken(value)}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select saved token" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="new">+ New Token Configuration</SelectItem>
+                {savedTokens?.map(token => (
+                  <SelectItem key={token.id} value={token.id}>
+                    {token.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedTokenId && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleDeleteToken}
+                className="flex-shrink-0"
+              >
+                <Trash size={18} />
+              </Button>
+            )}
+          </div>
+
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="token-name">Configuration Name</Label>
+              <Input
+                id="token-name"
+                type="text"
+                placeholder="Production, Staging, Development..."
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="token-endpoint">Token Endpoint URL</Label>
               <Input
@@ -203,13 +289,25 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
               </div>
             </div>
 
-            <Button
-              onClick={handleGenerateToken}
-              disabled={isGenerating || !endpoint || !clientId || !username || !password}
-              className="w-full"
-            >
-              {isGenerating ? 'Generating...' : 'Generate Token'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSaveToken}
+                disabled={!name || !endpoint || !clientId || !username || !password}
+                variant="outline"
+                className="flex-1"
+              >
+                <FloppyDisk size={18} className="mr-2" />
+                {selectedToken ? 'Update' : 'Save'} Configuration
+              </Button>
+              
+              <Button
+                onClick={handleGenerateToken}
+                disabled={isGenerating || !endpoint || !clientId || !username || !password}
+                className="flex-1"
+              >
+                {isGenerating ? 'Generating...' : 'Generate Token'}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
