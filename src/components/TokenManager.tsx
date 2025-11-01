@@ -227,13 +227,6 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          <Alert className="border-accent/50 bg-accent/5">
-            <ShieldCheck size={18} className="text-accent" />
-            <AlertTitle className="text-sm font-semibold">Encrypted Storage</AlertTitle>
-            <AlertDescription className="text-xs">
-              All credentials are stored encrypted via Spark KV. However, use test credentials only and never store production secrets.
-            </AlertDescription>
-          </Alert>
           {accessToken && (
             <Card className={isTokenValid ? 'border-accent' : 'border-destructive'}>
               <CardHeader className="pb-3">
@@ -299,41 +292,6 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                 <Trash size={18} />
               </Button>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Button
-                onClick={handleExportTokens}
-                disabled={!savedTokens || savedTokens.length === 0}
-                variant="outline"
-                size="sm"
-                className="flex-1"
-              >
-                <Export size={16} className="mr-2" />
-                Export All
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => document.getElementById('import-tokens')?.click()}
-              >
-                <Download size={16} className="mr-2" />
-                Import
-              </Button>
-              <input
-                id="import-tokens"
-                type="file"
-                accept=".json"
-                onChange={handleImportTokens}
-                className="hidden"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground flex items-start gap-1">
-              <Warning size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
-              <span>Export files contain plaintext credentials. Handle securely and delete when no longer needed.</span>
-            </p>
           </div>
 
           <div className="space-y-4">
@@ -425,6 +383,49 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
               </Button>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Button
+                onClick={handleExportTokens}
+                disabled={!savedTokens || savedTokens.length === 0}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                <Export size={16} className="mr-2" />
+                Export All
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => document.getElementById('import-tokens')?.click()}
+              >
+                <Download size={16} className="mr-2" />
+                Import
+              </Button>
+              <input
+                id="import-tokens"
+                type="file"
+                accept=".json"
+                onChange={handleImportTokens}
+                className="hidden"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground flex items-start gap-1">
+              <Warning size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
+              <span>Export files contain plaintext credentials. Handle securely and delete when no longer needed.</span>
+            </p>
+          </div>
+
+          <Alert className="border-accent/50 bg-accent/5">
+            <ShieldCheck size={18} className="text-accent" />
+            <AlertTitle className="text-sm font-semibold">Encrypted Storage</AlertTitle>
+            <AlertDescription className="text-xs">
+              All credentials are stored encrypted via Spark KV. However, use test credentials only and never store production secrets.
+            </AlertDescription>
+          </Alert>
         </div>
       </DialogContent>
     </Dialog>
