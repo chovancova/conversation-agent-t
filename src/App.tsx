@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -34,6 +34,7 @@ function App() {
   const [tokenStatusExpanded, setTokenStatusExpanded] = useState(true)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null)
+  const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -232,6 +233,13 @@ function App() {
     setConversationToDelete(null)
   }
 
+  const handleClearAllConfirm = () => {
+    setConversations([])
+    setActiveConversationId(null)
+    toast.success('All conversations cleared')
+    setClearAllDialogOpen(false)
+  }
+
   const conversationToDeleteData = conversations?.find((c) => c.id === conversationToDelete)
 
   return (
@@ -253,6 +261,23 @@ function App() {
             <AlertDialogCancel onClick={() => setConversationToDelete(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={clearAllDialogOpen} onOpenChange={setClearAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All Conversations</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete all {conversations?.length || 0} conversation{(conversations?.length || 0) !== 1 ? 's' : ''}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearAllConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Clear All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -313,8 +338,21 @@ function App() {
           
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
-                Recent Conversations
+              <div className="flex items-center justify-between px-2 py-1">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Recent Conversations
+                </div>
+                {(conversations?.length || 0) > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setClearAllDialogOpen(true)}
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash size={14} className="mr-1" />
+                    Clear All
+                  </Button>
+                )}
               </div>
               <ConversationList
                 conversations={conversations || []}
