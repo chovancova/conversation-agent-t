@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck } from '@phosphor-icons/react'
+import { Key, X, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +29,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [showForm, setShowForm] = useState(false)
 
   const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
 
@@ -146,10 +147,16 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     setClientSecret('')
     setUsername('')
     setPassword('')
+    setShowForm(true)
   }
 
   const handleSelectToken = (tokenId: string) => {
     setSelectedTokenId(tokenId)
+    setShowForm(false)
+  }
+
+  const handleUpdateConfiguration = () => {
+    setShowForm(true)
   }
 
   const handleClearToken = () => {
@@ -282,107 +289,162 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                 ))}
               </SelectContent>
             </Select>
-            {selectedTokenId && (
+            {selectedTokenId && !showForm && (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleUpdateConfiguration}
+                  className="flex-shrink-0"
+                  title="Update Configuration"
+                >
+                  <PencilSimple size={18} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleDeleteToken}
+                  className="flex-shrink-0"
+                  title="Delete Configuration"
+                >
+                  <Trash size={18} />
+                </Button>
+              </>
+            )}
+            {!selectedTokenId && !showForm && (
               <Button
-                variant="outline"
-                size="icon"
-                onClick={handleDeleteToken}
+                variant="default"
+                onClick={handleNewToken}
                 className="flex-shrink-0"
               >
-                <Trash size={18} />
+                <Plus size={18} className="mr-2" />
+                Add New Configuration
               </Button>
             )}
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="token-name">Configuration Name</Label>
-              <Input
-                id="token-name"
-                type="text"
-                placeholder="Production, Staging, Development..."
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="token-endpoint">Token Endpoint URL</Label>
-              <Input
-                id="token-endpoint"
-                type="url"
-                placeholder="https://api.example.com/oauth/token"
-                value={endpoint}
-                onChange={(e) => setEndpoint(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="client-id">Client ID</Label>
-              <Input
-                id="client-id"
-                type="text"
-                placeholder="your-client-id"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="client-secret">Client Secret</Label>
-              <Input
-                id="client-secret"
-                type="password"
-                placeholder="your-client-secret"
-                value={clientSecret}
-                onChange={(e) => setClientSecret(e.target.value)}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          {showForm && (
+            <div className="space-y-4 border border-border rounded-lg p-4 bg-card">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="token-name">Configuration Name</Label>
                 <Input
-                  id="username"
+                  id="token-name"
                   type="text"
-                  placeholder="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Production, Staging, Development..."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="token-endpoint">Token Endpoint URL</Label>
                 <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="token-endpoint"
+                  type="url"
+                  placeholder="https://api.example.com/oauth/token"
+                  value={endpoint}
+                  onChange={(e) => setEndpoint(e.target.value)}
                 />
               </div>
-            </div>
 
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSaveToken}
-                disabled={!name || !endpoint || !clientId || !clientSecret || !username || !password}
-                variant="outline"
-                className="flex-1"
-              >
-                <FloppyDisk size={18} className="mr-2" />
-                {selectedToken ? 'Update' : 'Save'} Configuration
-              </Button>
-              
-              <Button
-                onClick={handleGenerateToken}
-                disabled={isGenerating || !endpoint || !clientId || !clientSecret || !username || !password}
-                className="flex-1"
-              >
-                {isGenerating ? 'Generating...' : 'Generate Token'}
-              </Button>
+              <div className="space-y-2">
+                <Label htmlFor="client-id">Client ID</Label>
+                <Input
+                  id="client-id"
+                  type="text"
+                  placeholder="your-client-id"
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client-secret">Client Secret</Label>
+                <Input
+                  id="client-secret"
+                  type="password"
+                  placeholder="your-client-secret"
+                  value={clientSecret}
+                  onChange={(e) => setClientSecret(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSaveToken}
+                  disabled={!name || !endpoint || !clientId || !clientSecret || !username || !password}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <FloppyDisk size={18} className="mr-2" />
+                  {selectedToken ? 'Update' : 'Save'} Configuration
+                </Button>
+                
+                <Button
+                  onClick={handleGenerateToken}
+                  disabled={isGenerating || !endpoint || !clientId || !clientSecret || !username || !password}
+                  className="flex-1"
+                >
+                  {isGenerating ? 'Generating...' : 'Generate Token'}
+                </Button>
+              </div>
+
+              {selectedToken && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowForm(false)}
+                  className="w-full"
+                >
+                  Cancel
+                </Button>
+              )}
             </div>
-          </div>
+          )}
+
+          {selectedToken && !showForm && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{selectedToken.name}</CardTitle>
+                <CardDescription className="text-xs break-all">
+                  {selectedToken.endpoint}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={handleGenerateToken}
+                  disabled={isGenerating}
+                  className="w-full"
+                >
+                  {isGenerating ? 'Generating...' : 'Generate Token'}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="space-y-2">
             <div className="flex gap-2">
