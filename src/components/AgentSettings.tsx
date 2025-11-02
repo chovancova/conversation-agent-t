@@ -258,8 +258,9 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.success('Agent settings exported to Downloads folder', {
-      description: `File: ${filename}`
+    toast.success('Download started!', {
+      description: `${filename} - Check your Downloads folder`,
+      duration: 5000
     })
   }
 

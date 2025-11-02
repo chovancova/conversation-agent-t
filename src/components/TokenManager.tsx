@@ -188,8 +188,9 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.warning('Token configurations exported to Downloads folder', {
-      description: `File: ${filename} - Contains plaintext credentials!`
+    toast.success('Download started!', {
+      description: `${filename} - Check your Downloads folder. Contains plaintext credentials!`,
+      duration: 5000
     })
   }
 
