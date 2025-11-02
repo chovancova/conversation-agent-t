@@ -29,7 +29,7 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[85vh] flex flex-col">
+      <DialogContent className="max-w-5xl h-[85vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <ShieldCheck size={24} weight="duotone" className="text-accent" />
