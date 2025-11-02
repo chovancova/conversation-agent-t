@@ -156,7 +156,18 @@ export function SoundSettings({ open, onOpenChange }: SoundSettingsProps) {
                   Choose when to play notification sounds
                 </p>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
+                    <div>
+                      <p className="text-sm font-medium">10 Minutes</p>
+                      <p className="text-xs text-muted-foreground">Early warning notification</p>
+                    </div>
+                    <Switch
+                      checked={prefs.warningIntervals.tenMinutes}
+                      onCheckedChange={(checked) => handleIntervalToggle('tenMinutes', checked)}
+                    />
+                  </div>
+
                   <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
                     <div>
                       <p className="text-sm font-medium">5 Minutes</p>
@@ -193,11 +204,22 @@ export function SoundSettings({ open, onOpenChange }: SoundSettingsProps) {
                   <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
                     <div>
                       <p className="text-sm font-medium">30 Seconds</p>
-                      <p className="text-xs text-muted-foreground">Alert when 30 seconds remaining</p>
+                      <p className="text-xs text-muted-foreground">Critical warning notification</p>
                     </div>
                     <Switch
                       checked={prefs.warningIntervals.thirtySeconds}
                       onCheckedChange={(checked) => handleIntervalToggle('thirtySeconds', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
+                    <div>
+                      <p className="text-sm font-medium">10 Seconds</p>
+                      <p className="text-xs text-muted-foreground">Final warning before expiry</p>
+                    </div>
+                    <Switch
+                      checked={prefs.warningIntervals.tenSeconds}
+                      onCheckedChange={(checked) => handleIntervalToggle('tenSeconds', checked)}
                     />
                   </div>
                 </div>

@@ -5,10 +5,12 @@ export type SoundPreferences = {
   sound: NotificationSound
   volume: number
   warningIntervals: {
+    tenMinutes: boolean
     fiveMinutes: boolean
     twoMinutes: boolean
     oneMinute: boolean
     thirtySeconds: boolean
+    tenSeconds: boolean
   }
 }
 
@@ -17,10 +19,12 @@ export const DEFAULT_SOUND_PREFERENCES: SoundPreferences = {
   sound: 'chime',
   volume: 0.5,
   warningIntervals: {
+    tenMinutes: false,
     fiveMinutes: true,
     twoMinutes: true,
     oneMinute: true,
-    thirtySeconds: false
+    thirtySeconds: false,
+    tenSeconds: false
   }
 }
 

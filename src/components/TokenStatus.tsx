@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, Warning, CheckCircle, ArrowsClockwise, Lock, Gear } from '@phosphor-icons/react'
+import { Key, Warning, CheckCircle, ArrowsClockwise, Lock, Gear, Flask } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { AccessToken, TokenConfig, AutoRefreshConfig } from '@/lib/types'
@@ -44,17 +45,22 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
   const [isGenerating, setIsGenerating] = useState(false)
   const [showDecryptDialog, setShowDecryptDialog] = useState(false)
   const [pendingAction, setPendingAction] = useState<'generate' | 'auto-refresh-enable' | null>(null)
+  const [testTokenPopoverOpen, setTestTokenPopoverOpen] = useState(false)
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const soundPlayedRef = useRef<{
+    tenMinutes: boolean
     fiveMinutes: boolean
     twoMinutes: boolean
     oneMinute: boolean
     thirtySeconds: boolean
+    tenSeconds: boolean
   }>({
+    tenMinutes: false,
     fiveMinutes: false,
     twoMinutes: false,
     oneMinute: false,
-    thirtySeconds: false
+    thirtySeconds: false,
+    tenSeconds: false
   })
 
   const isTokenValid = accessToken && accessToken.expiresAt > Date.now()
@@ -231,6 +237,20 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
     }
   }
 
+  const handleCreateTestToken = (minutes: number) => {
+    const testToken: AccessToken = {
+      token: `test_token_${Date.now()}`,
+      expiresAt: Date.now() + (minutes * 60 * 1000),
+      refreshCount: 0,
+      generatedAt: Date.now()
+    }
+    setAccessToken(testToken)
+    setTestTokenPopoverOpen(false)
+    toast.success(`Test token created (expires in ${minutes} minute${minutes !== 1 ? 's' : ''})`, {
+      description: 'Use this to test auto-refresh and sound alerts'
+    })
+  }
+
   useEffect(() => {
     if (selectedToken?.id !== selectedTokenId && decryptedCredentials) {
       setDecryptedCredentials(null)
@@ -240,10 +260,12 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
   useEffect(() => {
     if (!accessToken || !accessToken.expiresAt || !isTokenValid) {
       soundPlayedRef.current = {
+        tenMinutes: false,
         fiveMinutes: false,
         twoMinutes: false,
         oneMinute: false,
-        thirtySeconds: false
+        thirtySeconds: false,
+        tenSeconds: false
       }
       return
     }
@@ -253,6 +275,13 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
 
     const checkInterval = setInterval(() => {
       const timeRemaining = accessToken.expiresAt - Date.now()
+      
+      if (timeRemaining <= 600000 && timeRemaining > 599000 && 
+          prefs.warningIntervals.tenMinutes && !soundPlayedRef.current.tenMinutes) {
+        playNotificationSound(prefs.sound, prefs.volume)
+        soundPlayedRef.current.tenMinutes = true
+        toast.info('Token expires in 10 minutes', { duration: 3000 })
+      }
       
       if (timeRemaining <= 300000 && timeRemaining > 299000 && 
           prefs.warningIntervals.fiveMinutes && !soundPlayedRef.current.fiveMinutes) {
@@ -280,6 +309,13 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
         playNotificationSound(prefs.sound, prefs.volume)
         soundPlayedRef.current.thirtySeconds = true
         toast.error('Token expires in 30 seconds!', { duration: 5000 })
+      }
+      
+      if (timeRemaining <= 10000 && timeRemaining > 9000 && 
+          prefs.warningIntervals.tenSeconds && !soundPlayedRef.current.tenSeconds) {
+        playNotificationSound(prefs.sound, prefs.volume)
+        soundPlayedRef.current.tenSeconds = true
+        toast.error('Token expires in 10 seconds!', { duration: 5000 })
       }
     }, 1000)
 
@@ -448,6 +484,91 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                   )}
                 </Button>
 
+                <Popover open={testTokenPopoverOpen} onOpenChange={setTestTokenPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-8 text-xs"
+                    >
+                      <Flask size={14} className="mr-1.5" />
+                      Test Token with Custom Time
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="center">
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">Create Test Token</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Generate a test token with custom expiry time to test auto-refresh and sound alerts
+                        </p>
+                      </div>
+                      <Separator />
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCreateTestToken(0.5)}
+                          className="h-16 flex flex-col gap-1"
+                        >
+                          <span className="text-base font-bold">30s</span>
+                          <span className="text-xs text-muted-foreground">Quick</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCreateTestToken(1)}
+                          className="h-16 flex flex-col gap-1"
+                        >
+                          <span className="text-base font-bold">1m</span>
+                          <span className="text-xs text-muted-foreground">Test</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCreateTestToken(2)}
+                          className="h-16 flex flex-col gap-1"
+                        >
+                          <span className="text-base font-bold">2m</span>
+                          <span className="text-xs text-muted-foreground">Short</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCreateTestToken(5)}
+                          className="h-16 flex flex-col gap-1"
+                        >
+                          <span className="text-base font-bold">5m</span>
+                          <span className="text-xs text-muted-foreground">Medium</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCreateTestToken(10)}
+                          className="h-16 flex flex-col gap-1"
+                        >
+                          <span className="text-base font-bold">10m</span>
+                          <span className="text-xs text-muted-foreground">Long</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCreateTestToken(15)}
+                          className="h-16 flex flex-col gap-1"
+                        >
+                          <span className="text-base font-bold">15m</span>
+                          <span className="text-xs text-muted-foreground">Full</span>
+                        </Button>
+                      </div>
+                      <div className="pt-2">
+                        <p className="text-xs text-muted-foreground">
+                          Test tokens won't make real API calls. Use to verify warning sounds and auto-refresh behavior.
+                        </p>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
                 {selectedToken && (
                   <>
                     <div className="flex items-center justify-between gap-2 px-1">
@@ -466,8 +587,8 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                               <Gear size={14} className="text-muted-foreground" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-72" align="end">
-                            <div className="space-y-3">
+                          <PopoverContent className="w-80" align="end">
+                            <div className="space-y-4">
                               <div className="space-y-1.5">
                                 <Label htmlFor="max-refreshes" className="text-sm font-medium">
                                   Max Auto-Refreshes
@@ -476,26 +597,114 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                                   Maximum number of times to automatically refresh the token before stopping
                                 </p>
                               </div>
-                              <Input
-                                id="max-refreshes"
-                                type="number"
-                                min={1}
-                                max={999}
-                                value={autoRefreshConfig?.maxRefreshes || 10}
-                                onChange={(e) => {
-                                  const value = parseInt(e.target.value)
-                                  if (value > 0 && value <= 999) {
-                                    setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+                              <div className="space-y-2">
+                                <Input
+                                  id="max-refreshes"
+                                  type="number"
+                                  min={1}
+                                  max={9999}
+                                  value={autoRefreshConfig?.maxRefreshes || 10}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value)
+                                    if (value > 0 && value <= 9999) {
+                                      setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+                                        ...current,
+                                        maxRefreshes: value
+                                      }))
+                                    }
+                                  }}
+                                  className="h-9"
+                                />
+                                <div className="grid grid-cols-3 gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
                                       ...current,
-                                      maxRefreshes: value
-                                    }))
-                                  }
-                                }}
-                                className="h-9"
-                              />
+                                      maxRefreshes: 10
+                                    }))}
+                                    className="h-7 text-xs"
+                                  >
+                                    10
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+                                      ...current,
+                                      maxRefreshes: 50
+                                    }))}
+                                    className="h-7 text-xs"
+                                  >
+                                    50
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+                                      ...current,
+                                      maxRefreshes: 100
+                                    }))}
+                                    className="h-7 text-xs"
+                                  >
+                                    100
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+                                      ...current,
+                                      maxRefreshes: 500
+                                    }))}
+                                    className="h-7 text-xs"
+                                  >
+                                    500
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+                                      ...current,
+                                      maxRefreshes: 1000
+                                    }))}
+                                    className="h-7 text-xs"
+                                  >
+                                    1000
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+                                      ...current,
+                                      maxRefreshes: 9999
+                                    }))}
+                                    className="h-7 text-xs"
+                                  >
+                                    9999
+                                  </Button>
+                                </div>
+                              </div>
+                              <Separator />
+                              <div className="space-y-2">
+                                <p className="text-xs font-medium text-muted-foreground">Estimated Runtime</p>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  <div className="p-2 rounded-md bg-muted/50">
+                                    <p className="text-muted-foreground mb-0.5">At 15 min/token:</p>
+                                    <p className="font-medium text-foreground">
+                                      ~{Math.floor((autoRefreshConfig?.maxRefreshes || 10) * 15 / 60)}h {((autoRefreshConfig?.maxRefreshes || 10) * 15) % 60}m
+                                    </p>
+                                  </div>
+                                  <div className="p-2 rounded-md bg-muted/50">
+                                    <p className="text-muted-foreground mb-0.5">Total refreshes:</p>
+                                    <p className="font-medium text-foreground">
+                                      {autoRefreshConfig?.maxRefreshes || 10}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
                               <div className="pt-1">
                                 <p className="text-xs text-muted-foreground">
-                                  Token refreshes automatically when less than 1 minute remains
+                                  Token refreshes automatically when less than 1 minute remains. Set higher values for unattended operation.
                                 </p>
                               </div>
                             </div>
