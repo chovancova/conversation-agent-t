@@ -88,16 +88,16 @@ export function ConversationPane({
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0">
-      <header className="h-16 border-b border-border px-4 flex items-center justify-between bg-card/80 backdrop-blur-sm flex-shrink-0">
-        <div className="flex items-center gap-3 flex-1 min-w-0 mr-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent/30 to-accent/10 flex items-center justify-center flex-shrink-0 border border-accent/20">
-            <Robot size={18} weight="duotone" className="text-accent" />
+      <header className="h-14 border-b border-border px-4 flex items-center justify-between bg-card/50 backdrop-blur-sm flex-shrink-0">
+        <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent/30 to-accent/10 flex items-center justify-center flex-shrink-0 border border-accent/20">
+            <Robot size={16} weight="duotone" className="text-accent" />
           </div>
           <div className="flex flex-col min-w-0 flex-1">
             <h2 className="font-semibold text-sm text-foreground truncate">
               {conversation.title}
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <p className="text-xs text-muted-foreground truncate">
                 {getAgentName(conversation.agentType, agentNames)}
               </p>
@@ -112,9 +112,9 @@ export function ConversationPane({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <Select value={conversation.agentType} onValueChange={(value) => onAgentChange(conversation.id, value as AgentType)}>
-            <SelectTrigger className="w-[160px] h-9 rounded-lg">
+            <SelectTrigger className="w-[150px] h-8 rounded-lg text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -130,8 +130,8 @@ export function ConversationPane({
           </Select>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 px-3 rounded-lg">
-                <Export size={16} className="mr-1.5" />
+              <Button variant="outline" size="sm" className="h-8 px-2.5 rounded-lg text-xs">
+                <Export size={14} className="mr-1.5" />
                 Export
               </Button>
             </DropdownMenuTrigger>
@@ -160,10 +160,10 @@ export function ConversationPane({
               variant="outline" 
               size="sm" 
               onClick={onOpenSplit} 
-              className="h-9 px-3 rounded-lg"
+              className="h-8 px-2.5 rounded-lg text-xs"
               title="Open split view"
             >
-              <Columns size={16} className="mr-1.5" />
+              <Columns size={14} className="mr-1.5" />
               Split
             </Button>
           )}
@@ -172,10 +172,10 @@ export function ConversationPane({
               variant="ghost" 
               size="icon" 
               onClick={onCloseSplit} 
-              className="h-9 w-9 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
               title="Close split view"
             >
-              <X size={18} weight="bold" />
+              <X size={16} weight="bold" />
             </Button>
           )}
         </div>

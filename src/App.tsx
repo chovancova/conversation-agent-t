@@ -387,39 +387,37 @@ function App() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="flex h-screen bg-background">
-        <aside className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-r border-border bg-card flex flex-col h-full overflow-hidden`}>
-          <div className="p-6 border-b border-border flex-shrink-0">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 blur-sm"></div>
-                  <ChatsCircle size={22} weight="fill" className="text-primary-foreground relative z-10" />
-                </div>
-                <div className="flex flex-col">
-                  <h1 className="text-lg font-bold tracking-tight text-foreground leading-tight">
-                    Agent Tester
-                  </h1>
-                  <p className="text-xs text-muted-foreground font-medium">Multi-Agent Platform</p>
-                </div>
+      <div className="flex h-screen bg-background overflow-hidden">
+        <aside className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 ease-in-out border-r border-border bg-card flex flex-col h-full overflow-hidden flex-shrink-0`}>
+          <div className="p-5 border-b border-border flex-shrink-0">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-primary via-accent to-accent/80 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/30">
+                <div className="absolute inset-0.5 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 backdrop-blur-xl"></div>
+                <Robot size={24} weight="duotone" className="text-primary-foreground relative z-10" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <h1 className="text-xl font-bold tracking-tight text-foreground leading-tight">
+                  Agent Tester
+                </h1>
+                <p className="text-xs text-muted-foreground font-medium">Multi-Agent Testing</p>
               </div>
             </div>
 
             <Button 
               onClick={() => createNewConversation('account-opening')}
-              className="w-full h-11 mb-4"
+              className="w-full h-10 mb-3 shadow-sm hover:shadow-md transition-shadow"
               size="lg"
             >
-              <Plus size={20} weight="bold" className="mr-2" />
+              <Plus size={18} weight="bold" className="mr-2" />
               New Conversation
             </Button>
 
-            <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className="flex gap-2 mb-3">
               <Button 
                 onClick={() => setTokenManagerOpen(true)} 
                 variant="outline" 
                 size="sm"
-                className="h-9"
+                className="h-9 flex-1"
               >
                 <Key size={16} className="mr-1.5" />
                 Token
@@ -428,10 +426,10 @@ function App() {
                 onClick={() => setAgentSettingsOpen(true)} 
                 variant="outline" 
                 size="sm"
-                className="h-9"
+                className="h-9 flex-1"
               >
                 <Gear size={16} className="mr-1.5" />
-                Settings
+                Agents
               </Button>
             </div>
             
@@ -541,50 +539,51 @@ function App() {
           </div>
         </aside>
 
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col min-w-0">
           {activeConversation ? (
-            <div className="flex flex-1 overflow-hidden">
-              <div className={`${splitMode && splitConversation ? 'w-1/2 border-r border-border' : 'w-full'} flex flex-col`}>
-                <div className="h-16 border-b border-border px-4 flex items-center justify-between bg-card/80 backdrop-blur-sm flex-shrink-0">
-                  <div className="flex items-center gap-3 flex-1">
+            <div className="flex flex-1 overflow-hidden min-w-0">
+              <div className={`${splitMode && splitConversation ? 'w-1/2 border-r border-border' : 'w-full'} flex flex-col min-w-0`}>
+                <div className="h-14 border-b border-border px-3 flex items-center justify-between bg-card/50 backdrop-blur-sm flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setSidebarOpen((current) => !current)}
-                      className="h-10 w-10 rounded-lg hover:bg-muted transition-colors"
+                      className="h-9 w-9 rounded-xl hover:bg-muted transition-all flex-shrink-0"
+                      title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
                     >
-                      <List size={22} weight="bold" />
+                      <List size={20} weight="bold" />
                     </Button>
                     {!sidebarOpen && (
                       <>
-                        <Separator orientation="vertical" className="h-6" />
-                        <div className="flex items-center gap-2">
+                        <Separator orientation="vertical" className="h-5" />
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() => createNewConversation('account-opening')}
                             disabled={isLoading}
-                            className="h-9 w-9 rounded-lg"
+                            className="h-8 w-8 rounded-lg"
                             title="New conversation"
                           >
-                            <Plus size={18} weight="bold" />
+                            <Plus size={16} weight="bold" />
                           </Button>
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={handleQuickTokenRefresh}
                             disabled={isLoading}
-                            className={`h-9 w-9 rounded-lg ${isTokenValid ? 'border-accent text-accent hover:bg-accent/10' : 'border-destructive text-destructive hover:bg-destructive/10'}`}
+                            className={`h-8 w-8 rounded-lg ${isTokenValid ? 'border-accent/50 text-accent hover:bg-accent/10' : 'border-destructive/50 text-destructive hover:bg-destructive/10'}`}
                             title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
                           >
-                            <Key size={18} weight="bold" />
+                            <Key size={16} weight="bold" />
                           </Button>
                         </div>
                       </>
                     )}
                     {splitMode && (
-                      <div className="ml-2 px-3 py-1 rounded-md bg-primary/10 text-primary text-xs font-semibold">
-                        Pane A
+                      <div className="ml-2 px-2.5 py-1 rounded-lg bg-primary/15 text-primary text-xs font-bold tracking-wide flex-shrink-0">
+                        PANE A
                       </div>
                     )}
                   </div>
@@ -602,11 +601,11 @@ function App() {
               </div>
               
               {splitMode && splitConversation && (
-                <div className="w-1/2 flex flex-col">
-                  <div className="h-16 border-b border-border px-4 flex items-center justify-between bg-card/80 backdrop-blur-sm flex-shrink-0">
-                    <div className="flex items-center gap-3">
-                      <div className="px-3 py-1 rounded-md bg-accent/10 text-accent text-xs font-semibold">
-                        Pane B
+                <div className="w-1/2 flex flex-col min-w-0">
+                  <div className="h-14 border-b border-border px-3 flex items-center justify-between bg-card/50 backdrop-blur-sm flex-shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="px-2.5 py-1 rounded-lg bg-accent/15 text-accent text-xs font-bold tracking-wide flex-shrink-0">
+                        PANE B
                       </div>
                     </div>
                   </div>
@@ -623,15 +622,16 @@ function App() {
               )}
             </div>
           ) : (
-            <div className="flex flex-col h-full">
-              <header className="h-16 border-b border-border px-4 flex items-center bg-card/80 backdrop-blur-sm flex-shrink-0">
+            <div className="flex flex-col h-full min-w-0">
+              <header className="h-14 border-b border-border px-3 flex items-center bg-card/50 backdrop-blur-sm flex-shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setSidebarOpen((current) => !current)}
-                  className="h-10 w-10 rounded-lg hover:bg-muted transition-colors"
+                  className="h-9 w-9 rounded-xl hover:bg-muted transition-all"
+                  title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
                 >
-                  <List size={22} weight="bold" />
+                  <List size={20} weight="bold" />
                 </Button>
               </header>
               <div className="flex-1">
