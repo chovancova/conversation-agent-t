@@ -11,8 +11,8 @@ type ClientSideInfoProps = {
 export function ClientSideInfo({ open, onOpenChange }: ClientSideInfoProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <CloudSlash size={24} weight="duotone" className="text-accent" />
             Client-Side Only Storage
@@ -22,8 +22,8 @@ export function ClientSideInfo({ open, onOpenChange }: ClientSideInfoProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-5 py-4">
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-5 pr-6 py-2">
             <Alert className="border-accent/50 bg-accent/5">
               <CloudSlash size={20} className="text-accent" />
               <AlertTitle className="text-accent font-bold">Zero Server Storage</AlertTitle>
