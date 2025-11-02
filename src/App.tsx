@@ -608,6 +608,39 @@ function App() {
                         PANE B
                       </div>
                     </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const newConversation: Conversation = {
+                            id: Date.now().toString(),
+                            title: 'New Conversation',
+                            agentType: 'account-opening',
+                            messages: [],
+                            createdAt: Date.now(),
+                            updatedAt: Date.now(),
+                          }
+                          setConversations((current = []) => [newConversation, ...current])
+                          setSplitConversationId(newConversation.id)
+                        }}
+                        disabled={isLoading}
+                        className="h-8 w-8 rounded-lg"
+                        title="New conversation in pane B"
+                      >
+                        <Plus size={16} weight="bold" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleQuickTokenRefresh}
+                        disabled={isLoading}
+                        className={`h-8 w-8 rounded-lg ${isTokenValid ? 'border-accent/50 text-accent hover:bg-accent/10' : 'border-destructive/50 text-destructive hover:bg-destructive/10'}`}
+                        title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
+                      >
+                        <Key size={16} weight="bold" />
+                      </Button>
+                    </div>
                   </div>
                   <ConversationPane
                     conversation={splitConversation}
