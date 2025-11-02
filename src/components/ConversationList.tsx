@@ -255,11 +255,11 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                       isInSplit
                         ? 'opacity-100 bg-accent/20 text-accent hover:bg-accent/30'
                         : 'hover:bg-accent/15 text-muted-foreground hover:text-accent'
-                  title="Delete"
+                    }`}
                     title="Open in split view"
-                  <Trash size={14} weight="bold" />
+                  >
                     <Columns size={14} weight="bold" />
-              </div>
+                  </Button>
                 )}
                 <Button
                   variant="ghost"
@@ -267,4 +267,17 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                   onClick={(e) => {
                     e.stopPropagation()
                     onDelete(conversation.id)
-                  }}                  className="h-7 w-7 flex-shrink-0 hover:bg-destructive/15 text-muted-foreground hover:text-destructive"                  title="Delete"                >                  <Trash size={14} weight="bold" />                </Button>              </div>            )}
+                  }}
+                  className="h-7 w-7 flex-shrink-0 hover:bg-destructive/15 text-muted-foreground hover:text-destructive"
+                  title="Delete"
+                >
+                  <Trash size={14} weight="bold" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
