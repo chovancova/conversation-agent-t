@@ -672,7 +672,7 @@ function App() {
 
             {conversationsVisible && (
               <ScrollArea className="flex-1 min-h-0">
-                <div className="p-4 space-y-2">
+                <div className="px-3 py-3">
                   {hasActiveFilters && filteredConversations.length === 0 && (conversations?.length || 0) > 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-center px-4">
                       <p className="text-sm font-medium text-foreground mb-1">No matches found</p>

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getAgentConfig } from '@/lib/agents'
-import { Chat, Robot, Trash, Columns, PencilSimple, Check, X } from '@phosphor-icons/react'
+import { Chat, Robot, Trash, Columns, PencilSimple, Check, X, ChatCircle, Clock } from '@phosphor-icons/react'
 
 type ConversationListProps = {
   conversations: Conversation[]
@@ -56,6 +56,28 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
     }
   }
 
+  const formatDate = (timestamp: number) => {
+    const now = new Date()
+    const date = new Date(timestamp)
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    } else if (diffInHours < 48) {
+      return 'Yesterday'
+    } else if (diffInHours < 168) {
+      return date.toLocaleDateString('en-US', { weekday: 'short' })
+    } else {
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      })
+    }
+  }
+
   if (conversations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-40 text-center px-4 py-8">
@@ -69,199 +91,190 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       {conversations.map((conversation) => {
         const agent = getAgentConfig(conversation.agentType)
         const isActive = activeId === conversation.id
         const isInSplit = splitId === conversation.id
         const isHighlighted = isActive || isInSplit
         const isEditing = editingId === conversation.id
+        const hasMessages = conversation.messages.length > 0
+        
         return (
           <div
             key={conversation.id}
-            className={`relative rounded-lg transition-all duration-150 group overflow-hidden ${
+            className={`relative rounded-xl transition-all duration-200 group ${
               isActive
-                ? 'bg-accent text-accent-foreground shadow-sm'
+                ? 'bg-gradient-to-br from-primary/15 to-accent/10 shadow-sm ring-1 ring-primary/20'
                 : isInSplit
-                ? 'bg-primary/10 border border-primary/30'
-                : 'hover:bg-muted/80'
+                ? 'bg-accent/10 shadow-sm ring-1 ring-accent/30'
+                : 'bg-card hover:bg-muted/50 hover:shadow-sm'
             }`}
           >
             <button
               onClick={() => !isEditing && onSelect(conversation.id)}
-              className="w-full text-left px-3 py-3"
+              className="w-full text-left p-3.5"
               disabled={isEditing}
             >
-              <div className="flex items-start gap-2.5 mb-2">
-                <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 ${
+              <div className="flex items-start gap-3 mb-2.5">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
                   isActive 
-                    ? 'bg-accent-foreground/10' 
+                    ? 'bg-primary/20 ring-1 ring-primary/30' 
                     : isInSplit 
-                    ? 'bg-primary/20'
-                    : 'bg-muted group-hover:bg-muted-foreground/10'
+                    ? 'bg-accent/20 ring-1 ring-accent/30'
+                    : 'bg-muted/50 group-hover:bg-muted'
                 }`}>
-                  <Robot size={14} weight="duotone" className={
+                  <Robot size={18} weight="duotone" className={
                     isActive 
-                      ? 'text-accent-foreground' 
+                      ? 'text-primary' 
                       : isInSplit
-                      ? 'text-primary'
+                      ? 'text-accent'
                       : 'text-muted-foreground'
                   } />
                 </div>
-                <div className={`flex-1 min-w-0 ${splitMode && onSelectForSplit && !isActive ? 'pr-28' : 'pr-20'}`}>
+                <div className="flex-1 min-w-0">
                   {isEditing ? (
-                    <div className="flex items-center gap-1 mb-1" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5 mb-2" onClick={(e) => e.stopPropagation()}>
                       <Input
                         ref={inputRef}
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        className={`h-7 text-sm font-medium px-2 ${
+                        className={`h-8 text-sm font-semibold px-2.5 ${
                           isActive 
-                            ? 'bg-accent-foreground/10 border-accent-foreground/30 text-accent-foreground' 
+                            ? 'bg-primary/10 border-primary/30 text-foreground' 
                             : isInSplit
-                            ? 'bg-primary/10 border-primary/30 text-primary'
+                            ? 'bg-accent/10 border-accent/30 text-foreground'
                             : 'bg-background border-input'
                         }`}
                       />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSaveEdit()
+                        }}
+                        className="h-8 w-8 flex-shrink-0 bg-primary/20 text-primary hover:bg-primary/30"
+                        title="Save"
+                      >
+                        <Check size={16} weight="bold" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCancelEdit()
+                        }}
+                        className="h-8 w-8 flex-shrink-0 hover:bg-muted text-muted-foreground"
+                        title="Cancel"
+                      >
+                        <X size={16} weight="bold" />
+                      </Button>
                     </div>
                   ) : (
-                    <h3 className={`font-medium text-sm truncate mb-1 ${
+                    <h3 className={`font-semibold text-sm leading-snug mb-2 line-clamp-2 ${
                       isActive 
-                        ? 'text-accent-foreground' 
+                        ? 'text-foreground' 
                         : isInSplit
-                        ? 'text-primary'
-                        : 'text-foreground'
+                        ? 'text-foreground'
+                        : 'text-foreground/90'
                     }`}>
                       {conversation.title}
                     </h3>
                   )}
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 mb-1.5">
                     <Badge 
-                      variant={isActive ? "default" : "secondary"} 
-                      className={`text-[10px] px-1.5 py-0 font-medium h-5 flex-shrink-0 ${
+                      variant="secondary" 
+                      className={`text-[10px] px-2 py-0.5 font-medium h-5 flex-shrink-0 ${
                         isActive 
-                          ? 'bg-accent-foreground/15 text-accent-foreground border-0' 
+                          ? 'bg-primary/20 text-primary border-0' 
                           : isInSplit
-                          ? 'bg-primary/20 text-primary border-0'
-                          : 'bg-muted'
+                          ? 'bg-accent/25 text-accent border-0'
+                          : 'bg-muted/80 text-muted-foreground'
                       }`}
                     >
                       {agent?.name || conversation.agentType}
                     </Badge>
-                    {conversation.messages.length > 0 && (
-                      <span className={`text-xs flex-shrink-0 ${
+                    {hasMessages && (
+                      <div className={`flex items-center gap-1 text-[11px] flex-shrink-0 ${
                         isActive 
-                          ? 'text-accent-foreground/60' 
+                          ? 'text-primary/70' 
                           : isInSplit
-                          ? 'text-primary/70'
-                          : 'text-muted-foreground'
+                          ? 'text-accent/70'
+                          : 'text-muted-foreground/80'
                       }`}>
-                        {conversation.messages.length} msgs
-                      </span>
+                        <ChatCircle size={12} weight="fill" />
+                        <span className="font-medium">{conversation.messages.length}</span>
+                      </div>
                     )}
+                  </div>
+                  <div className={`flex items-center gap-1 text-[11px] ${
+                    isActive 
+                      ? 'text-primary/60' 
+                      : isInSplit
+                      ? 'text-accent/60'
+                      : 'text-muted-foreground/70'
+                  }`}>
+                    <Clock size={11} />
+                    <span>{formatDate(conversation.updatedAt)}</span>
                   </div>
                 </div>
               </div>
-              <p className={`text-xs pl-9 truncate ${
-                isActive 
-                  ? 'text-accent-foreground/60' 
-                  : isInSplit
-                  ? 'text-primary/60'
-                  : 'text-muted-foreground/80'
-              }`}>
-                {new Date(conversation.updatedAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
-              </p>
             </button>
-            <div className="absolute top-2 right-2 flex gap-1 items-center">
-              {isEditing ? (
-                <>
+            {!isEditing && (
+              <div className="absolute top-2.5 right-2.5 flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleStartEdit(e, conversation)
+                  }}
+                  className={`h-7 w-7 flex-shrink-0 ${
+                    isHighlighted 
+                      ? isActive
+                        ? 'hover:bg-primary/15 text-primary'
+                        : 'hover:bg-accent/15 text-accent'
+                      : 'hover:bg-muted text-muted-foreground'
+                  }`}
+                  title="Rename"
+                >
+                  <PencilSimple size={14} weight="bold" />
+                </Button>
+                {splitMode && onSelectForSplit && !isActive && (
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleSaveEdit()
+                      onSelectForSplit(conversation.id)
                     }}
-                    className="h-7 w-7 flex-shrink-0 bg-accent/80 text-accent-foreground hover:bg-accent"
-                    title="Save"
-                  >
-                    <Check size={14} weight="bold" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleCancelEdit()
-                    }}
-                    className="h-7 w-7 flex-shrink-0 hover:bg-muted text-muted-foreground"
-                    title="Cancel"
-                  >
-                    <X size={14} weight="bold" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => handleStartEdit(e, conversation)}
-                    className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ${
-                      isHighlighted 
-                        ? isActive
-                          ? 'hover:bg-accent-foreground/10 text-accent-foreground'
-                          : 'hover:bg-primary/10 text-primary'
-                        : 'hover:bg-muted text-muted-foreground'
+                    className={`h-7 w-7 flex-shrink-0 ${
+                      isInSplit
+                        ? 'opacity-100 bg-accent/20 text-accent hover:bg-accent/30'
+                        : 'hover:bg-accent/15 text-muted-foreground hover:text-accent'
                     }`}
-                    title="Rename"
+                    title="Open in split view"
                   >
-                    <PencilSimple size={14} weight="bold" />
+                    <Columns size={14} weight="bold" />
                   </Button>
-                  {splitMode && onSelectForSplit && !isActive && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onSelectForSplit(conversation.id)
-                      }}
-                      className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ${
-                        isInSplit
-                          ? 'opacity-100 bg-primary/10 text-primary hover:bg-primary/20'
-                          : 'hover:bg-primary/10 text-muted-foreground hover:text-primary'
-                      }`}
-                      title="Open in split view"
-                    >
-                      <Columns size={14} weight="bold" />
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDelete(conversation.id)
-                    }}
-                    className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ${
-                      isHighlighted 
-                        ? isActive
-                          ? 'hover:bg-accent-foreground/10 text-accent-foreground'
-                          : 'hover:bg-primary/10 text-primary'
-                        : 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive'
-                    }`}
-                    title="Delete"
-                  >
-                    <Trash size={14} weight="bold" />
-                  </Button>
-                </>
-              )}
-            </div>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete(conversation.id)
+                  }}
+                  className="h-7 w-7 flex-shrink-0 hover:bg-destructive/15 text-muted-foreground hover:text-destructive"
+                  title="Delete"
+                >
+                  <Trash size={14} weight="bold" />
+                </Button>
+              </div>
+            )}
           </div>
         )
       })}
