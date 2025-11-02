@@ -351,15 +351,6 @@ function App() {
     updateConversation(conversationId, { agentType })
   }
 
-  const handleTokenConfigChange = (conversationId: string, tokenConfigId: string | undefined) => {
-    updateConversation(conversationId, { tokenConfigId })
-    if (tokenConfigId) {
-      toast.success('Token configuration updated for this conversation')
-    } else {
-      toast.success('Using default token configuration')
-    }
-  }
-
   const handleOpenSplit = () => {
     if (!activeConversation) return
     
@@ -763,15 +754,9 @@ function App() {
                             <Plus size={16} weight="bold" />
                           </Button>
                           <TokenStatusIcon
-                            onClick={handleQuickTokenRefresh}
-                            disabled={isLoading}
                           />
                         </div>
-                      </>
-                    )}
-                    {splitMode && (
-                      <div className="ml-2 px-2.5 py-1 rounded-lg bg-primary/15 text-primary text-xs font-bold tracking-wide flex-shrink-0">
-                        PANE A
+                          />
                       </div>
                     )}
                   </div>
@@ -781,7 +766,6 @@ function App() {
                   isLoading={isLoading && loadingConversationId === activeConversation.id}
                   onSendMessage={sendMessageToConversation}
                   onAgentChange={handleAgentChange}
-                  onTokenConfigChange={handleTokenConfigChange}
                   agentNames={agentNames || {}}
                   showSplitButton={!splitMode}
                   onOpenSplit={handleOpenSplit}
@@ -817,17 +801,10 @@ function App() {
                       />
                     </div>
                   </div>
-                  <ConversationPane
-                    conversation={splitConversation}
-                    isLoading={isLoading && loadingConversationId === splitConversation.id}
+                      <TokenStatusIcon
                     onSendMessage={sendMessageToConversation}
                     onAgentChange={handleAgentChange}
-                    onTokenConfigChange={handleTokenConfigChange}
-                    onCloseSplit={handleCloseSplit}
-                    agentNames={agentNames || {}}
-                    isPaneA={false}
-                  />
-                </div>
+                      />
               )}
             </div>
           ) : (
