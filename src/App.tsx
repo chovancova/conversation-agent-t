@@ -110,6 +110,11 @@ function App() {
     )
   }
 
+  const handleRenameConversation = (id: string, newTitle: string) => {
+    updateConversation(id, { title: newTitle })
+    toast.success('Conversation renamed')
+  }
+
   const sendMessageToConversation = async (conversationId: string, messageContent: string) => {
     const conversation = conversations?.find(c => c.id === conversationId)
     if (!conversation) return
@@ -520,6 +525,7 @@ function App() {
                       splitId={splitConversationId || null}
                       onSelect={setActiveConversationId}
                       onDelete={handleDeleteRequest}
+                      onRename={handleRenameConversation}
                       onSelectForSplit={setSplitConversationId}
                       splitMode={splitMode || false}
                     />
