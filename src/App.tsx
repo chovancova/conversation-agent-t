@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,7 @@ import { TokenStatus } from '@/components/TokenStatus'
 import { AgentSettings } from '@/components/AgentSettings'
 import { SecurityInfo } from '@/components/SecurityInfo'
 import { ThemeSettings } from '@/components/ThemeSettings'
+import { SoundSettings } from '@/components/SoundSettings'
 import { ConversationPane } from '@/components/ConversationPane'
 import { ClientSideInfo } from '@/components/ClientSideInfo'
 import { ConversationSelector } from '@/components/ConversationSelector'
@@ -50,6 +51,7 @@ function App() {
   const [securityInfoOpen, setSecurityInfoOpen] = useState(false)
   const [clientSideInfoOpen, setClientSideInfoOpen] = useState(false)
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false)
+  const [soundSettingsOpen, setSoundSettingsOpen] = useState(false)
   const [tokenStatusExpanded, setTokenStatusExpanded] = useState(true)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null)
@@ -503,6 +505,7 @@ function App() {
       <SecurityInfo open={securityInfoOpen} onOpenChange={setSecurityInfoOpen} />
       <ClientSideInfo open={clientSideInfoOpen} onOpenChange={setClientSideInfoOpen} />
       <ThemeSettings open={themeSettingsOpen} onOpenChange={setThemeSettingsOpen} />
+      <SoundSettings open={soundSettingsOpen} onOpenChange={setSoundSettingsOpen} />
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -584,15 +587,26 @@ function App() {
               </Button>
             </div>
             
-            <Button 
-              onClick={() => setThemeSettingsOpen(true)} 
-              variant="outline" 
-              size="sm"
-              className="w-full h-9"
-            >
-              <Palette size={16} className="mr-1.5" />
-              Theme
-            </Button>
+            <div className="flex gap-2 mb-3">
+              <Button 
+                onClick={() => setThemeSettingsOpen(true)} 
+                variant="outline" 
+                size="sm"
+                className="h-9 flex-1"
+              >
+                <Palette size={16} className="mr-1.5" />
+                Theme
+              </Button>
+              <Button 
+                onClick={() => setSoundSettingsOpen(true)} 
+                variant="outline" 
+                size="sm"
+                className="h-9 flex-1"
+              >
+                <SpeakerHigh size={16} className="mr-1.5" />
+                Sounds
+              </Button>
+            </div>
           </div>
 
           <div className="px-4 py-3 border-b border-border bg-muted/30 flex-shrink-0">

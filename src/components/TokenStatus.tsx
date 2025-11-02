@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { EncryptionPasswordDialog } from '@/components/EncryptionPasswordDialog'
 import { decryptData } from '@/lib/encryption'
+import { SoundPreferences, DEFAULT_SOUND_PREFERENCES, playNotificationSound } from '@/lib/sound'
 
 type TokenStatusProps = {
   onOpenTokenManager: () => void
@@ -36,11 +37,23 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
     currentRefreshes: 0,
     startTime: null
   })
+  const [soundPreferences] = useKV<SoundPreferences>('sound-preferences', DEFAULT_SOUND_PREFERENCES)
   const [decryptedCredentials, setDecryptedCredentials] = useKV<DecryptedCredentials | null>('decrypted-credentials-cache', null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [showDecryptDialog, setShowDecryptDialog] = useState(false)
   const [pendingAction, setPendingAction] = useState<'generate' | 'auto-refresh-enable' | null>(null)
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const soundPlayedRef = useRef<{
+    fiveMinutes: boolean
+    twoMinutes: boolean
+    oneMinute: boolean
+    thirtySeconds: boolean
+  }>({
+    fiveMinutes: false,
+    twoMinutes: false,
+    oneMinute: false,
+    thirtySeconds: false
+  })
 
   const isTokenValid = accessToken && accessToken.expiresAt > Date.now()
   const { minutes, seconds } = useCountdown(accessToken?.expiresAt || null)
@@ -221,6 +234,55 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
       setDecryptedCredentials(null)
     }
   }, [selectedTokenId])
+
+  useEffect(() => {
+    if (!accessToken || !accessToken.expiresAt || !isTokenValid) {
+      soundPlayedRef.current = {
+        fiveMinutes: false,
+        twoMinutes: false,
+        oneMinute: false,
+        thirtySeconds: false
+      }
+      return
+    }
+
+    const prefs = soundPreferences || DEFAULT_SOUND_PREFERENCES
+    if (!prefs.enabled || prefs.sound === 'none') return
+
+    const checkInterval = setInterval(() => {
+      const timeRemaining = accessToken.expiresAt - Date.now()
+      
+      if (timeRemaining <= 300000 && timeRemaining > 299000 && 
+          prefs.warningIntervals.fiveMinutes && !soundPlayedRef.current.fiveMinutes) {
+        playNotificationSound(prefs.sound, prefs.volume)
+        soundPlayedRef.current.fiveMinutes = true
+        toast.warning('Token expires in 5 minutes', { duration: 3000 })
+      }
+      
+      if (timeRemaining <= 120000 && timeRemaining > 119000 && 
+          prefs.warningIntervals.twoMinutes && !soundPlayedRef.current.twoMinutes) {
+        playNotificationSound(prefs.sound, prefs.volume)
+        soundPlayedRef.current.twoMinutes = true
+        toast.warning('Token expires in 2 minutes', { duration: 3000 })
+      }
+      
+      if (timeRemaining <= 60000 && timeRemaining > 59000 && 
+          prefs.warningIntervals.oneMinute && !soundPlayedRef.current.oneMinute) {
+        playNotificationSound(prefs.sound, prefs.volume)
+        soundPlayedRef.current.oneMinute = true
+        toast.warning('Token expires in 1 minute!', { duration: 4000 })
+      }
+      
+      if (timeRemaining <= 30000 && timeRemaining > 29000 && 
+          prefs.warningIntervals.thirtySeconds && !soundPlayedRef.current.thirtySeconds) {
+        playNotificationSound(prefs.sound, prefs.volume)
+        soundPlayedRef.current.thirtySeconds = true
+        toast.error('Token expires in 30 seconds!', { duration: 5000 })
+      }
+    }, 1000)
+
+    return () => clearInterval(checkInterval)
+  }, [accessToken, soundPreferences, isTokenValid])
 
   useEffect(() => {
     if (refreshIntervalRef.current) {
