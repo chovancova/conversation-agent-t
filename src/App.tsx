@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -392,12 +392,16 @@ function App() {
           <div className="p-6 border-b border-border flex-shrink-0">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
-                  <Robot size={20} weight="bold" className="text-primary-foreground" />
+                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 blur-sm"></div>
+                  <ChatsCircle size={22} weight="fill" className="text-primary-foreground relative z-10" />
                 </div>
-                <h1 className="text-lg font-semibold tracking-tight text-foreground">
-                  Agent Tester
-                </h1>
+                <div className="flex flex-col">
+                  <h1 className="text-lg font-bold tracking-tight text-foreground leading-tight">
+                    Agent Tester
+                  </h1>
+                  <p className="text-xs text-muted-foreground font-medium">Multi-Agent Platform</p>
+                </div>
               </div>
             </div>
 
@@ -541,39 +545,47 @@ function App() {
           {activeConversation ? (
             <div className="flex flex-1 overflow-hidden">
               <div className={`${splitMode && splitConversation ? 'w-1/2 border-r border-border' : 'w-full'} flex flex-col`}>
-                <div className="h-16 border-b border-border px-6 flex items-center justify-between bg-card/80 backdrop-blur-sm flex-shrink-0">
-                  <div className="flex items-center gap-2">
+                <div className="h-16 border-b border-border px-4 flex items-center justify-between bg-card/80 backdrop-blur-sm flex-shrink-0">
+                  <div className="flex items-center gap-3 flex-1">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setSidebarOpen((current) => !current)}
-                      className="h-9 w-9"
+                      className="h-10 w-10 rounded-lg hover:bg-muted transition-colors"
                     >
-                      <List size={20} weight="bold" />
+                      <List size={22} weight="bold" />
                     </Button>
                     {!sidebarOpen && (
                       <>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => createNewConversation('account-opening')}
-                          disabled={isLoading}
-                          className="h-9 w-9"
-                          title="New conversation"
-                        >
-                          <Plus size={16} weight="bold" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={handleQuickTokenRefresh}
-                          disabled={isLoading}
-                          className={`h-9 w-9 ${isTokenValid ? 'border-accent text-accent hover:bg-accent/10' : 'border-destructive text-destructive hover:bg-destructive/10'}`}
-                          title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
-                        >
-                          <Key size={16} weight="bold" />
-                        </Button>
+                        <Separator orientation="vertical" className="h-6" />
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => createNewConversation('account-opening')}
+                            disabled={isLoading}
+                            className="h-9 w-9 rounded-lg"
+                            title="New conversation"
+                          >
+                            <Plus size={18} weight="bold" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={handleQuickTokenRefresh}
+                            disabled={isLoading}
+                            className={`h-9 w-9 rounded-lg ${isTokenValid ? 'border-accent text-accent hover:bg-accent/10' : 'border-destructive text-destructive hover:bg-destructive/10'}`}
+                            title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
+                          >
+                            <Key size={18} weight="bold" />
+                          </Button>
+                        </div>
                       </>
+                    )}
+                    {splitMode && (
+                      <div className="ml-2 px-3 py-1 rounded-md bg-primary/10 text-primary text-xs font-semibold">
+                        Pane A
+                      </div>
                     )}
                   </div>
                 </div>
@@ -591,6 +603,13 @@ function App() {
               
               {splitMode && splitConversation && (
                 <div className="w-1/2 flex flex-col">
+                  <div className="h-16 border-b border-border px-4 flex items-center justify-between bg-card/80 backdrop-blur-sm flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="px-3 py-1 rounded-md bg-accent/10 text-accent text-xs font-semibold">
+                        Pane B
+                      </div>
+                    </div>
+                  </div>
                   <ConversationPane
                     conversation={splitConversation}
                     isLoading={isLoading && loadingConversationId === splitConversation.id}
@@ -605,14 +624,14 @@ function App() {
             </div>
           ) : (
             <div className="flex flex-col h-full">
-              <header className="h-16 border-b border-border px-6 flex items-center bg-card/80 backdrop-blur-sm flex-shrink-0">
+              <header className="h-16 border-b border-border px-4 flex items-center bg-card/80 backdrop-blur-sm flex-shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setSidebarOpen((current) => !current)}
-                  className="h-9 w-9"
+                  className="h-10 w-10 rounded-lg hover:bg-muted transition-colors"
                 >
-                  <List size={20} weight="bold" />
+                  <List size={22} weight="bold" />
                 </Button>
               </header>
               <div className="flex-1">
