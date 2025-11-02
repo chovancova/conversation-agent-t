@@ -27,11 +27,24 @@ A professional testing environment for multiple conversation agents that enables
 - **Success criteria**: Token generates successfully, expiration clearly shown, expired tokens prevent message sending with helpful prompt, users see encryption status and security warnings
 
 ### Agent Configuration
-- **Functionality**: Configure HTTP POST endpoints for each specialized agent type (Account Opening, Payment, Moderator, Card, RAG)
-- **Purpose**: Enable testing against different agent services and environments without code changes
+- **Functionality**: Configure HTTP POST endpoints for each specialized agent type (Account Opening, Payment, Moderator, Card, RAG) with protocol-specific validation for Custom HTTP, A2A (Agent-to-Agent), and MCP (Model Context Protocol) configurations. Advanced settings include custom headers, request body templates, and response field mappings with real-time validation.
+- **Purpose**: Enable testing against different agent services and environments without code changes, with comprehensive protocol support and validation to ensure correct API integration
 - **Trigger**: User clicks Agents button in sidebar or when endpoint not configured
-- **Progression**: Click agents button → Dialog opens with tabs → Select agent → Enter endpoint URL → Save → Endpoint used for subsequent requests
-- **Success criteria**: Endpoints save per agent, clear visual indication of configuration status, helpful prompts when missing
+- **Progression**: Click agents button → Dialog opens with tabs → Select agent → Enter endpoint URL and optional custom name → Expand Advanced Configuration → Select protocol type (Custom/A2A/MCP) → Configure protocol-specific headers and body templates → Set response field mappings → Click Validate to check configuration → Save → Configuration validated and used for requests
+- **Success criteria**: Endpoints save per agent with protocol settings, validation displays errors/warnings for protocol-specific requirements, helpful prompts when missing or misconfigured, protocol templates auto-populate when switching types, validation passes before saving
+
+### Protocol Validation
+- **Functionality**: Real-time validation of agent configurations based on selected protocol (Custom HTTP, A2A, MCP) with specific requirements, error messages, and protocol-specific guidance
+- **Purpose**: Ensure agent configurations meet protocol specifications before testing, preventing runtime errors and providing clear guidance on proper formatting
+- **Trigger**: User clicks Validate button in agent settings or attempts to save configuration
+- **Progression**: User configures agent → Clicks Validate → System checks protocol requirements → Displays validation results (errors/warnings/success) → User fixes issues if needed → Save when valid
+- **Success criteria**: 
+  - Custom HTTP validates: JSON body template, required fields, content-type header presence
+  - A2A validates: Required headers (A2A-Version, A2A-Client-ID), intent field, context structure, version format
+  - MCP validates: JSON-RPC 2.0 format, Content-Type: application/json-rpc, required fields (jsonrpc, method, params, id)
+  - Clear error messages with specific field references
+  - Warning messages for recommended but optional configurations
+  - Protocol-specific help documentation displayed inline
 
 ### Agent Selection & Switching
 - **Functionality**: Create new conversations with specific agent types or switch agent mid-conversation
@@ -75,6 +88,16 @@ A professional testing environment for multiple conversation agents that enables
 - **Network Errors**: Display error messages inline in chat with detailed HTTP status codes, allow retry
 - **Empty Messages**: Disable send button when input is empty to prevent blank submissions
 - **Long Messages**: Support multi-line input with proper text wrapping and scrollable message bubbles
+- **Protocol Validation Errors**: Display inline validation errors in agent settings with specific field references and required fixes
+- **Invalid JSON Templates**: Catch JSON parsing errors in body templates and show syntax error details
+- **Missing Protocol Headers**: Highlight missing required headers for A2A (A2A-Version, A2A-Client-ID) and MCP (Content-Type: application/json-rpc)
+- **Invalid A2A Version Format**: Validate A2A-Version header matches X.Y format (e.g., "1.0"), show error if invalid
+- **Missing MCP Fields**: Validate JSON-RPC 2.0 required fields (jsonrpc: "2.0", method, params, id), show specific missing field
+- **Protocol Mismatch**: Warn when endpoint URL pattern doesn't match selected protocol (e.g., A2A without /a2a suffix)
+- **Empty Header Values**: Warn about headers with empty keys or values that will be ignored in requests
+- **Response Field Mapping**: Validate response field paths are properly formatted (e.g., "data.message" vs "data message")
+- **Protocol Template Auto-Fill**: When switching protocols, offer to replace configuration with protocol defaults or keep current
+- **Save with Validation Errors**: Prevent saving agent configuration when validation errors exist, allow warnings
 - **API Errors**: Display error messages with distinct visual styling (red border/icon) in chat flow
 - **Slow Responses**: Show typing indicator during agent processing to maintain user awareness
 - **No Conversations**: Display helpful empty state encouraging user to start first conversation

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Gear, Robot, Palette, Check, Plus, X, CodeBlock, Info, Flask } from '@phosphor-icons/react'
+import { Gear, Robot, Palette, Check, Plus, X, CodeBlock, Info, Flask, Warning, CheckCircle, Sparkle } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,9 +12,12 @@ import { Card } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AgentConfig, AgentAdvancedConfig, CustomHeader, AgentProtocol } from '@/lib/types'
 import { AGENTS } from '@/lib/agents'
 import { themes, ThemeOption, applyTheme } from '@/lib/themes'
+import { validateProtocolConfig, getProtocolDefaults, ValidationResult } from '@/lib/protocolValidation'
+import { ProtocolGuide } from '@/components/ProtocolGuide'
 
 type AgentSettingsProps = {
   open: boolean
@@ -29,6 +32,7 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
   const [endpoints, setEndpoints] = useState<Record<string, string>>({})
   const [names, setNames] = useState<Record<string, string>>({})
   const [advancedConfigs, setAdvancedConfigs] = useState<Record<string, AgentAdvancedConfig>>({})
+  const [validationResults, setValidationResults] = useState<Record<string, ValidationResult>>({})
 
   const getDefaultConfig = (): AgentAdvancedConfig => ({
     protocol: 'custom',
@@ -78,13 +82,21 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
   }
 
   const handleProtocolChange = (agentType: string, protocol: AgentProtocol) => {
+    const currentConfig = advancedConfigs[agentType] || getDefaultConfig()
+    const protocolDefaults = getProtocolDefaults(protocol)
+    
     setAdvancedConfigs(prev => ({
       ...prev,
       [agentType]: {
-        ...(prev[agentType] || getDefaultConfig()),
+        ...currentConfig,
+        ...protocolDefaults,
         protocol
       }
     }))
+    
+    toast.success(`Protocol changed to ${protocol.toUpperCase()}`, {
+      description: 'Configuration has been updated with protocol-specific defaults'
+    })
   }
 
   const handleHeaderAdd = (agentType: string) => {
@@ -166,11 +178,59 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
   }
 
   const handleSave = () => {
+    const allValidationResults: Record<string, ValidationResult> = {}
+    let hasErrors = false
+    
+    AGENTS.forEach(agent => {
+      const config = advancedConfigs[agent.type] || getDefaultConfig()
+      const endpoint = endpoints[agent.type] || ''
+      const result = validateProtocolConfig(config, endpoint)
+      
+      allValidationResults[agent.type] = result
+      if (!result.valid && endpoint) {
+        hasErrors = true
+      }
+    })
+    
+    setValidationResults(allValidationResults)
+    
+    if (hasErrors) {
+      toast.error('Configuration has validation errors', {
+        description: 'Please fix the errors before saving'
+      })
+      return
+    }
+    
     setAgentEndpoints(endpoints)
     setAgentNames(names)
     setAgentAdvancedConfigs(advancedConfigs)
-    toast.success('Settings saved')
+    toast.success('Settings saved successfully', {
+      description: 'All agent configurations have been updated'
+    })
     onOpenChange(false)
+  }
+  
+  const validateAgent = (agentType: string) => {
+    const config = advancedConfigs[agentType] || getDefaultConfig()
+    const endpoint = endpoints[agentType] || ''
+    const result = validateProtocolConfig(config, endpoint)
+    
+    setValidationResults(prev => ({
+      ...prev,
+      [agentType]: result
+    }))
+    
+    if (result.valid) {
+      toast.success('Configuration is valid', {
+        description: result.warnings.length > 0 
+          ? `${result.warnings.length} warning(s) found` 
+          : 'No issues detected'
+      })
+    } else {
+      toast.error('Configuration has errors', {
+        description: `${result.errors.length} error(s) found`
+      })
+    }
   }
 
   const getConfig = (agentType: string) => advancedConfigs[agentType] || getDefaultConfig()
@@ -290,12 +350,55 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
 
               {AGENTS.map(agent => {
                 const config = getConfig(agent.type)
+                const validation = validationResults[agent.type]
+                
                 return (
                   <TabsContent key={agent.type} value={agent.type} className="space-y-4 pt-4">
                     <div>
                       <h3 className="font-semibold text-lg mb-1">{names[agent.type] || agent.name}</h3>
                       <p className="text-sm text-muted-foreground mb-4">{agent.description}</p>
                     </div>
+
+                    {validation && (
+                      <>
+                        {validation.errors.length > 0 && (
+                          <Alert className="border-destructive/50 bg-destructive/5">
+                            <Warning size={18} weight="fill" className="text-destructive" />
+                            <AlertDescription className="ml-2">
+                              <p className="font-semibold text-sm mb-1">Configuration Errors:</p>
+                              <ul className="text-xs space-y-0.5 list-disc list-inside">
+                                {validation.errors.map((error, i) => (
+                                  <li key={i}>{error}</li>
+                                ))}
+                              </ul>
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        
+                        {validation.warnings.length > 0 && validation.errors.length === 0 && (
+                          <Alert className="border-amber-500/50 bg-amber-500/5">
+                            <Info size={18} weight="fill" className="text-amber-600" />
+                            <AlertDescription className="ml-2">
+                              <p className="font-semibold text-sm mb-1">Warnings:</p>
+                              <ul className="text-xs space-y-0.5 list-disc list-inside">
+                                {validation.warnings.map((warning, i) => (
+                                  <li key={i}>{warning}</li>
+                                ))}
+                              </ul>
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        
+                        {validation.valid && validation.warnings.length === 0 && (
+                          <Alert className="border-green-500/50 bg-green-500/5">
+                            <CheckCircle size={18} weight="fill" className="text-green-600" />
+                            <AlertDescription className="ml-2 text-sm">
+                              Configuration is valid and ready to use
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </>
+                    )}
 
                     <div className="space-y-2">
                       <Label htmlFor={`name-${agent.type}`}>Custom Agent Name</Label>
@@ -335,9 +438,20 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4 space-y-6">
                           <div className="space-y-3">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Flask size={18} weight="duotone" className="text-primary" />
-                              <Label className="text-sm font-semibold">Protocol Type</Label>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Flask size={18} weight="duotone" className="text-primary" />
+                                <Label className="text-sm font-semibold">Protocol Type</Label>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => validateAgent(agent.type)}
+                                className="h-7 text-xs"
+                              >
+                                <CheckCircle size={14} className="mr-1" />
+                                Validate
+                              </Button>
                             </div>
                             <Select 
                               value={config.protocol} 
@@ -347,22 +461,52 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="custom">Custom HTTP API</SelectItem>
-                                <SelectItem value="a2a">A2A Protocol (Future)</SelectItem>
-                                <SelectItem value="mcp">MCP Protocol (Future)</SelectItem>
+                                <SelectItem value="custom">
+                                  <div className="flex items-center gap-2">
+                                    <span>Custom HTTP API</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="a2a">
+                                  <div className="flex items-center gap-2">
+                                    <span>A2A Protocol</span>
+                                    <span className="text-xs text-muted-foreground">(Agent-to-Agent)</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="mcp">
+                                  <div className="flex items-center gap-2">
+                                    <span>MCP Protocol</span>
+                                    <span className="text-xs text-muted-foreground">(Model Context)</span>
+                                  </div>
+                                </SelectItem>
                               </SelectContent>
                             </Select>
-                            {config.protocol !== 'custom' && (
+                            {config.protocol === 'a2a' && (
+                              <div className="flex items-start gap-2 p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                                <Sparkle size={16} weight="fill" className="text-primary mt-0.5 flex-shrink-0" />
+                                <div className="text-xs space-y-1">
+                                  <p className="font-semibold text-foreground">A2A Protocol (Agent-to-Agent)</p>
+                                  <p className="text-muted-foreground">
+                                    Standardized protocol for agent communication. Requires specific headers and request format.
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            {config.protocol === 'mcp' && (
                               <div className="flex items-start gap-2 p-3 bg-accent/10 border border-accent/30 rounded-lg">
-                                <Info size={16} weight="fill" className="text-accent mt-0.5 flex-shrink-0" />
-                                <p className="text-xs text-accent-foreground">
-                                  {config.protocol === 'a2a' 
-                                    ? 'A2A (Agent-to-Agent) protocol support is planned for future releases.'
-                                    : 'MCP (Model Context Protocol) support is planned for future releases.'}
-                                </p>
+                                <Sparkle size={16} weight="fill" className="text-accent mt-0.5 flex-shrink-0" />
+                                <div className="text-xs space-y-1">
+                                  <p className="font-semibold text-foreground">MCP Protocol (Model Context Protocol)</p>
+                                  <p className="text-muted-foreground">
+                                    JSON-RPC 2.0 based protocol for model interactions. Validates against spec requirements.
+                                  </p>
+                                </div>
                               </div>
                             )}
                           </div>
+
+                          {config.protocol !== 'custom' && (
+                            <ProtocolGuide protocol={config.protocol} />
+                          )}
 
                           <div className="space-y-3">
                             <Label className="text-sm font-semibold">Custom Headers</Label>
