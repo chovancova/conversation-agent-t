@@ -117,15 +117,15 @@ function App() {
 
   const generateConversationTitle = async (firstMessage: string): Promise<string> => {
     try {
-      const truncatedMessage = firstMessage.slice(0, 200)
-      const prompt = `Generate a brief, concise title (3-6 words) for a conversation that starts with this message: ${truncatedMessage}. Return only the title without quotes or extra punctuation.`
-      const title = await window.spark.llm(prompt, 'gpt-4o-mini')
+      const prompt = spark.llmPrompt`Generate a brief, concise title (3-6 words) for a conversation that starts with this message: "${firstMessage}". Return only the title without quotes or extra punctuation.`
+      const title = await spark.llm(prompt, 'gpt-4o-mini')
       return title.trim().replace(/^["']|["']$/g, '')
     } catch (error) {
       console.error('Failed to generate title:', error)
       return firstMessage.slice(0, 50) + (firstMessage.length > 50 ? '...' : '')
     }
   }
+
 
   const sendMessageToConversation = async (conversationId: string, messageContent: string) => {
     const conversation = conversations?.find(c => c.id === conversationId)
@@ -151,21 +151,21 @@ function App() {
       timestamp: Date.now(),
     }
 
-    const updatedMessages = [...conversation.messages, userMessage]
+    const isFirstMessage = conversation.messages.length === 0
     const isFirstMessage = conversation.messages.length === 0
     
     updateConversation(conversation.id, {
-      messages: updatedMessages,
+      title: isFirstMessage 
       title: isFirstMessage 
         ? messageContent.slice(0, 50) + (messageContent.length > 50 ? '...' : '')
         : conversation.title,
     })
-
     if (isFirstMessage) {
       generateConversationTitle(messageContent).then(generatedTitle => {
         updateConversation(conversation.id, { title: generatedTitle })
       })
     }
+
 
     setLoadingConversationId(conversationId)
     setIsLoading(true)
@@ -543,7 +543,7 @@ function App() {
                       activeId={activeConversationId || null}
                       splitId={splitConversationId || null}
                       onSelect={setActiveConversationId}
-                      onDelete={handleDeleteRequest}
+                      onRename={handleRenameConversation}
                       onRename={handleRenameConversation}
                       onSelectForSplit={setSplitConversationId}
                       splitMode={splitMode || false}
