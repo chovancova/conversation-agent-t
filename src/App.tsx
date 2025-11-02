@@ -368,9 +368,10 @@ function App() {
   }
 
   const handleQuickTokenRefresh = async () => {
-    const [savedTokens, selectedTokenId] = await Promise.all([
+    const [savedTokens, selectedTokenId, decryptedCredentials] = await Promise.all([
       window.spark.kv.get<TokenConfig[]>('saved-tokens'),
-      window.spark.kv.get<string | null>('selected-token-id')
+      window.spark.kv.get<string | null>('selected-token-id'),
+      window.spark.kv.get<any>('decrypted-credentials-cache')
     ])
 
     const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
@@ -381,8 +382,8 @@ function App() {
       return
     }
 
-    if (selectedToken.isEncrypted) {
-      toast.error('Selected token is encrypted. Please use Token Manager to generate token.')
+    if (selectedToken.isEncrypted && !decryptedCredentials) {
+      toast.error('Selected token is encrypted. Please use Token Status to decrypt and cache credentials.')
       setTokenManagerOpen(true)
       return
     }
@@ -391,16 +392,25 @@ function App() {
     toast.info('Generating new token...')
 
     try {
+      const credentials = selectedToken.isEncrypted 
+        ? decryptedCredentials 
+        : {
+            clientId: selectedToken.clientId,
+            clientSecret: selectedToken.clientSecret,
+            username: selectedToken.username,
+            password: selectedToken.password
+          }
+
       const response = await fetch(selectedToken.endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          client_id: selectedToken.clientId,
-          client_secret: selectedToken.clientSecret,
-          username: selectedToken.username,
-          password: selectedToken.password
+          client_id: credentials.clientId,
+          client_secret: credentials.clientSecret,
+          username: credentials.username,
+          password: credentials.password
         })
       })
 
