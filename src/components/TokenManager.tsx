@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple } from '@phosphor-icons/react'
+import { Key, X, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,8 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Switch } from '@/components/ui/switch'
 import { TokenConfig, AccessToken } from '@/lib/types'
 import { useCountdown } from '@/hooks/use-countdown'
+import { EncryptionPasswordDialog } from '@/components/EncryptionPasswordDialog'
+import { encryptData, decryptData } from '@/lib/encryption'
 
 type TokenManagerProps = {
   open: boolean
@@ -30,6 +33,12 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [password, setPassword] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [encryptOnSave, setEncryptOnSave] = useState(true)
+  const [encryptOnExport, setEncryptOnExport] = useState(true)
+  const [showEncryptDialog, setShowEncryptDialog] = useState(false)
+  const [showDecryptDialog, setShowDecryptDialog] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'save' | 'export' | 'load' | null>(null)
+  const [tokenToDecrypt, setTokenToDecrypt] = useState<TokenConfig | null>(null)
 
   const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
 
@@ -37,15 +46,169 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     if (selectedToken) {
       setName(selectedToken.name)
       setEndpoint(selectedToken.endpoint)
-      setClientId(selectedToken.clientId)
-      setClientSecret(selectedToken.clientSecret)
-      setUsername(selectedToken.username)
-      setPassword(selectedToken.password)
+      if (selectedToken.isEncrypted) {
+        setClientId('••••••••')
+        setClientSecret('••••••••')
+        setUsername('••••••••')
+        setPassword('••••••••')
+      } else {
+        setClientId(selectedToken.clientId)
+        setClientSecret(selectedToken.clientSecret)
+        setUsername(selectedToken.username)
+        setPassword(selectedToken.password)
+      }
     }
   }, [selectedToken])
 
   const isTokenValid = accessToken && accessToken.expiresAt > Date.now()
   const { minutes: minutesRemaining, seconds: secondsRemaining } = useCountdown(accessToken?.expiresAt || null)
+
+  const handleEncryptionPassword = async (encryptionPassword: string) => {
+    if (pendingAction === 'save') {
+      await handleSaveTokenWithEncryption(encryptionPassword)
+    } else if (pendingAction === 'export') {
+      await handleExportWithEncryption(encryptionPassword)
+    } else if (pendingAction === 'load' && tokenToDecrypt) {
+      await handleDecryptToken(tokenToDecrypt, encryptionPassword)
+    }
+    setPendingAction(null)
+    setTokenToDecrypt(null)
+    setShowEncryptDialog(false)
+    setShowDecryptDialog(false)
+  }
+
+  const handleSaveTokenWithEncryption = async (encryptionPassword: string) => {
+    if (!name || !endpoint || !clientId || !clientSecret || !username || !password) {
+      toast.error('All fields are required to save')
+      return
+    }
+
+    const tokenId = selectedTokenId || Date.now().toString()
+
+    try {
+      const credentialsData = JSON.stringify({
+        clientId,
+        clientSecret,
+        username,
+        password
+      })
+
+      const encrypted = await encryptData(credentialsData, encryptionPassword)
+
+      const newToken: TokenConfig = {
+        id: tokenId,
+        name,
+        endpoint,
+        clientId: encrypted.encrypted,
+        clientSecret: encrypted.iv,
+        username: encrypted.salt,
+        password: '',
+        isEncrypted: true
+      }
+
+      setSavedTokens((current = []) => {
+        const existing = current.find(t => t.id === tokenId)
+        if (existing) {
+          return current.map(t => t.id === tokenId ? newToken : t)
+        }
+        return [...current, newToken]
+      })
+
+      setSelectedTokenId(tokenId)
+      toast.success(selectedToken ? 'Token updated (encrypted)' : 'Token saved (encrypted)')
+      setShowForm(false)
+    } catch (error) {
+      toast.error('Failed to encrypt credentials')
+      console.error('Encryption error:', error)
+    }
+  }
+
+  const handleDecryptToken = async (token: TokenConfig, encryptionPassword: string) => {
+    if (!token.isEncrypted) {
+      toast.error('Token is not encrypted')
+      return
+    }
+
+    try {
+      const encryptedData = {
+        encrypted: token.clientId,
+        iv: token.clientSecret,
+        salt: token.username
+      }
+
+      const decrypted = await decryptData(encryptedData, encryptionPassword)
+      const credentials = JSON.parse(decrypted)
+
+      setClientId(credentials.clientId)
+      setClientSecret(credentials.clientSecret)
+      setUsername(credentials.username)
+      setPassword(credentials.password)
+      setShowForm(true)
+
+      toast.success('Credentials decrypted successfully')
+    } catch (error) {
+      toast.error('Failed to decrypt credentials. Check your password.')
+      console.error('Decryption error:', error)
+    }
+  }
+
+  const handleLoadForGenerate = async (token: TokenConfig) => {
+    if (token.isEncrypted) {
+      setTokenToDecrypt(token)
+      setPendingAction('load')
+      setShowDecryptDialog(true)
+    } else {
+      setClientId(token.clientId)
+      setClientSecret(token.clientSecret)
+      setUsername(token.username)
+      setPassword(token.password)
+      await handleGenerateTokenDirect(token.endpoint, token.clientId, token.clientSecret, token.username, token.password)
+    }
+  }
+
+  const handleGenerateTokenDirect = async (ep: string, cid: string, csecret: string, uname: string, pwd: string) => {
+    setIsGenerating(true)
+
+    try {
+      const response = await fetch(ep, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          client_id: cid,
+          client_secret: csecret,
+          username: uname,
+          password: pwd
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Token generation failed: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      
+      const token = data.access_token || data.token
+      if (!token) {
+        throw new Error('No access token in response')
+      }
+
+      const newAccessToken: AccessToken = {
+        token,
+        expiresAt: Date.now() + (15 * 60 * 1000)
+      }
+
+      setAccessToken(newAccessToken)
+
+      toast.success('Access token generated successfully')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to generate token')
+      console.error('Token generation error:', error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
 
   const handleGenerateToken = async () => {
     if (!endpoint || !clientId || !clientSecret || !username || !password) {
@@ -102,27 +265,36 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       return
     }
 
-    const tokenId = selectedTokenId || Date.now().toString()
-    const newToken: TokenConfig = {
-      id: tokenId,
-      name,
-      endpoint,
-      clientId,
-      clientSecret,
-      username,
-      password
-    }
-
-    setSavedTokens((current = []) => {
-      const existing = current.find(t => t.id === tokenId)
-      if (existing) {
-        return current.map(t => t.id === tokenId ? newToken : t)
+    if (encryptOnSave) {
+      setPendingAction('save')
+      setShowEncryptDialog(true)
+    } else {
+      const tokenId = selectedTokenId || Date.now().toString()
+      const newToken: TokenConfig = {
+        id: tokenId,
+        name,
+        endpoint,
+        clientId,
+        clientSecret,
+        username,
+        password,
+        isEncrypted: false
       }
-      return [...current, newToken]
-    })
 
-    setSelectedTokenId(tokenId)
-    toast.success(selectedToken ? 'Token updated' : 'Token saved')
+      setSavedTokens((current = []) => {
+        const existing = current.find(t => t.id === tokenId)
+        if (existing) {
+          return current.map(t => t.id === tokenId ? newToken : t)
+        }
+        return [...current, newToken]
+      })
+
+      setSelectedTokenId(tokenId)
+      toast.success(selectedToken ? 'Token updated (unencrypted)' : 'Token saved (unencrypted)', {
+        description: 'Warning: Credentials stored in plaintext'
+      })
+      setShowForm(false)
+    }
   }
 
   const handleDeleteToken = () => {
@@ -156,7 +328,13 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   }
 
   const handleUpdateConfiguration = () => {
-    setShowForm(true)
+    if (selectedToken?.isEncrypted) {
+      setTokenToDecrypt(selectedToken)
+      setPendingAction('load')
+      setShowDecryptDialog(true)
+    } else {
+      setShowForm(true)
+    }
   }
 
   const handleClearToken = () => {
@@ -164,7 +342,62 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     toast.success('Token cleared')
   }
 
+  const handleExportWithEncryption = async (encryptionPassword: string) => {
+    if (!savedTokens || savedTokens.length === 0) {
+      toast.error('No saved tokens to export')
+      return
+    }
+
+    try {
+      const exportData = {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        encrypted: true,
+        tokens: savedTokens
+      }
+
+      const dataStr = JSON.stringify(exportData, null, 2)
+      const encrypted = await encryptData(dataStr, encryptionPassword)
+
+      const encryptedExport = {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        encrypted: true,
+        data: encrypted
+      }
+
+      const dataBlob = new Blob([JSON.stringify(encryptedExport, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(dataBlob)
+      const link = document.createElement('a')
+      link.href = url
+      const filename = `token-configs-encrypted-${Date.now()}.json`
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      toast.success('Encrypted export downloaded!', {
+        description: `${filename} - Requires password to decrypt`,
+        duration: 5000
+      })
+    } catch (error) {
+      toast.error('Failed to encrypt export')
+      console.error('Encryption error:', error)
+    }
+  }
+
   const handleExportTokens = () => {
+    if (!savedTokens || savedTokens.length === 0) {
+      toast.error('No saved tokens to export')
+      return
+    }
+
+    if (encryptOnExport) {
+      setPendingAction('export')
+      setShowEncryptDialog(true)
+      return
+    }
     if (!savedTokens || savedTokens.length === 0) {
       toast.error('No saved tokens to export')
       return
@@ -288,7 +521,12 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                 <SelectItem value="new">+ New Token Configuration</SelectItem>
                 {savedTokens?.map(token => (
                   <SelectItem key={token.id} value={token.id}>
-                    {token.name}
+                    <span className="flex items-center gap-2">
+                      {token.name}
+                      {token.isEncrypted && (
+                        <Lock size={12} className="text-accent" weight="fill" />
+                      )}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -397,6 +635,25 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                 </div>
               </div>
 
+              <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={18} className={encryptOnSave ? 'text-accent' : 'text-muted-foreground'} />
+                  <div className="flex flex-col">
+                    <Label htmlFor="encrypt-on-save" className="text-sm font-semibold cursor-pointer">
+                      Encrypt Before Saving
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Recommended: Encrypt credentials with a password
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="encrypt-on-save"
+                  checked={encryptOnSave}
+                  onCheckedChange={setEncryptOnSave}
+                />
+              </div>
+
               <div className="flex gap-2">
                 <Button
                   onClick={handleSaveToken}
@@ -433,14 +690,34 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
           {selectedToken && !showForm && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">{selectedToken.name}</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  {selectedToken.name}
+                  {selectedToken.isEncrypted && (
+                    <Lock size={14} className="text-accent" weight="fill" />
+                  )}
+                </CardTitle>
                 <CardDescription className="text-xs break-all">
                   {selectedToken.endpoint}
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {selectedToken.isEncrypted ? (
+                  <Alert className="mb-3 border-accent/50 bg-accent/10">
+                    <Lock size={16} className="text-accent" />
+                    <AlertDescription className="text-xs ml-2">
+                      Encrypted credentials - password required to generate token
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Alert variant="destructive" className="mb-3">
+                    <LockOpen size={16} />
+                    <AlertDescription className="text-xs ml-2">
+                      Unencrypted credentials - stored in plaintext
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <Button
-                  onClick={handleGenerateToken}
+                  onClick={() => selectedToken.isEncrypted ? handleLoadForGenerate(selectedToken) : handleGenerateToken()}
                   disabled={isGenerating}
                   className="w-full"
                 >
@@ -450,7 +727,26 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
             </Card>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2">
+                <Lock size={18} className={encryptOnExport ? 'text-accent' : 'text-muted-foreground'} />
+                <div className="flex flex-col">
+                  <Label htmlFor="encrypt-on-export" className="text-sm font-semibold cursor-pointer">
+                    Encrypt Exports
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Password-protect exported JSON files
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="encrypt-on-export"
+                checked={encryptOnExport}
+                onCheckedChange={setEncryptOnExport}
+              />
+            </div>
+
             <div className="flex gap-2">
               <Button
                 onClick={handleExportTokens}
@@ -479,20 +775,38 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                 className="hidden"
               />
             </div>
-            <p className="text-xs text-muted-foreground flex items-start gap-1">
-              <Warning size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
-              <span>Export files contain plaintext credentials. Handle securely and delete when no longer needed.</span>
-            </p>
+            {!encryptOnExport && (
+              <Alert variant="destructive">
+                <Warning size={16} />
+                <AlertDescription className="text-xs ml-2">
+                  Warning: Exports will contain plaintext credentials. Enable encryption for security.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <Alert className="border-accent/50 bg-accent/5">
             <ShieldCheck size={18} className="text-accent" />
-            <AlertTitle className="text-sm font-semibold">Encrypted Storage</AlertTitle>
+            <AlertTitle className="text-sm font-semibold">Client-Side Encryption</AlertTitle>
             <AlertDescription className="text-xs">
-              All credentials are stored encrypted via Spark KV. However, use test credentials only and never store production secrets.
+              Credentials are encrypted using AES-256-GCM with PBKDF2 key derivation (100,000 iterations). Encryption happens entirely in your browser - passwords never leave your device.
             </AlertDescription>
           </Alert>
         </div>
+
+        <EncryptionPasswordDialog
+          open={showEncryptDialog}
+          onOpenChange={setShowEncryptDialog}
+          onConfirm={handleEncryptionPassword}
+          mode="encrypt"
+        />
+
+        <EncryptionPasswordDialog
+          open={showDecryptDialog}
+          onOpenChange={setShowDecryptDialog}
+          onConfirm={handleEncryptionPassword}
+          mode="decrypt"
+        />
       </DialogContent>
     </Dialog>
   )

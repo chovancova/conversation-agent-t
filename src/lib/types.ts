@@ -59,6 +59,19 @@ export type TokenConfig = {
   clientSecret: string
   username: string
   password: string
+  isEncrypted?: boolean
+}
+
+export type EncryptedTokenConfig = {
+  id: string
+  name: string
+  endpoint: string
+  encryptedData: {
+    encrypted: string
+    iv: string
+    salt: string
+  }
+  isEncrypted: true
 }
 
 export type AccessToken = {

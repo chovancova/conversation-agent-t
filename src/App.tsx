@@ -381,6 +381,12 @@ function App() {
       return
     }
 
+    if (selectedToken.isEncrypted) {
+      toast.error('Selected token is encrypted. Please use Token Manager to generate token.')
+      setTokenManagerOpen(true)
+      return
+    }
+
     setIsLoading(true)
     toast.info('Generating new token...')
 
