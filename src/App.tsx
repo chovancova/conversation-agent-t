@@ -23,7 +23,7 @@ import { ConversationPane } from '@/components/ConversationPane'
 import { ClientSideInfo } from '@/components/ClientSideInfo'
 import { ConversationSelector } from '@/components/ConversationSelector'
 import { KeyboardShortcuts } from '@/components/KeyboardShortcuts'
-import { Conversation, Message, AgentType, AccessToken, TokenConfig } from '@/lib/types'
+import { Conversation, Message, AgentType, AccessToken, TokenConfig, AgentAdvancedConfig } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 import { ThemeOption, applyTheme } from '@/lib/themes'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
@@ -36,6 +36,7 @@ function App() {
   const [accessToken] = useKV<AccessToken | null>('access-token', null)
   const [agentEndpoints] = useKV<Record<string, string>>('agent-endpoints', {})
   const [agentNames] = useKV<Record<string, string>>('agent-names', {})
+  const [agentAdvancedConfigs] = useKV<Record<string, AgentAdvancedConfig>>('agent-advanced-configs', {})
   const [sidebarOpen, setSidebarOpen] = useKV<boolean>('sidebar-open', true)
   const [conversationsVisible, setConversationsVisible] = useKV<boolean>('conversations-visible', true)
   const [selectedTheme] = useKV<ThemeOption>('selected-theme', 'dark')
@@ -174,6 +175,28 @@ function App() {
   }
 
 
+  const getNestedValue = (obj: any, path: string): any => {
+    return path.split('.').reduce((curr, key) => curr?.[key], obj)
+  }
+
+  const buildRequestBody = (config: AgentAdvancedConfig, message: string, sessionId?: string): any => {
+    let template = config.requestConfig.bodyTemplate
+    template = template.replace(/\{\{message\}\}/g, message)
+    if (sessionId) {
+      template = template.replace(/\{\{sessionId\}\}/g, sessionId)
+    }
+    try {
+      return JSON.parse(template)
+    } catch (error) {
+      const body: any = {}
+      body[config.requestConfig.messageField] = message
+      if (sessionId && config.requestConfig.sessionField) {
+        body[config.requestConfig.sessionField] = sessionId
+      }
+      return body
+    }
+  }
+
   const sendMessageToConversation = async (conversationId: string, messageContent: string) => {
     const conversation = conversations?.find(c => c.id === conversationId)
     if (!conversation) return
@@ -190,6 +213,23 @@ function App() {
       setAgentSettingsOpen(true)
       return
     }
+
+    const agentConfig = agentAdvancedConfigs?.[conversation.agentType]
+    const defaultConfig: AgentAdvancedConfig = {
+      protocol: 'custom',
+      requestConfig: {
+        headers: [{ key: 'Content-Type', value: 'application/json' }],
+        bodyTemplate: '{\n  "message": "{{message}}"\n}',
+        messageField: 'message',
+        sessionField: 'sessionId'
+      },
+      responseConfig: {
+        responseField: 'response',
+        sessionField: 'sessionId',
+        errorField: 'error'
+      }
+    }
+    const config = agentConfig || defaultConfig
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -217,20 +257,21 @@ function App() {
     setLoadingConversationId(conversationId)
 
     try {
-      const requestBody: { message: string; sessionId?: string } = {
-        message: messageContent
+      const requestBody = buildRequestBody(config, messageContent, conversation.sessionId)
+
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${accessToken!.token}`
       }
 
-      if (conversation.sessionId) {
-        requestBody.sessionId = conversation.sessionId
-      }
+      config.requestConfig.headers.forEach(header => {
+        if (header.key && header.value) {
+          headers[header.key] = header.value
+        }
+      })
 
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken!.token}`
-        },
+        headers,
         body: JSON.stringify(requestBody)
       })
 
@@ -240,8 +281,15 @@ function App() {
 
       const data = await response.json()
       
-      const responseContent = data.response || data.message || data.content || JSON.stringify(data)
-      const sessionId = data.sessionId || data.session_id || conversation.sessionId
+      const responseContent = getNestedValue(data, config.responseConfig.responseField) 
+        || data.response 
+        || data.message 
+        || data.content 
+        || JSON.stringify(data)
+      
+      const sessionId = config.responseConfig.sessionField 
+        ? (getNestedValue(data, config.responseConfig.sessionField) || conversation.sessionId)
+        : (data.sessionId || data.session_id || conversation.sessionId)
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),

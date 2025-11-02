@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Gear, Robot, Palette, Check } from '@phosphor-icons/react'
+import { Gear, Robot, Palette, Check, Plus, X, CodeBlock, Info, Flask } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,7 +9,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Card } from '@/components/ui/card'
-import { AgentConfig } from '@/lib/types'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { AgentConfig, AgentAdvancedConfig, CustomHeader, AgentProtocol } from '@/lib/types'
 import { AGENTS } from '@/lib/agents'
 import { themes, ThemeOption, applyTheme } from '@/lib/themes'
 
@@ -21,9 +24,26 @@ type AgentSettingsProps = {
 export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
   const [agentEndpoints, setAgentEndpoints] = useKV<Record<string, string>>('agent-endpoints', {})
   const [agentNames, setAgentNames] = useKV<Record<string, string>>('agent-names', {})
+  const [agentAdvancedConfigs, setAgentAdvancedConfigs] = useKV<Record<string, AgentAdvancedConfig>>('agent-advanced-configs', {})
   const [selectedTheme, setSelectedTheme] = useKV<ThemeOption>('selected-theme', 'dark')
   const [endpoints, setEndpoints] = useState<Record<string, string>>({})
   const [names, setNames] = useState<Record<string, string>>({})
+  const [advancedConfigs, setAdvancedConfigs] = useState<Record<string, AgentAdvancedConfig>>({})
+
+  const getDefaultConfig = (): AgentAdvancedConfig => ({
+    protocol: 'custom',
+    requestConfig: {
+      headers: [{ key: 'Content-Type', value: 'application/json' }],
+      bodyTemplate: '{\n  "message": "{{message}}"\n}',
+      messageField: 'message',
+      sessionField: 'sessionId'
+    },
+    responseConfig: {
+      responseField: 'response',
+      sessionField: 'sessionId',
+      errorField: 'error'
+    }
+  })
 
   useEffect(() => {
     if (agentEndpoints) {
@@ -36,6 +56,12 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
       setNames(agentNames)
     }
   }, [agentNames])
+
+  useEffect(() => {
+    if (agentAdvancedConfigs) {
+      setAdvancedConfigs(agentAdvancedConfigs)
+    }
+  }, [agentAdvancedConfigs])
 
   const handleEndpointChange = (agentType: string, value: string) => {
     setEndpoints(prev => ({
@@ -51,6 +77,88 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
     }))
   }
 
+  const handleProtocolChange = (agentType: string, protocol: AgentProtocol) => {
+    setAdvancedConfigs(prev => ({
+      ...prev,
+      [agentType]: {
+        ...(prev[agentType] || getDefaultConfig()),
+        protocol
+      }
+    }))
+  }
+
+  const handleHeaderAdd = (agentType: string) => {
+    const config = advancedConfigs[agentType] || getDefaultConfig()
+    setAdvancedConfigs(prev => ({
+      ...prev,
+      [agentType]: {
+        ...config,
+        requestConfig: {
+          ...config.requestConfig,
+          headers: [...config.requestConfig.headers, { key: '', value: '' }]
+        }
+      }
+    }))
+  }
+
+  const handleHeaderRemove = (agentType: string, index: number) => {
+    const config = advancedConfigs[agentType] || getDefaultConfig()
+    setAdvancedConfigs(prev => ({
+      ...prev,
+      [agentType]: {
+        ...config,
+        requestConfig: {
+          ...config.requestConfig,
+          headers: config.requestConfig.headers.filter((_, i) => i !== index)
+        }
+      }
+    }))
+  }
+
+  const handleHeaderChange = (agentType: string, index: number, field: 'key' | 'value', value: string) => {
+    const config = advancedConfigs[agentType] || getDefaultConfig()
+    const newHeaders = [...config.requestConfig.headers]
+    newHeaders[index] = { ...newHeaders[index], [field]: value }
+    setAdvancedConfigs(prev => ({
+      ...prev,
+      [agentType]: {
+        ...config,
+        requestConfig: {
+          ...config.requestConfig,
+          headers: newHeaders
+        }
+      }
+    }))
+  }
+
+  const handleRequestConfigChange = (agentType: string, field: keyof AgentAdvancedConfig['requestConfig'], value: string) => {
+    const config = advancedConfigs[agentType] || getDefaultConfig()
+    setAdvancedConfigs(prev => ({
+      ...prev,
+      [agentType]: {
+        ...config,
+        requestConfig: {
+          ...config.requestConfig,
+          [field]: value
+        }
+      }
+    }))
+  }
+
+  const handleResponseConfigChange = (agentType: string, field: keyof AgentAdvancedConfig['responseConfig'], value: string) => {
+    const config = advancedConfigs[agentType] || getDefaultConfig()
+    setAdvancedConfigs(prev => ({
+      ...prev,
+      [agentType]: {
+        ...config,
+        responseConfig: {
+          ...config.responseConfig,
+          [field]: value
+        }
+      }
+    }))
+  }
+
   const handleThemeChange = (theme: ThemeOption) => {
     setSelectedTheme(theme)
     applyTheme(theme)
@@ -60,9 +168,12 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
   const handleSave = () => {
     setAgentEndpoints(endpoints)
     setAgentNames(names)
+    setAgentAdvancedConfigs(advancedConfigs)
     toast.success('Settings saved')
     onOpenChange(false)
   }
+
+  const getConfig = (agentType: string) => advancedConfigs[agentType] || getDefaultConfig()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -177,53 +288,253 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
                 ))}
               </TabsList>
 
-              {AGENTS.map(agent => (
-                <TabsContent key={agent.type} value={agent.type} className="space-y-4 pt-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">{names[agent.type] || agent.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{agent.description}</p>
-                  </div>
+              {AGENTS.map(agent => {
+                const config = getConfig(agent.type)
+                return (
+                  <TabsContent key={agent.type} value={agent.type} className="space-y-4 pt-4">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1">{names[agent.type] || agent.name}</h3>
+                      <p className="text-sm text-muted-foreground mb-4">{agent.description}</p>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor={`name-${agent.type}`}>Custom Agent Name</Label>
-                    <Input
-                      id={`name-${agent.type}`}
-                      type="text"
-                      placeholder={agent.name}
-                      value={names[agent.type] || ''}
-                      onChange={(e) => handleNameChange(agent.type, e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Give this agent a custom name (leave empty to use default: {agent.name})
-                    </p>
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`name-${agent.type}`}>Custom Agent Name</Label>
+                      <Input
+                        id={`name-${agent.type}`}
+                        type="text"
+                        placeholder={agent.name}
+                        value={names[agent.type] || ''}
+                        onChange={(e) => handleNameChange(agent.type, e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Give this agent a custom name (leave empty to use default: {agent.name})
+                      </p>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor={`endpoint-${agent.type}`}>Agent Endpoint URL</Label>
-                    <Input
-                      id={`endpoint-${agent.type}`}
-                      type="url"
-                      placeholder="https://api.example.com/agent/chat"
-                      value={endpoints[agent.type] || ''}
-                      onChange={(e) => handleEndpointChange(agent.type, e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      This endpoint will receive POST requests with Bearer authentication
-                    </p>
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`endpoint-${agent.type}`}>Agent Endpoint URL</Label>
+                      <Input
+                        id={`endpoint-${agent.type}`}
+                        type="url"
+                        placeholder="https://api.example.com/agent/chat"
+                        value={endpoints[agent.type] || ''}
+                        onChange={(e) => handleEndpointChange(agent.type, e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        This endpoint will receive POST requests with Bearer authentication
+                      </p>
+                    </div>
 
-                  <div className="bg-muted rounded-lg p-4 space-y-2">
-                    <p className="text-xs font-semibold">Request Format:</p>
-                    <code className="text-xs block">
-                      POST {endpoints[agent.type] || '[endpoint]'}
-                      <br />
-                      Headers: Authorization: Bearer [token]
-                      <br />
-                      Body: {JSON.stringify({ message: "user message" }, null, 2)}
-                    </code>
-                  </div>
-                </TabsContent>
-              ))}
+                    <Accordion type="single" collapsible className="border rounded-lg">
+                      <AccordionItem value="advanced" className="border-none">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center gap-2">
+                            <CodeBlock size={18} weight="duotone" />
+                            <span className="font-semibold">Advanced Configuration</span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4 space-y-6">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Flask size={18} weight="duotone" className="text-primary" />
+                              <Label className="text-sm font-semibold">Protocol Type</Label>
+                            </div>
+                            <Select 
+                              value={config.protocol} 
+                              onValueChange={(value: AgentProtocol) => handleProtocolChange(agent.type, value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="custom">Custom HTTP API</SelectItem>
+                                <SelectItem value="a2a">A2A Protocol (Future)</SelectItem>
+                                <SelectItem value="mcp">MCP Protocol (Future)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {config.protocol !== 'custom' && (
+                              <div className="flex items-start gap-2 p-3 bg-accent/10 border border-accent/30 rounded-lg">
+                                <Info size={16} weight="fill" className="text-accent mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-accent-foreground">
+                                  {config.protocol === 'a2a' 
+                                    ? 'A2A (Agent-to-Agent) protocol support is planned for future releases.'
+                                    : 'MCP (Model Context Protocol) support is planned for future releases.'}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label className="text-sm font-semibold">Custom Headers</Label>
+                            <div className="space-y-2">
+                              {config.requestConfig.headers.map((header, index) => (
+                                <div key={index} className="flex gap-2">
+                                  <Input
+                                    placeholder="Header Key"
+                                    value={header.key}
+                                    onChange={(e) => handleHeaderChange(agent.type, index, 'key', e.target.value)}
+                                    className="flex-1"
+                                  />
+                                  <Input
+                                    placeholder="Header Value"
+                                    value={header.value}
+                                    onChange={(e) => handleHeaderChange(agent.type, index, 'value', e.target.value)}
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleHeaderRemove(agent.type, index)}
+                                    className="flex-shrink-0"
+                                  >
+                                    <X size={16} />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleHeaderAdd(agent.type)}
+                                className="w-full"
+                              >
+                                <Plus size={16} className="mr-2" />
+                                Add Header
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Custom headers to include in all requests (Authorization header is added automatically)
+                            </p>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label htmlFor={`body-template-${agent.type}`} className="text-sm font-semibold">
+                              Request Body Template
+                            </Label>
+                            <Textarea
+                              id={`body-template-${agent.type}`}
+                              value={config.requestConfig.bodyTemplate}
+                              onChange={(e) => handleRequestConfigChange(agent.type, 'bodyTemplate', e.target.value)}
+                              className="font-mono text-xs min-h-32"
+                              placeholder='{"message": "{{message}}"}'
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Use <code className="px-1 py-0.5 bg-muted rounded">{'{{message}}'}</code> for user message and <code className="px-1 py-0.5 bg-muted rounded">{'{{sessionId}}'}</code> for session ID
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`message-field-${agent.type}`} className="text-sm font-semibold">
+                                Message Field Name
+                              </Label>
+                              <Input
+                                id={`message-field-${agent.type}`}
+                                value={config.requestConfig.messageField}
+                                onChange={(e) => handleRequestConfigChange(agent.type, 'messageField', e.target.value)}
+                                placeholder="message"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Field name for the message in request body
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor={`session-field-req-${agent.type}`} className="text-sm font-semibold">
+                                Session Field (Request)
+                              </Label>
+                              <Input
+                                id={`session-field-req-${agent.type}`}
+                                value={config.requestConfig.sessionField || ''}
+                                onChange={(e) => handleRequestConfigChange(agent.type, 'sessionField', e.target.value)}
+                                placeholder="sessionId"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Optional session ID field name
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t space-y-3">
+                            <Label className="text-sm font-semibold">Response Mapping</Label>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor={`response-field-${agent.type}`} className="text-xs">
+                                Response Message Field
+                              </Label>
+                              <Input
+                                id={`response-field-${agent.type}`}
+                                value={config.responseConfig.responseField}
+                                onChange={(e) => handleResponseConfigChange(agent.type, 'responseField', e.target.value)}
+                                placeholder="response"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Path to the message in response (e.g., "response", "data.message", "content")
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor={`session-field-res-${agent.type}`} className="text-xs">
+                                  Session Field (Response)
+                                </Label>
+                                <Input
+                                  id={`session-field-res-${agent.type}`}
+                                  value={config.responseConfig.sessionField || ''}
+                                  onChange={(e) => handleResponseConfigChange(agent.type, 'sessionField', e.target.value)}
+                                  placeholder="sessionId"
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor={`error-field-${agent.type}`} className="text-xs">
+                                  Error Field (Optional)
+                                </Label>
+                                <Input
+                                  id={`error-field-${agent.type}`}
+                                  value={config.responseConfig.errorField || ''}
+                                  onChange={(e) => handleResponseConfigChange(agent.type, 'errorField', e.target.value)}
+                                  placeholder="error"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-muted rounded-lg p-4 space-y-3">
+                            <p className="text-xs font-semibold flex items-center gap-2">
+                              <Info size={14} />
+                              Example Configuration
+                            </p>
+                            <div className="space-y-2">
+                              <div>
+                                <p className="text-xs font-medium mb-1">Request:</p>
+                                <code className="text-xs block bg-background p-2 rounded border">
+                                  POST {endpoints[agent.type] || '[endpoint]'}
+                                  <br />
+                                  {config.requestConfig.headers.map((h, i) => (
+                                    <span key={i}>
+                                      {h.key}: {h.value}
+                                      <br />
+                                    </span>
+                                  ))}
+                                  Authorization: Bearer [token]
+                                  <br /><br />
+                                  {config.requestConfig.bodyTemplate}
+                                </code>
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium mb-1">Expected Response:</p>
+                                <code className="text-xs block bg-background p-2 rounded border">
+                                  {`{\n  "${config.responseConfig.responseField}": "Agent response message",\n  "${config.responseConfig.sessionField || 'sessionId'}": "session-123"\n}`}
+                                </code>
+                              </div>
+                            </div>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </TabsContent>
+                )
+              })}
             </Tabs>
           </TabsContent>
         </Tabs>

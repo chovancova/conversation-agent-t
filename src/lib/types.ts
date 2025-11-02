@@ -1,5 +1,7 @@
 export type AgentType = 'account-opening' | 'payment' | 'moderator' | 'card' | 'rag'
 
+export type AgentProtocol = 'custom' | 'a2a' | 'mcp'
+
 export type Message = {
   id: string
   role: 'user' | 'assistant'
@@ -23,6 +25,30 @@ export type AgentConfig = {
   name: string
   endpoint: string
   description: string
+}
+
+export type CustomHeader = {
+  key: string
+  value: string
+}
+
+export type AgentRequestConfig = {
+  headers: CustomHeader[]
+  bodyTemplate: string
+  messageField: string
+  sessionField?: string
+}
+
+export type AgentResponseConfig = {
+  responseField: string
+  sessionField?: string
+  errorField?: string
+}
+
+export type AgentAdvancedConfig = {
+  protocol: AgentProtocol
+  requestConfig: AgentRequestConfig
+  responseConfig: AgentResponseConfig
 }
 
 export type TokenConfig = {
