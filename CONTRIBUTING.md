@@ -2,6 +2,18 @@
 
 Thank you for your interest in contributing to Multi-Agent Tester! This document provides guidelines and information for contributors.
 
+## ⚠️ Important: Proprietary License Notice
+
+**This repository is under a proprietary license.** The source code is publicly viewable for review purposes only.
+
+By contributing to this project, you acknowledge and agree that:
+- Your contributions become part of the proprietary codebase
+- The copyright holder retains all rights to your contributions
+- Your contributions do not grant you any usage rights to the software
+- You assign all intellectual property rights of your contributions to the copyright holder
+
+If you do not agree with these terms, please do not contribute to this project.
+
 ## 📋 Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
@@ -355,9 +367,19 @@ Contributors will be:
 - Mentioned in release notes
 - Appreciated in the community
 
-## License
+## License & Intellectual Property
 
-By contributing, you agree that your contributions will be licensed under the same license as the project (see [LICENSE](LICENSE) file).
+By contributing, you acknowledge and agree that:
+
+1. Your contributions will be subject to the proprietary license of this project
+2. You assign all intellectual property rights in your contributions to the copyright holder
+3. The copyright holder retains exclusive rights to use, modify, distribute, or commercialize your contributions
+4. You do not retain any rights to use the software or your contributions independently
+5. Your contribution does not grant you any license or usage rights to the software
+
+See the [LICENSE](LICENSE) file for the complete proprietary license terms.
+
+If you have questions about the licensing terms, please contact the repository owner before contributing.
 
 ---
 

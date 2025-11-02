@@ -26,20 +26,29 @@ Visit `http://localhost:5173`
 - ✅ **No sensitive data** - Fully reviewed, clean
 - ✅ **Security** - Client-side encryption, zero server storage
 - ✅ **Documentation** - Comprehensive in `docs/` folder
-- ⚠️ **License** - MIT (allows copying) - See `docs/LICENSE_NOTE.md`
+- ✅ **License** - PROPRIETARY (review only, no copying)
 
 ### Important Documents
-1. **docs/PUBLIC_RELEASE_SUMMARY.md** - Executive summary (start here!)
-2. **docs/LICENSE_NOTE.md** - Critical license information
+1. **LICENSE** - Proprietary license terms
+2. **docs/PUBLIC_RELEASE_SUMMARY.md** - Executive summary (start here!)
 3. **README.md** - Project overview
 4. **docs/PRODUCTION_READINESS.md** - Deployment readiness
 
-## 👨‍💻 For Contributors
+## ⚠️ Note for Contributors
 
-### Setup Development Environment
+**This repository is under a proprietary license.** 
+
+Contributions are welcome, but by contributing you agree that:
+- Your contributions become part of the proprietary codebase
+- The copyright holder retains all rights to the software
+- Contributions do not grant you usage rights to the software
+
+Please read **CONTRIBUTING.md** and **LICENSE** before contributing.
+
+### Setup Development Environment (For Authorized Contributors Only)
 ```bash
-# Fork and clone
-git clone https://github.com/YOUR_USERNAME/conversation-agent-t.git
+# Clone the repository
+git clone https://github.com/chovancova/conversation-agent-t.git
 cd conversation-agent-t
 
 # Install dependencies
@@ -53,15 +62,10 @@ npm run build
 ```
 
 ### Read This First
+- **LICENSE** - Understanding the proprietary license
 - **CONTRIBUTING.md** - Contribution guidelines
 - **docs/ARCHITECTURE.md** - Technical architecture
 - **docs/TODO.md** - What needs to be done
-
-### Quick Contribution
-1. Find an issue labeled `good first issue`
-2. Comment that you're working on it
-3. Create a feature branch
-4. Submit a pull request
 
 ## 🔐 Security Note
 
@@ -75,16 +79,17 @@ See **SECURITY.md** for details.
 
 ## ⚠️ License Note
 
-**Current License**: MIT (permissive)
+**Current License**: PROPRIETARY - Source Available for Review Only
 
-MIT License allows:
-- ✅ Anyone can copy the code
-- ✅ Anyone can use commercially
-- ✅ Anyone can modify and distribute
+This repository is publicly viewable but usage is restricted:
+- ✅ View and read the code (allowed)
+- ✅ Study for educational purposes (allowed)
+- ❌ Copy, use, or distribute (NOT allowed)
+- ❌ Modify or create derivatives (NOT allowed)
 
-If you want "check only" (no copying), the license needs to be changed.
+**All rights reserved.** Any use beyond review requires explicit written permission.
 
-See **docs/LICENSE_NOTE.md** for details.
+See **LICENSE** file for complete terms.
 
 ## 🐛 Known Issues
 

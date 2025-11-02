@@ -2,10 +2,18 @@
 
 > A professional, secure testing environment for conversation agents with OAuth2 authentication and client-side encryption.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 [![Built with React](https://img.shields.io/badge/React-19-61dafb.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+## ⚠️ License Notice
+
+**This repository is source-available for REVIEW PURPOSES ONLY.**
+
+🔒 **Proprietary License** - All rights reserved. This code is publicly viewable for review, reference, and educational purposes. **No usage, copying, modification, or distribution rights are granted** without explicit written permission from the copyright holder. See [LICENSE](LICENSE) for complete terms.
+
+---
 
 ## 🎯 Overview
 
@@ -274,7 +282,25 @@ See [TODO.md](docs/TODO.md) for complete list.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**PROPRIETARY LICENSE - Source Available for Review Only**
+
+This software is made publicly available for **review, reference, and educational purposes only**.
+
+⚠️ **No usage rights are granted.** You may:
+- ✅ View and read the source code
+- ✅ Study the code for educational purposes
+- ✅ Review the code for security assessment
+
+❌ **You may NOT**:
+- Use, copy, modify, or distribute this software
+- Deploy or run this software in any environment
+- Create derivative works or commercial products
+
+**All rights reserved.** Any use beyond review requires explicit written permission from the copyright holder.
+
+See the [LICENSE](LICENSE) file for complete terms and conditions.
+
+---
 
 Built with ❤️ using React, TypeScript, and modern web technologies.
 

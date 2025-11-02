@@ -1,26 +1,32 @@
 # License Information
 
-## Current License: MIT
+## Current License: PROPRIETARY - Source Available for Review Only
 
-This repository is currently licensed under the **MIT License**, which is a **permissive open-source license**.
+This repository is now licensed under a **Proprietary License**, which is a **restrictive source-available license**.
 
-### What the MIT License Allows
+**Decision Made**: The repository owner has chosen the most restrictive license option to enforce "review only" access.
 
-The MIT License permits anyone to:
+### What the Proprietary License Restricts
+
+The Proprietary License permits:
 - ✅ View and read the source code
-- ✅ Copy and modify the code
-- ✅ Use the software commercially
-- ✅ Distribute the software
-- ✅ Sublicense the software
-- ✅ Use the software privately
+- ✅ Study the code for educational purposes
+- ✅ Review the code for security assessment
+- ✅ Reference the code in academic contexts with attribution
 
-The only requirement is that the license and copyright notice must be included in all copies.
+The Proprietary License **PROHIBITS**:
+- ❌ Using the software for any purpose
+- ❌ Copying or reproducing the code
+- ❌ Modifying or creating derivative works
+- ❌ Distributing or sharing the software
+- ❌ Commercial use of any kind
+- ❌ Deploying the software in any environment
 
-## ⚠️ Important Note from Repository Owner
+## ✅ Decision Implemented
 
-**Repository Owner's Intent**: The repository is made public primarily for **review and reference purposes**, not for unrestricted copying and commercial use.
+**Repository Owner's Intent**: The repository is made public for **review and reference purposes only**.
 
-However, the **MIT License currently in effect allows full commercial use and copying**.
+The **Proprietary License now in effect prevents copying and usage**, aligning with the owner's intent.
 
 ## Alternative License Options
 
@@ -84,25 +90,27 @@ Similar to MIT but:
 ### If Open Source Is the Goal:
 Keep the current MIT License, which allows anyone to use, copy, and modify the code freely.
 
-## Action Required
+## ✅ Decision Made
 
-**Decision Point**: The repository owner needs to decide:
+**The repository owner has selected Option B**: Proprietary restrictive license.
 
-1. **Option A**: Keep MIT License (allows free use and copying by anyone)
-2. **Option B**: Switch to a restrictive license (prevents copying and commercial use)
-3. **Option C**: Use a hybrid approach (e.g., dual licensing)
+This decision means:
+- ✅ Code is viewable for review purposes
+- ❌ No copying, usage, or distribution allowed
+- ❌ No commercial use permitted
+- ✅ All rights reserved by copyright holder
 
-**Note**: Once code is released under MIT License, you cannot retroactively revoke that license for versions already distributed. However, you can change the license for future versions.
+**Note**: This license applies to all current and future versions. Previous versions released under MIT License (if any) remain under that license for those who obtained them before this change.
 
-## How to Change the License
+## Implementation Completed
 
-If the repository owner decides to change the license:
+The license has been changed:
 
-1. Replace the LICENSE file content
-2. Update the README.md to reflect the new license
-3. Add license headers to source files (optional but recommended)
-4. Create a new release/version with the new license
-5. Notify any contributors (if applicable)
+1. ✅ Replaced LICENSE file with proprietary license
+2. ✅ Updated README.md to reflect new license
+3. ✅ Added prominent license notices in documentation
+4. ✅ Updated QUICK_START.md with license information
+5. ✅ Updated badge from MIT to Proprietary
 
 ## Legal Disclaimer
 
