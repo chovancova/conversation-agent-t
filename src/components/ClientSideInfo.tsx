@@ -2,7 +2,7 @@ import { CloudSlash, CheckCircle, Database, Browsers, ShieldCheck } from '@phosp
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 type ClientSideInfoProps = {
   open: boolean
@@ -26,7 +26,7 @@ export function ClientSideInfo({ open, onOpenChange }: ClientSideInfoProps) {
         </DialogHeader>
 
         <ScrollArea className="flex-1 px-6">
-          <div className="space-y-6 py-6 pr-4">
+          <div className="space-y-5 py-6 pr-4">
             <Alert className="border-accent/50 bg-accent/5">
               <CloudSlash size={20} className="text-accent flex-shrink-0" />
               <AlertTitle className="text-accent font-bold text-base">Zero Server Storage</AlertTitle>
@@ -41,123 +41,136 @@ export function ClientSideInfo({ open, onOpenChange }: ClientSideInfoProps) {
               </AlertDescription>
             </Alert>
 
-            <Separator />
-
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                <ShieldCheck size={22} weight="duotone" className="text-primary" />
-                How It Works
-              </h3>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <div className="mt-0.5 flex-shrink-0">
-                    <CheckCircle size={20} weight="fill" className="text-accent" />
+            <Accordion type="multiple" defaultValue={["how-it-works", "stored-data"]} className="w-full">
+              <AccordionItem value="how-it-works" className="border rounded-lg px-4 mb-3">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={20} weight="duotone" className="text-primary" />
+                    <span className="font-semibold text-base">How It Works</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm mb-1.5">Browser-Only Storage</h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Everything you enter (credentials, tokens, conversations) is saved only in your browser's 
-                      local storage using Spark KV. Your data never leaves your device.
-                    </p>
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                      <div className="mt-0.5 flex-shrink-0">
+                        <CheckCircle size={18} weight="fill" className="text-accent" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm mb-1">Browser-Only Storage</h4>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Everything you enter (credentials, tokens, conversations) is saved only in your browser's 
+                          local storage using Spark KV. Your data never leaves your device.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                      <div className="mt-0.5 flex-shrink-0">
+                        <CheckCircle size={18} weight="fill" className="text-accent" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm mb-1">Direct API Communication</h4>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          When you send messages to agents, they go <strong>directly from your browser</strong> to 
+                          the configured endpoints. This application acts only as a static file host.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                      <div className="mt-0.5 flex-shrink-0">
+                        <CheckCircle size={18} weight="fill" className="text-accent" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm mb-1">Private & Isolated</h4>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Your data is scoped to your user account and browser. Other users cannot access your 
+                          stored configurations or conversations.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </AccordionContent>
+              </AccordionItem>
 
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <div className="mt-0.5 flex-shrink-0">
-                    <CheckCircle size={20} weight="fill" className="text-accent" />
+              <AccordionItem value="stored-data" className="border rounded-lg px-4 mb-3">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-2">
+                    <Database size={20} weight="duotone" className="text-primary" />
+                    <span className="font-semibold text-base">What Gets Stored Locally</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm mb-1.5">Direct API Communication</h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      When you send messages to agents, they go <strong>directly from your browser</strong> to 
-                      the configured endpoints. This application acts only as a static file host.
-                    </p>
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <div className="space-y-0 text-sm bg-card border border-border rounded-lg overflow-hidden mt-2">
+                    <div className="flex justify-between items-center py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <span className="font-medium">Token Configurations</span>
+                      <span className="text-xs text-muted-foreground">Client credentials</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <span className="font-medium">Access Tokens</span>
+                      <span className="text-xs text-muted-foreground">Bearer tokens</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <span className="font-medium">Agent Endpoints</span>
+                      <span className="text-xs text-muted-foreground">API URLs</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <span className="font-medium">Conversations</span>
+                      <span className="text-xs text-muted-foreground">Chat history</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 px-4 hover:bg-muted/30 transition-colors">
+                      <span className="font-medium">UI Preferences</span>
+                      <span className="text-xs text-muted-foreground">Theme, filters</span>
+                    </div>
                   </div>
-                </div>
+                </AccordionContent>
+              </AccordionItem>
 
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <div className="mt-0.5 flex-shrink-0">
-                    <CheckCircle size={20} weight="fill" className="text-accent" />
+              <AccordionItem value="benefits" className="border rounded-lg px-4 mb-3">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={20} weight="fill" className="text-primary" />
+                    <span className="font-semibold text-base">Benefits of Client-Side Storage</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm mb-1.5">Private & Isolated</h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Your data is scoped to your user account and browser. Other users cannot access your 
-                      stored configurations or conversations.
-                    </p>
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <ul className="space-y-2 text-sm text-muted-foreground pt-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span>Complete privacy - no server can access your data</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span>No data breaches - nothing to leak from servers</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span>Full control - you can clear data anytime</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span>No tracking - your usage patterns stay private</span>
+                    </li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="device-specific" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-2">
+                    <Browsers size={20} className="text-primary" />
+                    <span className="font-semibold text-base">Device-Specific Storage</span>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            <Alert className="border-primary/30 bg-primary/5">
-              <Browsers size={18} className="text-primary flex-shrink-0" />
-              <AlertDescription className="text-sm">
-                <p className="font-semibold text-foreground mb-1.5">Device-Specific Storage</p>
-                <p className="text-muted-foreground leading-relaxed">
-                  All data exists only on this device in your browser. If you use a different browser 
-                  or device, you'll need to reconfigure your settings.
-                </p>
-              </AlertDescription>
-            </Alert>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                <Database size={22} weight="duotone" className="text-primary" />
-                What Gets Stored Locally
-              </h3>
-
-              <div className="space-y-0 text-sm bg-card border border-border rounded-lg overflow-hidden">
-                <div className="flex justify-between items-center py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <span className="font-medium">Token Configurations</span>
-                  <span className="text-xs text-muted-foreground">Client credentials</span>
-                </div>
-                <div className="flex justify-between items-center py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <span className="font-medium">Access Tokens</span>
-                  <span className="text-xs text-muted-foreground">Bearer tokens</span>
-                </div>
-                <div className="flex justify-between items-center py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <span className="font-medium">Agent Endpoints</span>
-                  <span className="text-xs text-muted-foreground">API URLs</span>
-                </div>
-                <div className="flex justify-between items-center py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <span className="font-medium">Conversations</span>
-                  <span className="text-xs text-muted-foreground">Chat history</span>
-                </div>
-                <div className="flex justify-between items-center py-3 px-4 hover:bg-muted/30 transition-colors">
-                  <span className="font-medium">UI Preferences</span>
-                  <span className="text-xs text-muted-foreground">Theme, filters</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-5">
-              <p className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                <CheckCircle size={18} weight="fill" className="text-primary" />
-                Benefits of Client-Side Storage
-              </p>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span>Complete privacy - no server can access your data</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span>No data breaches - nothing to leak from servers</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span>Full control - you can clear data anytime</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span>No tracking - your usage patterns stay private</span>
-                </li>
-              </ul>
-            </div>
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed pt-2">
+                    All data exists only on this device in your browser. If you use a different browser 
+                    or device, you'll need to reconfigure your settings. This is because everything is 
+                    stored locally and there is no synchronization across devices.
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
             <div className="h-4"></div>
           </div>
