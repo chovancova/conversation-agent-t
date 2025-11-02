@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { PaperPlaneRight, Export, Robot, Columns, X, TextT, FilePdf, Image, ClipboardText } from '@phosphor-icons/react'
+import { PaperPlaneRight, Export, Robot, Columns, X, TextT, FilePdf, Image, ClipboardText, CaretUpDown } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -22,6 +22,7 @@ type ConversationPaneProps = {
   showSplitButton?: boolean
   onOpenSplit?: () => void
   isPaneA?: boolean
+  onSwitchConversation?: () => void
 }
 
 export function ConversationPane({
@@ -34,6 +35,7 @@ export function ConversationPane({
   showSplitButton = false,
   onOpenSplit,
   isPaneA = false,
+  onSwitchConversation,
 }: ConversationPaneProps) {
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -94,9 +96,22 @@ export function ConversationPane({
             <Robot size={16} weight="duotone" className="text-accent" />
           </div>
           <div className="flex flex-col min-w-0 flex-1">
-            <h2 className="font-semibold text-sm text-foreground truncate">
-              {conversation.title}
-            </h2>
+            <div className="flex items-center gap-1.5">
+              <h2 className="font-semibold text-sm text-foreground truncate">
+                {conversation.title}
+              </h2>
+              {onSwitchConversation && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onSwitchConversation}
+                  className="h-5 w-5 hover:bg-muted"
+                  title="Switch conversation"
+                >
+                  <CaretUpDown size={12} weight="bold" />
+                </Button>
+              )}
+            </div>
             <div className="flex items-center gap-1.5">
               <p className="text-xs text-muted-foreground truncate">
                 {getAgentName(conversation.agentType, agentNames)}

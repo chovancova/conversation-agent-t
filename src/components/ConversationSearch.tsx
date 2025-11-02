@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, forwardRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,14 +16,14 @@ type ConversationSearchProps = {
   hasActiveFilters: boolean
 }
 
-export function ConversationSearch({
+export const ConversationSearch = forwardRef<HTMLInputElement, ConversationSearchProps>(({
   searchQuery,
   onSearchChange,
   selectedAgents,
   onAgentToggle,
   onClearFilters,
   hasActiveFilters
-}: ConversationSearchProps) {
+}, ref) => {
   const [filterOpen, setFilterOpen] = useState(false)
 
   return (
@@ -35,6 +35,7 @@ export function ConversationSearch({
           weight="bold"
         />
         <Input
+          ref={ref}
           type="text"
           placeholder="Search conversations..."
           value={searchQuery}
@@ -127,4 +128,6 @@ export function ConversationSearch({
       </div>
     </div>
   )
-}
+})
+
+ConversationSearch.displayName = 'ConversationSearch'

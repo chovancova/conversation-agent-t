@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -21,9 +21,12 @@ import { SecurityInfo } from '@/components/SecurityInfo'
 import { ThemeSettings } from '@/components/ThemeSettings'
 import { ConversationPane } from '@/components/ConversationPane'
 import { ClientSideInfo } from '@/components/ClientSideInfo'
+import { ConversationSelector } from '@/components/ConversationSelector'
+import { KeyboardShortcuts } from '@/components/KeyboardShortcuts'
 import { Conversation, Message, AgentType, AccessToken, TokenConfig } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 import { ThemeOption, applyTheme } from '@/lib/themes'
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 
 function App() {
   const [conversations, setConversations] = useKV<Conversation[]>('conversations', [])
@@ -50,6 +53,9 @@ function App() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null)
   const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false)
+  const [conversationSelectorOpen, setConversationSelectorOpen] = useState(false)
+  const [keyboardShortcutsOpen, setKeyboardShortcutsOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const activeConversation = (conversations || []).find((c) => c.id === activeConversationId)
   const splitConversation = (conversations || []).find((c) => c.id === splitConversationId)
@@ -83,6 +89,47 @@ function App() {
       }
     }
   }, [selectedTheme, customTheme])
+
+  useKeyboardShortcuts([
+    {
+      key: 'n',
+      ctrlOrCmd: true,
+      callback: () => createNewConversation('account-opening'),
+      description: 'Create new conversation',
+    },
+    {
+      key: 'b',
+      ctrlOrCmd: true,
+      callback: () => setSidebarOpen((current) => !current),
+      description: 'Toggle sidebar',
+    },
+    {
+      key: 'k',
+      ctrlOrCmd: true,
+      callback: () => {
+        setSidebarOpen(true)
+        setTimeout(() => searchInputRef.current?.focus(), 100)
+      },
+      description: 'Focus search',
+    },
+    {
+      key: '\\',
+      ctrlOrCmd: true,
+      callback: () => {
+        if (splitMode) {
+          handleCloseSplit()
+        } else if (activeConversation) {
+          handleOpenSplit()
+        }
+      },
+      description: 'Toggle split view',
+    },
+    {
+      key: '?',
+      callback: () => setKeyboardShortcutsOpen(true),
+      description: 'Show keyboard shortcuts',
+    },
+  ], true)
 
   const isTokenValid = accessToken && accessToken.expiresAt > Date.now()
 
@@ -372,6 +419,14 @@ function App() {
     setSelectedAgentFilters([])
   }
 
+  const handleSwitchSplitConversation = () => {
+    setConversationSelectorOpen(true)
+  }
+
+  const handleSelectSplitConversation = (conversationId: string) => {
+    setSplitConversationId(conversationId)
+  }
+
   const hasActiveFilters = (searchQuery && searchQuery.trim() !== '') || (selectedAgentFilters && selectedAgentFilters.length > 0)
 
   const conversationToDeleteData = conversations?.find((c) => c.id === conversationToDelete)
@@ -384,6 +439,17 @@ function App() {
       <SecurityInfo open={securityInfoOpen} onOpenChange={setSecurityInfoOpen} />
       <ClientSideInfo open={clientSideInfoOpen} onOpenChange={setClientSideInfoOpen} />
       <ThemeSettings open={themeSettingsOpen} onOpenChange={setThemeSettingsOpen} />
+      <KeyboardShortcuts open={keyboardShortcutsOpen} onOpenChange={setKeyboardShortcutsOpen} />
+      <ConversationSelector
+        open={conversationSelectorOpen}
+        onOpenChange={setConversationSelectorOpen}
+        conversations={conversations?.filter(c => c.id !== splitConversationId) || []}
+        onSelect={handleSelectSplitConversation}
+        currentConversationId={splitConversationId || null}
+        agentNames={agentNames || {}}
+        title="Switch Conversation - Pane B"
+        description="Select a different conversation for the split view"
+      />
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -503,6 +569,7 @@ function App() {
                 <>
                   <div className="mt-3">
                     <ConversationSearch
+                      ref={searchInputRef}
                       searchQuery={searchQuery || ''}
                       onSearchChange={setSearchQuery}
                       selectedAgents={selectedAgentFilters || []}
@@ -559,6 +626,15 @@ function App() {
           </div>
           
           <div className="p-4 border-t border-border bg-muted/20 flex-shrink-0 space-y-2">
+            <Button 
+              onClick={() => setKeyboardShortcutsOpen(true)} 
+              variant="ghost" 
+              size="sm"
+              className="w-full justify-start h-8 px-2 text-muted-foreground hover:text-primary hover:bg-primary/10"
+            >
+              <Keyboard size={16} className="mr-2 flex-shrink-0" />
+              <span className="text-xs font-semibold">Keyboard Shortcuts</span>
+            </Button>
             <Button 
               onClick={() => setClientSideInfoOpen(true)} 
               variant="ghost" 
@@ -683,6 +759,7 @@ function App() {
                     onCloseSplit={handleCloseSplit}
                     agentNames={agentNames || {}}
                     isPaneA={false}
+                    onSwitchConversation={handleSwitchSplitConversation}
                   />
                 </div>
               )}
