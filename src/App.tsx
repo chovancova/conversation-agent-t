@@ -16,6 +16,7 @@ import { ConversationSearch } from '@/components/ConversationSearch'
 import { EmptyState } from '@/components/EmptyState'
 import { TokenManager } from '@/components/TokenManager'
 import { TokenStatus } from '@/components/TokenStatus'
+import { TokenStatusIcon } from '@/components/TokenStatusIcon'
 import { AgentSettings } from '@/components/AgentSettings'
 import { SecurityInfo } from '@/components/SecurityInfo'
 import { ThemeSettings } from '@/components/ThemeSettings'
@@ -742,16 +743,10 @@ function App() {
                           >
                             <Plus size={16} weight="bold" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
+                          <TokenStatusIcon
                             onClick={handleQuickTokenRefresh}
                             disabled={isLoading}
-                            className={`h-8 w-8 rounded-lg ${isTokenValid ? 'border-accent/50 text-accent hover:bg-accent/10' : 'border-destructive/50 text-destructive hover:bg-destructive/10'}`}
-                            title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
-                          >
-                            <Key size={16} weight="bold" />
-                          </Button>
+                          />
                         </div>
                       </>
                     )}
@@ -796,16 +791,10 @@ function App() {
                       >
                         <Plus size={16} weight="bold" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
+                      <TokenStatusIcon
                         onClick={handleQuickTokenRefresh}
                         disabled={isLoading}
-                        className={`h-8 w-8 rounded-lg ${isTokenValid ? 'border-accent/50 text-accent hover:bg-accent/10' : 'border-destructive/50 text-destructive hover:bg-destructive/10'}`}
-                        title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
-                      >
-                        <Key size={16} weight="bold" />
-                      </Button>
+                      />
                     </div>
                   </div>
                   <ConversationPane

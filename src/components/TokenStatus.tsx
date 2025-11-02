@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, Warning, CheckCircle, ArrowsClockwise, Lock, Gear, Flask } from '@phosphor-icons/react'
+import { Key, Warning, CheckCircle, ArrowsClockwise, Lock, Gear } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import { EncryptionPasswordDialog } from '@/components/EncryptionPasswordDialog'
 import { decryptData } from '@/lib/encryption'
 import { SoundPreferences, DEFAULT_SOUND_PREFERENCES, playNotificationSound } from '@/lib/sound'
+import { getJWTExpiration } from '@/lib/jwt'
 
 type TokenStatusProps = {
   onOpenTokenManager: () => void
@@ -45,7 +46,6 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
   const [isGenerating, setIsGenerating] = useState(false)
   const [showDecryptDialog, setShowDecryptDialog] = useState(false)
   const [pendingAction, setPendingAction] = useState<'generate' | 'auto-refresh-enable' | null>(null)
-  const [testTokenPopoverOpen, setTestTokenPopoverOpen] = useState(false)
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const soundPlayedRef = useRef<{
     tenMinutes: boolean
@@ -66,22 +66,42 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
   const isTokenValid = accessToken && accessToken.expiresAt > Date.now()
   const { minutes, seconds } = useCountdown(accessToken?.expiresAt || null)
   const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
+  const totalSecondsRemaining = (accessToken?.expiresAt || 0) - Date.now()
+  const hasTimeRemaining = totalSecondsRemaining > 0
 
   const generateToken = async (credentials: DecryptedCredentials, endpoint: string, isAutoRefresh = false) => {
     setIsGenerating(true)
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      const useFormEncoded = selectedToken?.useFormEncoded || false
+      const useJWTExpiration = selectedToken?.useJWTExpiration || false
+      
+      let headers: Record<string, string> = {}
+      let body: string
+
+      if (useFormEncoded) {
+        headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        const params = new URLSearchParams()
+        params.append('grant_type', 'password')
+        params.append('client_id', credentials.clientId)
+        params.append('client_secret', credentials.clientSecret)
+        params.append('username', credentials.username)
+        params.append('password', credentials.password)
+        body = params.toString()
+      } else {
+        headers['Content-Type'] = 'application/json'
+        body = JSON.stringify({
           client_id: credentials.clientId,
           client_secret: credentials.clientSecret,
           username: credentials.username,
           password: credentials.password
         })
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body
       })
 
       if (!response.ok) {
@@ -95,9 +115,20 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
         throw new Error('No access token in response')
       }
 
+      let expiresAt = Date.now() + (15 * 60 * 1000)
+      
+      if (useJWTExpiration) {
+        const jwtExp = getJWTExpiration(token)
+        if (jwtExp) {
+          expiresAt = jwtExp
+        }
+      } else if (data.expires_in) {
+        expiresAt = Date.now() + (data.expires_in * 1000)
+      }
+
       const newAccessToken: AccessToken = {
         token,
-        expiresAt: Date.now() + (15 * 60 * 1000),
+        expiresAt,
         refreshCount: (accessToken?.refreshCount || 0) + (isAutoRefresh ? 1 : 0),
         generatedAt: Date.now()
       }
@@ -237,19 +268,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
     }
   }
 
-  const handleCreateTestToken = (minutes: number) => {
-    const testToken: AccessToken = {
-      token: `test_token_${Date.now()}`,
-      expiresAt: Date.now() + (minutes * 60 * 1000),
-      refreshCount: 0,
-      generatedAt: Date.now()
-    }
-    setAccessToken(testToken)
-    setTestTokenPopoverOpen(false)
-    toast.success(`Test token created (expires in ${minutes} minute${minutes !== 1 ? 's' : ''})`, {
-      description: 'Use this to test auto-refresh and sound alerts'
-    })
-  }
+
 
   useEffect(() => {
     if (selectedToken?.id !== selectedTokenId && decryptedCredentials) {
@@ -385,7 +404,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
         <Card 
           className={cn(
             "border cursor-pointer transition-all",
-            isTokenValid ? "border-accent/30 bg-accent/5" : "border-destructive/40 bg-destructive/10"
+            hasTimeRemaining ? "border-accent/30 bg-accent/5" : "border-destructive/40 bg-destructive/10"
           )}
           onClick={onToggle}
         >
@@ -395,16 +414,16 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                 <TooltipTrigger asChild>
                   <div className="flex items-center justify-between h-5">
                     <div className="flex items-center gap-2.5">
-                      {isTokenValid ? (
+                      {hasTimeRemaining ? (
                         <CheckCircle size={18} weight="fill" className="text-accent flex-shrink-0" />
                       ) : (
                         <Warning size={18} weight="fill" className="text-destructive flex-shrink-0" />
                       )}
                       <span className={cn(
                         "text-sm font-medium",
-                        isTokenValid ? "text-foreground" : "text-destructive"
+                        hasTimeRemaining ? "text-foreground" : "text-destructive"
                       )}>
-                        {isTokenValid ? 'Token Active' : 'Token Expired'}
+                        {hasTimeRemaining ? 'Token Active' : 'Token Expired'}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -413,12 +432,12 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                       )}
                       <Key size={16} className={cn(
                         "transition-colors",
-                        isTokenValid ? "text-muted-foreground" : "text-destructive/60"
+                        hasTimeRemaining ? "text-muted-foreground" : "text-destructive/60"
                       )} />
                     </div>
                   </div>
                 </TooltipTrigger>
-                {!isTokenValid && !selectedToken && (
+                {!hasTimeRemaining && !selectedToken && (
                   <TooltipContent side="right" className="max-w-xs">
                     <p className="text-xs">No token configuration selected. Please set up a token in settings.</p>
                   </TooltipContent>
@@ -427,7 +446,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
 
               {isExpanded && (
               <div className="space-y-3 pt-0.5" onClick={(e) => e.stopPropagation()}>
-                {isTokenValid && (
+                {hasTimeRemaining && (
                   <div className="flex items-center justify-between px-1">
                     <span className="text-xs text-muted-foreground">Time remaining</span>
                     <span className={cn(
@@ -439,7 +458,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                   </div>
                 )}
                 
-                {!isTokenValid && !selectedToken && (
+                {!hasTimeRemaining && !selectedToken && (
                   <div className="px-2 py-2 bg-destructive/5 border border-destructive/20 rounded-md">
                     <p className="text-xs text-destructive/90 leading-relaxed">
                       No token configuration selected. Please set up a token in settings.
@@ -447,7 +466,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                   </div>
                 )}
 
-                {!isTokenValid && selectedToken && (
+                {!hasTimeRemaining && selectedToken && (
                   <div className="px-2 py-2 bg-destructive/5 border border-destructive/20 rounded-md">
                     <p className="text-xs text-destructive/90 leading-relaxed">
                       Your token has expired. Click below to generate a new one.
@@ -468,10 +487,10 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                   onClick={handleGenerateToken}
                   disabled={isGenerating || !selectedToken}
                   size="sm"
-                  variant={isTokenValid ? "outline" : "default"}
+                  variant={hasTimeRemaining ? "outline" : "default"}
                   className={cn(
                     "w-full h-9 text-sm",
-                    !isTokenValid && "bg-primary hover:bg-primary/90"
+                    !hasTimeRemaining && "bg-primary hover:bg-primary/90"
                   )}
                 >
                   {isGenerating ? (
@@ -479,95 +498,10 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                   ) : (
                     <>
                       <ArrowsClockwise size={16} className="mr-1.5" />
-                      {isTokenValid ? 'Refresh Token' : 'Generate New Token'}
+                      {hasTimeRemaining ? 'Refresh Token' : 'Generate New Token'}
                     </>
                   )}
                 </Button>
-
-                <Popover open={testTokenPopoverOpen} onOpenChange={setTestTokenPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-8 text-xs"
-                    >
-                      <Flask size={14} className="mr-1.5" />
-                      Test Token with Custom Time
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80" align="center">
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Create Test Token</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Generate a test token with custom expiry time to test auto-refresh and sound alerts
-                        </p>
-                      </div>
-                      <Separator />
-                      <div className="grid grid-cols-3 gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCreateTestToken(0.5)}
-                          className="h-16 flex flex-col gap-1"
-                        >
-                          <span className="text-base font-bold">30s</span>
-                          <span className="text-xs text-muted-foreground">Quick</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCreateTestToken(1)}
-                          className="h-16 flex flex-col gap-1"
-                        >
-                          <span className="text-base font-bold">1m</span>
-                          <span className="text-xs text-muted-foreground">Test</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCreateTestToken(2)}
-                          className="h-16 flex flex-col gap-1"
-                        >
-                          <span className="text-base font-bold">2m</span>
-                          <span className="text-xs text-muted-foreground">Short</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCreateTestToken(5)}
-                          className="h-16 flex flex-col gap-1"
-                        >
-                          <span className="text-base font-bold">5m</span>
-                          <span className="text-xs text-muted-foreground">Medium</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCreateTestToken(10)}
-                          className="h-16 flex flex-col gap-1"
-                        >
-                          <span className="text-base font-bold">10m</span>
-                          <span className="text-xs text-muted-foreground">Long</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCreateTestToken(15)}
-                          className="h-16 flex flex-col gap-1"
-                        >
-                          <span className="text-base font-bold">15m</span>
-                          <span className="text-xs text-muted-foreground">Full</span>
-                        </Button>
-                      </div>
-                      <div className="pt-2">
-                        <p className="text-xs text-muted-foreground">
-                          Test tokens won't make real API calls. Use to verify warning sounds and auto-refresh behavior.
-                        </p>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
 
                 {selectedToken && (
                   <>

@@ -60,6 +60,8 @@ export type TokenConfig = {
   username: string
   password: string
   isEncrypted?: boolean
+  useFormEncoded?: boolean
+  useJWTExpiration?: boolean
 }
 
 export type EncryptedTokenConfig = {

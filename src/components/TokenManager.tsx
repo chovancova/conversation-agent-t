@@ -14,6 +14,7 @@ import { TokenConfig, AccessToken } from '@/lib/types'
 import { useCountdown } from '@/hooks/use-countdown'
 import { EncryptionPasswordDialog } from '@/components/EncryptionPasswordDialog'
 import { encryptData, decryptData } from '@/lib/encryption'
+import { getJWTExpiration } from '@/lib/jwt'
 
 type TokenManagerProps = {
   open: boolean
@@ -31,6 +32,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [clientSecret, setClientSecret] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [useFormEncoded, setUseFormEncoded] = useState(false)
+  const [useJWTExpiration, setUseJWTExpiration] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [encryptOnSave, setEncryptOnSave] = useState(true)
@@ -48,6 +51,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     if (selectedToken) {
       setName(selectedToken.name)
       setEndpoint(selectedToken.endpoint)
+      setUseFormEncoded(selectedToken.useFormEncoded || false)
+      setUseJWTExpiration(selectedToken.useJWTExpiration || false)
       if (selectedToken.isEncrypted) {
         setClientId('••••••••')
         setClientSecret('••••••••')
@@ -109,7 +114,9 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         clientSecret: encrypted.iv,
         username: encrypted.salt,
         password: '',
-        isEncrypted: true
+        isEncrypted: true,
+        useFormEncoded,
+        useJWTExpiration
       }
 
       setSavedTokens((current = []) => {
@@ -195,25 +202,48 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       setClientSecret(token.clientSecret)
       setUsername(token.username)
       setPassword(token.password)
-      await handleGenerateTokenDirect(token.endpoint, token.clientId, token.clientSecret, token.username, token.password)
+      await handleGenerateTokenDirect(
+        token.endpoint, 
+        token.clientId, 
+        token.clientSecret, 
+        token.username, 
+        token.password,
+        token.useFormEncoded || false,
+        token.useJWTExpiration || false
+      )
     }
   }
 
-  const handleGenerateTokenDirect = async (ep: string, cid: string, csecret: string, uname: string, pwd: string) => {
+  const handleGenerateTokenDirect = async (ep: string, cid: string, csecret: string, uname: string, pwd: string, formEncoded = false, jwtExp = false) => {
     setIsGenerating(true)
 
     try {
-      const response = await fetch(ep, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      let headers: Record<string, string> = {}
+      let body: string
+
+      if (formEncoded) {
+        headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        const params = new URLSearchParams()
+        params.append('grant_type', 'password')
+        params.append('client_id', cid)
+        params.append('client_secret', csecret)
+        params.append('username', uname)
+        params.append('password', pwd)
+        body = params.toString()
+      } else {
+        headers['Content-Type'] = 'application/json'
+        body = JSON.stringify({
           client_id: cid,
           client_secret: csecret,
           username: uname,
           password: pwd
         })
+      }
+
+      const response = await fetch(ep, {
+        method: 'POST',
+        headers,
+        body
       })
 
       if (!response.ok) {
@@ -227,9 +257,20 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         throw new Error('No access token in response')
       }
 
+      let expiresAt = Date.now() + (15 * 60 * 1000)
+      
+      if (jwtExp) {
+        const jwtExpTime = getJWTExpiration(token)
+        if (jwtExpTime) {
+          expiresAt = jwtExpTime
+        }
+      } else if (data.expires_in) {
+        expiresAt = Date.now() + (data.expires_in * 1000)
+      }
+
       const newAccessToken: AccessToken = {
         token,
-        expiresAt: Date.now() + (15 * 60 * 1000)
+        expiresAt
       }
 
       setAccessToken(newAccessToken)
@@ -252,17 +293,32 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     setIsGenerating(true)
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      let headers: Record<string, string> = {}
+      let body: string
+
+      if (useFormEncoded) {
+        headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        const params = new URLSearchParams()
+        params.append('grant_type', 'password')
+        params.append('client_id', clientId)
+        params.append('client_secret', clientSecret)
+        params.append('username', username)
+        params.append('password', password)
+        body = params.toString()
+      } else {
+        headers['Content-Type'] = 'application/json'
+        body = JSON.stringify({
           client_id: clientId,
           client_secret: clientSecret,
           username,
           password
         })
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body
       })
 
       if (!response.ok) {
@@ -276,9 +332,20 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         throw new Error('No access token in response')
       }
 
+      let expiresAt = Date.now() + (15 * 60 * 1000)
+      
+      if (useJWTExpiration) {
+        const jwtExp = getJWTExpiration(token)
+        if (jwtExp) {
+          expiresAt = jwtExp
+        }
+      } else if (data.expires_in) {
+        expiresAt = Date.now() + (data.expires_in * 1000)
+      }
+
       const newAccessToken: AccessToken = {
         token,
-        expiresAt: Date.now() + (15 * 60 * 1000)
+        expiresAt
       }
 
       setAccessToken(newAccessToken)
@@ -311,7 +378,9 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         clientSecret,
         username,
         password,
-        isEncrypted: false
+        isEncrypted: false,
+        useFormEncoded,
+        useJWTExpiration
       }
 
       setSavedTokens((current = []) => {
@@ -352,6 +421,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     setClientSecret('')
     setUsername('')
     setPassword('')
+    setUseFormEncoded(false)
+    setUseJWTExpiration(false)
     setShowForm(true)
   }
 
@@ -671,6 +742,40 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                  <div className="flex flex-col flex-1">
+                    <Label htmlFor="use-form-encoded" className="text-sm font-semibold cursor-pointer">
+                      Use Form-Encoded Request
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Send as application/x-www-form-urlencoded instead of JSON
+                    </p>
+                  </div>
+                  <Switch
+                    id="use-form-encoded"
+                    checked={useFormEncoded}
+                    onCheckedChange={setUseFormEncoded}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                  <div className="flex flex-col flex-1">
+                    <Label htmlFor="use-jwt-expiration" className="text-sm font-semibold cursor-pointer">
+                      Use JWT Expiration
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Parse token 'exp' claim instead of using expires_in (15 min default)
+                    </p>
+                  </div>
+                  <Switch
+                    id="use-jwt-expiration"
+                    checked={useJWTExpiration}
+                    onCheckedChange={setUseJWTExpiration}
                   />
                 </div>
               </div>
