@@ -115,6 +115,18 @@ function App() {
     toast.success('Conversation renamed')
   }
 
+  const generateConversationTitle = async (firstMessage: string): Promise<string> => {
+    try {
+      const truncatedMessage = firstMessage.slice(0, 200)
+      const prompt = `Generate a brief, concise title (3-6 words) for a conversation that starts with this message: ${truncatedMessage}. Return only the title without quotes or extra punctuation.`
+      const title = await window.spark.llm(prompt, 'gpt-4o-mini')
+      return title.trim().replace(/^["']|["']$/g, '')
+    } catch (error) {
+      console.error('Failed to generate title:', error)
+      return firstMessage.slice(0, 50) + (firstMessage.length > 50 ? '...' : '')
+    }
+  }
+
   const sendMessageToConversation = async (conversationId: string, messageContent: string) => {
     const conversation = conversations?.find(c => c.id === conversationId)
     if (!conversation) return
@@ -140,13 +152,20 @@ function App() {
     }
 
     const updatedMessages = [...conversation.messages, userMessage]
+    const isFirstMessage = conversation.messages.length === 0
     
     updateConversation(conversation.id, {
       messages: updatedMessages,
-      title: conversation.messages.length === 0 
+      title: isFirstMessage 
         ? messageContent.slice(0, 50) + (messageContent.length > 50 ? '...' : '')
         : conversation.title,
     })
+
+    if (isFirstMessage) {
+      generateConversationTitle(messageContent).then(generatedTitle => {
+        updateConversation(conversation.id, { title: generatedTitle })
+      })
+    }
 
     setLoadingConversationId(conversationId)
     setIsLoading(true)
