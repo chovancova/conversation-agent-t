@@ -40,9 +40,13 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 600,
   },
+  // Vitest configuration for testing
   test: {
+    // Makes test globals like `describe`, `it`, `expect` available without imports
     globals: true,
+    // Simulates a browser environment for tests (DOM APIs available)
     environment: 'jsdom',
+    // Runs setup code before tests (configures testing-library matchers)
     setupFiles: './src/test/setup.ts',
   },
 });
