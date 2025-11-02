@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, Warning, CheckCircle, ArrowsClockwise, Lock } from '@phosphor-icons/react'
+import { Key, Warning, CheckCircle, ArrowsClockwise, Lock, Gear } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { AccessToken, TokenConfig, AutoRefreshConfig } from '@/lib/types'
 import { useCountdown } from '@/hooks/use-countdown'
 import { cn } from '@/lib/utils'
@@ -447,18 +449,68 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                 </Button>
 
                 {selectedToken && (
-                  <div className="flex items-center justify-between gap-2 px-1">
-                    <Label htmlFor="auto-refresh" className="text-xs font-normal cursor-pointer text-muted-foreground">
-                      Auto-refresh ({autoRefreshConfig?.currentRefreshes || 0}/{autoRefreshConfig?.maxRefreshes || 10})
-                    </Label>
-                    <Switch
-                      id="auto-refresh"
-                      checked={autoRefreshConfig?.enabled || false}
-                      onCheckedChange={handleToggleAutoRefresh}
-                      disabled={isGenerating}
-                      className="scale-90"
-                    />
-                  </div>
+                  <>
+                    <div className="flex items-center justify-between gap-2 px-1">
+                      <Label htmlFor="auto-refresh" className="text-xs font-normal cursor-pointer text-muted-foreground">
+                        Auto-refresh ({autoRefreshConfig?.currentRefreshes || 0}/{autoRefreshConfig?.maxRefreshes || 10})
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              title="Configure max refreshes"
+                            >
+                              <Gear size={14} className="text-muted-foreground" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-72" align="end">
+                            <div className="space-y-3">
+                              <div className="space-y-1.5">
+                                <Label htmlFor="max-refreshes" className="text-sm font-medium">
+                                  Max Auto-Refreshes
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                  Maximum number of times to automatically refresh the token before stopping
+                                </p>
+                              </div>
+                              <Input
+                                id="max-refreshes"
+                                type="number"
+                                min={1}
+                                max={999}
+                                value={autoRefreshConfig?.maxRefreshes || 10}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value)
+                                  if (value > 0 && value <= 999) {
+                                    setAutoRefreshConfig((current = { enabled: false, maxRefreshes: 10, currentRefreshes: 0, startTime: null }) => ({
+                                      ...current,
+                                      maxRefreshes: value
+                                    }))
+                                  }
+                                }}
+                                className="h-9"
+                              />
+                              <div className="pt-1">
+                                <p className="text-xs text-muted-foreground">
+                                  Token refreshes automatically when less than 1 minute remains
+                                </p>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <Switch
+                          id="auto-refresh"
+                          checked={autoRefreshConfig?.enabled || false}
+                          onCheckedChange={handleToggleAutoRefresh}
+                          disabled={isGenerating}
+                          className="scale-90"
+                        />
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
               )}
