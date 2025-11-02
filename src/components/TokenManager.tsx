@@ -218,7 +218,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     setIsGenerating(true)
 
     try {
-      let headers: Record<string, string> = {}
+      const headers: Record<string, string> = {}
       let body: string
 
       if (formEncoded) {
@@ -293,7 +293,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     setIsGenerating(true)
 
     try {
-      let headers: Record<string, string> = {}
+      const headers: Record<string, string> = {}
       let body: string
 
       if (useFormEncoded) {

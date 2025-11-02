@@ -76,7 +76,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
       const useFormEncoded = selectedToken?.useFormEncoded || false
       const useJWTExpiration = selectedToken?.useJWTExpiration || false
       
-      let headers: Record<string, string> = {}
+      const headers: Record<string, string> = {}
       let body: string
 
       if (useFormEncoded) {

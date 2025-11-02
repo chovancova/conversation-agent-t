@@ -1,21 +1,89 @@
-MIT License
+PROPRIETARY LICENSE - SOURCE AVAILABLE FOR REVIEW ONLY
 
-Copyright GitHub, Inc.
+Copyright (c) 2025 Repository Owner and Contributors
+All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+==============================================================================
+SOURCE CODE AVAILABILITY NOTICE
+==============================================================================
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This software and associated documentation files (the "Software") are made 
+publicly available for REVIEW, REFERENCE, and EDUCATIONAL PURPOSES ONLY.
+
+==============================================================================
+RESTRICTIONS - NO USAGE RIGHTS GRANTED
+==============================================================================
+
+Permission is NOT granted to any person to:
+
+❌ Use the Software for any purpose (commercial or non-commercial)
+❌ Copy, reproduce, or duplicate the Software in any form
+❌ Modify, adapt, or create derivative works based on the Software
+❌ Distribute, publish, or share the Software or any part thereof
+❌ Sublicense, sell, lease, or transfer the Software
+❌ Reverse engineer, decompile, or disassemble the Software
+❌ Remove or alter any proprietary notices or labels on the Software
+❌ Use the Software in any product or service
+❌ Deploy the Software in any environment (development, staging, production)
+
+==============================================================================
+PERMITTED ACTIVITIES
+==============================================================================
+
+The following activities are permitted:
+
+✅ Viewing the source code in this repository
+✅ Reading and studying the code for educational purposes
+✅ Reviewing the code for security assessment or code review
+✅ Citing or referencing the code in academic or research contexts with proper attribution
+
+==============================================================================
+EXPLICIT WRITTEN PERMISSION REQUIRED
+==============================================================================
+
+Any use of this Software beyond the permitted activities listed above requires 
+explicit written permission from the copyright holder. To request permission, 
+please contact the repository owner.
+
+==============================================================================
+NO WARRANTY
+==============================================================================
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, OR NONINFRINGEMENT. IN NO EVENT SHALL 
+THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, 
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+==============================================================================
+THIRD-PARTY COMPONENTS
+==============================================================================
+
+This project incorporates third-party open-source libraries and components.
+These third-party components remain under their original licenses (MIT, Apache, etc.)
+and are not affected by this proprietary license.
+
+This project was initially built using the GitHub Spark Template, which is 
+licensed under the MIT License by GitHub, Inc.
+
+For a complete list of third-party dependencies and their respective licenses, 
+see package.json and the node_modules directory.
+
+==============================================================================
+ENFORCEMENT
+==============================================================================
+
+Unauthorized use, copying, distribution, or any other violation of this license 
+may result in legal action. The copyright holder reserves all rights to enforce 
+this license and seek remedies for any violations.
+
+==============================================================================
+EFFECTIVE DATE
+==============================================================================
+
+This license is effective as of the date of publication of this repository
+and applies to all versions and updates published on or after this date.
+
+For questions regarding this license or to request permissions, please open
+an issue in the repository or contact the repository owner.
