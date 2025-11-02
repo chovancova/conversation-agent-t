@@ -613,16 +613,8 @@ function App() {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          const newConversation: Conversation = {
-                            id: Date.now().toString(),
-                            title: 'New Conversation',
-                            agentType: 'account-opening',
-                            messages: [],
-                            createdAt: Date.now(),
-                            updatedAt: Date.now(),
-                          }
-                          setConversations((current = []) => [newConversation, ...current])
-                          setSplitConversationId(newConversation.id)
+                          createNewConversation('account-opening')
+                          setSplitConversationId(Date.now().toString())
                         }}
                         disabled={isLoading}
                         className="h-8 w-8 rounded-lg"
@@ -633,6 +625,14 @@ function App() {
                       <Button
                         variant="outline"
                         size="icon"
+                        onClick={handleQuickTokenRefresh}
+                        disabled={isLoading}
+                        className={`h-8 w-8 rounded-lg ${isTokenValid ? 'border-accent/50 text-accent hover:bg-accent/10' : 'border-destructive/50 text-destructive hover:bg-destructive/10'}`}
+                        title={isTokenValid ? 'Token valid - Click to refresh' : 'Token expired - Click to generate new'}
+                      >
+                        <Key size={16} weight="bold" />
+                      </Button>
+                    </div>
                         onClick={handleQuickTokenRefresh}
                         disabled={isLoading}
                         className={`h-8 w-8 rounded-lg ${isTokenValid ? 'border-accent/50 text-accent hover:bg-accent/10' : 'border-destructive/50 text-destructive hover:bg-destructive/10'}`}
