@@ -281,33 +281,32 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
               </AccordionItem>
 
               <AccordionItem value="clear-data" className="border rounded-lg px-4 mb-3 border-destructive/30 bg-destructive/5">
-                <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-2">
                     <Trash size={20} weight="duotone" className="text-destructive" />
-                    <span className="font-semibold text-base text-destructive">Clear All Local Data</span>
+                    <Trash size={20} weight="duotone" className="text-destructive" />
                   </div>
-                </AccordionTrigger>
+                  </div>
                 <AccordionContent className="pb-4">
-                  <div className="space-y-3 pt-2">
+                <AccordionContent className="pb-4">
                     <p className="text-sm text-muted-foreground">
-                      Permanently delete all stored credentials, tokens, and conversation history from <strong>your browser</strong>.
+                    <p className="text-sm text-muted-foreground">tokens, and conversation history from <strong>your browser</strong>.
                       This action cannot be undone.
-                    </p>
+                      This action cannot be undone.
                     <Button
                       onClick={handleClearAllData}
                       variant="destructive"
-                      className="w-full"
+                      variant="destructive"
+                    >
                     >
                       <Trash size={16} weight="bold" className="mr-2" />
                       Clear All Data from Browser
-                    </Button>
                   </div>
-                </AccordionContent>
+                  </div>
               </AccordionItem>
             </Accordion>
           </div>
+      </DialogContent>
         </ScrollArea>
       </DialogContent>
-    </Dialog>
-  )
 }
+  )
