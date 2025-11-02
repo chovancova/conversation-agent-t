@@ -56,6 +56,38 @@ Access the "Security & Privacy" dialog from the sidebar to:
 
 ## 🚀 Getting Started
 
+### Deployment to GitHub Pages
+
+This application is configured to automatically deploy to GitHub Pages when changes are pushed to the `main` branch.
+
+#### Enable GitHub Pages (One-Time Setup)
+
+1. Go to your repository settings on GitHub
+2. Navigate to **Settings** → **Pages**
+3. Under **Build and deployment**:
+   - Set **Source** to "GitHub Actions"
+4. Push your changes to the `main` branch
+5. The GitHub Actions workflow will automatically build and deploy your site
+6. Your site will be available at: `https://chovancova.github.io/conversation-agent-t/`
+
+#### Local Development
+
+To run the application locally:
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
 ### 1. Generate Access Token
 1. Click "Token" in the sidebar
 2. Enter your OAuth token endpoint URL
