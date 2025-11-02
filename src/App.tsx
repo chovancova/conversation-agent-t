@@ -400,6 +400,8 @@ function App() {
                   Agent Tester
                 </h1>
                 <p className="text-xs text-muted-foreground font-medium">Multi-Agent Testing</p>
+              </div>
+            </div>
 
             <Button 
               onClick={() => createNewConversation('account-opening')}
