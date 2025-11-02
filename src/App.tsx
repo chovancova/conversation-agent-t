@@ -439,17 +439,6 @@ function App() {
       <SecurityInfo open={securityInfoOpen} onOpenChange={setSecurityInfoOpen} />
       <ClientSideInfo open={clientSideInfoOpen} onOpenChange={setClientSideInfoOpen} />
       <ThemeSettings open={themeSettingsOpen} onOpenChange={setThemeSettingsOpen} />
-      <KeyboardShortcuts open={keyboardShortcutsOpen} onOpenChange={setKeyboardShortcutsOpen} />
-      <ConversationSelector
-        open={conversationSelectorOpen}
-        onOpenChange={setConversationSelectorOpen}
-        conversations={conversations?.filter(c => c.id !== splitConversationId) || []}
-        onSelect={handleSelectSplitConversation}
-        currentConversationId={splitConversationId || null}
-        agentNames={agentNames || {}}
-        title="Switch Conversation - Pane B"
-        description="Select a different conversation for the split view"
-      />
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -569,7 +558,6 @@ function App() {
                 <>
                   <div className="mt-3">
                     <ConversationSearch
-                      ref={searchInputRef}
                       searchQuery={searchQuery || ''}
                       onSearchChange={setSearchQuery}
                       selectedAgents={selectedAgentFilters || []}
@@ -626,15 +614,6 @@ function App() {
           </div>
           
           <div className="p-4 border-t border-border bg-muted/20 flex-shrink-0 space-y-2">
-            <Button 
-              onClick={() => setKeyboardShortcutsOpen(true)} 
-              variant="ghost" 
-              size="sm"
-              className="w-full justify-start h-8 px-2 text-muted-foreground hover:text-primary hover:bg-primary/10"
-            >
-              <Keyboard size={16} className="mr-2 flex-shrink-0" />
-              <span className="text-xs font-semibold">Keyboard Shortcuts</span>
-            </Button>
             <Button 
               onClick={() => setClientSideInfoOpen(true)} 
               variant="ghost" 
@@ -759,7 +738,6 @@ function App() {
                     onCloseSplit={handleCloseSplit}
                     agentNames={agentNames || {}}
                     isPaneA={false}
-                    onSwitchConversation={handleSwitchSplitConversation}
                   />
                 </div>
               )}
