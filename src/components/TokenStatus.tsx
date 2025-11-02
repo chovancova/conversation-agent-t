@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { AccessToken, TokenConfig, AutoRefreshConfig } from '@/lib/types'
 import { useCountdown } from '@/hooks/use-countdown'
 import { cn } from '@/lib/utils'
@@ -168,36 +169,46 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
   }, [autoRefreshConfig?.enabled, autoRefreshConfig?.currentRefreshes, accessToken?.expiresAt, selectedToken])
 
   return (
-    <Card 
-      className={cn(
-        "border cursor-pointer transition-all",
-        isTokenValid ? "border-accent/30 bg-accent/5" : "border-destructive/40 bg-destructive/10"
-      )}
-      onClick={onToggle}
-    >
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between h-5">
-            <div className="flex items-center gap-2.5">
-              {isTokenValid ? (
-                <CheckCircle size={18} weight="fill" className="text-accent flex-shrink-0" />
-              ) : (
-                <Warning size={18} weight="fill" className="text-destructive flex-shrink-0" />
+    <TooltipProvider delayDuration={300}>
+      <Card 
+        className={cn(
+          "border cursor-pointer transition-all",
+          isTokenValid ? "border-accent/30 bg-accent/5" : "border-destructive/40 bg-destructive/10"
+        )}
+        onClick={onToggle}
+      >
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center justify-between h-5">
+                  <div className="flex items-center gap-2.5">
+                    {isTokenValid ? (
+                      <CheckCircle size={18} weight="fill" className="text-accent flex-shrink-0" />
+                    ) : (
+                      <Warning size={18} weight="fill" className="text-destructive flex-shrink-0" />
+                    )}
+                    <span className={cn(
+                      "text-sm font-medium",
+                      isTokenValid ? "text-foreground" : "text-destructive"
+                    )}>
+                      {isTokenValid ? 'Token Active' : 'Token Expired'}
+                    </span>
+                  </div>
+                  <Key size={16} className={cn(
+                    "transition-colors",
+                    isTokenValid ? "text-muted-foreground" : "text-destructive/60"
+                  )} />
+                </div>
+              </TooltipTrigger>
+              {!isTokenValid && !selectedToken && (
+                <TooltipContent side="right" className="max-w-xs">
+                  <p className="text-xs">No token configuration selected. Please set up a token in settings.</p>
+                </TooltipContent>
               )}
-              <span className={cn(
-                "text-sm font-medium",
-                isTokenValid ? "text-foreground" : "text-destructive"
-              )}>
-                {isTokenValid ? 'Token Active' : 'Token Expired'}
-              </span>
-            </div>
-            <Key size={16} className={cn(
-              "transition-colors",
-              isTokenValid ? "text-muted-foreground" : "text-destructive/60"
-            )} />
-          </div>
+            </Tooltip>
 
-          {isExpanded && (
+            {isExpanded && (
             <div className="space-y-3 pt-0.5" onClick={(e) => e.stopPropagation()}>
               {isTokenValid && (
                 <div className="flex items-center justify-between px-1">
@@ -262,9 +273,10 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                 </div>
               )}
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   )
 }
