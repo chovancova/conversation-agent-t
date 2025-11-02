@@ -1,98 +1,161 @@
-# Multi-Agent Tester with HTTP Bearer Auth
+# Multi-Agent Tester
 
-A professional testing environment for conversation agents that enables secure interaction with specialized HTTP-based agents via Bearer token authentication.
+> A professional, secure testing environment for conversation agents with OAuth2 authentication and client-side encryption.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Built with React](https://img.shields.io/badge/React-19-61dafb.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 ## 🎯 Overview
 
-This application allows you to test and evaluate multiple conversation agents across different business domains (Account Opening, Payment, Moderator, Card, RAG) through a clean, efficient interface.
+Multi-Agent Tester is a developer-focused tool for testing and evaluating conversation agents across multiple business domains. Test different specialized agents (Account Opening, Payment, Moderator, Card, RAG) through an intuitive interface with enterprise-grade security.
 
 ## ✨ Key Features
 
-- **Multi-Agent Chat Interface**: Test different specialized agents in isolated conversations
-- **Bearer Token Authentication**: OAuth2-style token generation with automatic expiry tracking
-- **Agent Configuration**: Configure HTTP endpoints for each agent type independently
-- **Conversation Management**: Maintain multiple conversation sessions with persistent history
-- **Message Export**: Extract conversations for analysis and documentation
-- **Security & Privacy**: Comprehensive data encryption and security information
+### Core Capabilities
+- 🤖 **Multi-Agent Testing** - Test multiple specialized agents in parallel conversations
+- 🔐 **OAuth2 Authentication** - Bearer token generation with automatic expiry tracking
+- 🔄 **Auto-Refresh** - Configurable automatic token refresh (up to 9,999 refreshes)
+- 💬 **Split View** - Compare agent responses side-by-side in real-time
+- 📊 **Response Metrics** - Track response times and performance for each agent
 
-## 🔒 Security Features
+### Security & Privacy
+- 🔒 **Client-Side Encryption** - AES-256-GCM encryption for all sensitive data
+- 🛡️ **Zero Server Storage** - All data stays in your browser, never sent to servers
+- 🔑 **Encrypted Credentials** - PBKDF2 key derivation with 100,000 iterations
+- 👤 **User-Scoped Data** - Complete data isolation and user control
 
-### Encrypted Storage
-All credentials and sensitive data are stored using **Spark KV with encryption at rest**:
-- Client secrets
-- Passwords
-- Bearer tokens
-- Conversation history
-- Agent endpoints
+### Developer Features
+- ⚙️ **Protocol Support** - Custom HTTP, A2A (Agent-to-Agent), MCP (Model Context Protocol)
+- 🎨 **Theme Customization** - 9 preset themes plus custom color palettes
+- 📝 **Conversation Export** - Extract conversations for analysis and documentation
+- 🔊 **Sound Alerts** - Configurable audio notifications for token expiration
+- ⌨️ **Keyboard Shortcuts** - Efficient workflow with keyboard navigation
+
+## 🔒 Security Architecture
+
+### Client-Side Only Storage
+**Zero server-side data storage** - All data remains in your browser:
+
+✅ **Your data never leaves your browser**  
+✅ **No server sees or stores your credentials**  
+✅ **Direct browser-to-agent communication only**  
+✅ **Complete data privacy and control**
+
+### Encryption at Rest
+All sensitive data is encrypted using industry-standard cryptography:
+- **Algorithm**: AES-256-GCM (Galois/Counter Mode)
+- **Key Derivation**: PBKDF2 with SHA-256 (100,000 iterations)
+- **Storage**: Spark KV encrypted storage in browser
+- **Scope**: User-isolated data with automatic decryption
+
+### What's Protected
+- Token configurations (client IDs, secrets, passwords)
+- Access tokens and refresh credentials
+- Agent endpoint configurations
+- Complete conversation history
+- User preferences and settings
 
 ### Security Best Practices
-✅ **What this app does right:**
-- Encrypted at-rest storage via Spark KV
-- User-scoped data isolation
-- Short-lived tokens (15-minute expiration)
-- Password input fields for visual protection
-- No credential logging to console
-- HTTPS enforcement for endpoints
-- Security warnings on export
-
-⚠️ **Important considerations:**
+⚠️ **Important Guidelines:**
 - **Use test credentials only** - Never store production secrets
-- Export files contain plaintext credentials - handle securely
-- Browser environment requires credential decryption for use
-- Clear data after testing sessions
+- **Export files** contain plaintext - handle securely and delete after use
+- **Clear data** after testing sessions via Security & Privacy dialog
+- **Lock your device** when stepping away
+- **Use browser profiles** to isolate different projects
 
-### Data Stored
-The application stores the following data types:
-- `saved-tokens` - Token configurations (encrypted)
-- `access-token` - Active bearer token (encrypted)
-- `agent-endpoints` - Agent HTTP endpoints (encrypted)
-- `conversations` - Message history (encrypted)
+📖 See [SECURITY.md](SECURITY.md) for comprehensive security documentation.
 
-### Clearing Data
-Access the "Security & Privacy" dialog from the sidebar to:
-- View detailed security information
-- Understand data encryption
-- Clear all stored data with one click
+## 🚀 Quick Start
 
-## 🚀 Getting Started
+### Prerequisites
+- Modern web browser (Chrome, Firefox, Safari, Edge)
+- Access to OAuth2 token endpoint
+- Agent API endpoints with Bearer token authentication
 
-### 1. Generate Access Token
-1. Click "Token" in the sidebar
-2. Enter your OAuth token endpoint URL
-3. Provide client ID, client secret, username, and password
-4. Click "Generate Token"
-5. Save configuration for reuse (optional)
+### Installation
 
-### 2. Configure Agent Endpoints
-1. Click "Agents" in the sidebar
-2. For each agent type, enter the HTTP POST endpoint
-3. Save configurations
-
-### 3. Start Testing
-1. Click "New Conversation" and select an agent type
-2. Type your message and press Enter
-3. View agent responses in real-time
-4. Switch agents or create new conversations as needed
-
-## 🔧 Technical Details
-
-### Token Generation
-```
-POST [token-endpoint]
-Content-Type: application/json
-
-{
-  "client_id": "your-client-id",
-  "client_secret": "your-client-secret",
-  "username": "username",
-  "password": "password"
-}
+**Option 1: Use Hosted Version** (Recommended)
+```bash
+# Deploy to your preferred platform
+# GitHub Pages, Netlify, Vercel, etc.
 ```
 
-### Agent Communication
+**Option 2: Local Development**
+```bash
+# Clone the repository
+git clone https://github.com/chovancova/conversation-agent-t.git
+cd conversation-agent-t
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
 ```
-POST [agent-endpoint]
-Authorization: Bearer [access-token]
+
+### First-Time Setup
+
+**Step 1: Configure Token Generation**
+1. Click **"Token"** button in sidebar
+2. Create new token configuration:
+   - Name: Your configuration name
+   - Token Endpoint: Your OAuth2 endpoint URL
+   - Client ID, Secret, Username, Password
+3. Enable **"Encrypt Before Saving"** (recommended)
+4. Click **"Save Configuration"**
+
+**Step 2: Configure Agent Endpoints**
+1. Click **"Agents"** button in sidebar
+2. Select agent type (Account Opening, Payment, etc.)
+3. Enter agent HTTP POST endpoint URL
+4. Configure protocol (Custom HTTP, A2A, MCP)
+5. Save configuration
+
+**Step 3: Start Testing**
+1. Click **"Generate Token"** to authenticate
+2. Click **"New Conversation"** and select agent type
+3. Type your message and press Enter
+4. View agent responses with timing metrics
+5. Use **Split View** to compare multiple agents
+
+## 🔧 Technical Stack
+
+### Frontend
+- **React 19** - Modern UI library with latest features
+- **TypeScript 5.7** - Type-safe development
+- **Vite 6** - Fast build tool and dev server
+- **Tailwind CSS 4** - Utility-first styling
+
+### Components & UI
+- **Radix UI** - Accessible component primitives
+- **shadcn/ui** - Reusable component library
+- **Framer Motion** - Animation library
+- **Lucide React** - Icon system
+
+### Security & Storage
+- **Web Crypto API** - AES-256-GCM encryption
+- **Spark KV** - Encrypted client-side storage
+- **PBKDF2** - Key derivation function
+
+### Supported Agent Types
+- 💼 **Account Opening** - Customer onboarding workflows
+- 💰 **Payment** - Transaction processing and management
+- 🛡️ **Moderator** - Content moderation and policy enforcement
+- 💳 **Card** - Card services and operations
+- 📚 **RAG** - Retrieval-augmented generation queries
+
+## 📡 Protocol Support
+
+### Custom HTTP
+Standard Bearer token authentication:
+```http
+POST /agent/endpoint
+Authorization: Bearer {token}
 Content-Type: application/json
 
 {
@@ -100,45 +163,123 @@ Content-Type: application/json
 }
 ```
 
-## 📋 Agent Types
+### A2A (Agent-to-Agent)
+```http
+POST /a2a/endpoint
+Authorization: Bearer {token}
+A2A-Version: 1.0
+A2A-Client-ID: {client-id}
+Content-Type: application/json
 
-- **Account Opening**: Customer account creation and onboarding
-- **Payment**: Payment processing and transaction handling
-- **Moderator**: Content moderation and policy enforcement
-- **Card**: Card services and management
-- **RAG**: Retrieval-augmented generation for knowledge queries
+{
+  "intent": "query",
+  "context": { "session": "abc123" },
+  "message": "user message"
+}
+```
 
-## 🛡️ Security Recommendations
+### MCP (Model Context Protocol)
+JSON-RPC 2.0 format:
+```http
+POST /mcp/endpoint
+Authorization: Bearer {token}
+Content-Type: application/json-rpc
 
-### For Users
-1. Use dedicated test/development credentials only
-2. Rotate credentials regularly after testing
-3. Store exported files in encrypted storage
-4. Delete export files when no longer needed
-5. Never commit export files to version control
-6. Clear stored data when switching projects
-7. Use tokens with minimal required permissions
+{
+  "jsonrpc": "2.0",
+  "method": "agent.query",
+  "params": { "message": "user message" },
+  "id": "req-123"
+}
+```
 
-### For Administrators
-1. Implement short-lived tokens (current: 15 minutes)
-2. Configure rate limiting on agent endpoints
-3. Require HTTPS for all endpoints
-4. Implement server-side audit logging
-5. Provide token revocation mechanisms
-6. Restrict endpoint access to authorized sources
+## 🎨 Customization
+
+### Themes
+Choose from **9 preset themes** or create your own:
+- Dark (default) - Modern with cyan-green accents
+- Light - Clean and minimal
+- Corporate Gold - Professional with golden highlights
+- Ocean, Forest, Sunset, Midnight, Lavender Dream, Rose Garden
+
+### Typography
+Customize reading experience:
+- **12 font families** across Sans Serif, Serif, and Monospace
+- **3 size presets**: Small (14px), Medium (16px), Large (18px)
+- **3 line height options**: Compact (1.4), Normal (1.6), Relaxed (1.8)
+
+### Advanced Features
+- **Sound Alerts** - Audio notifications at 10m, 5m, 2m, 1m, 30s, 10s intervals
+- **Auto-Refresh** - Configurable limits from 1 to 9,999 refreshes
+- **Split View** - Test two agents simultaneously with independent tokens
+- **Keyboard Shortcuts** - Efficient navigation and actions
 
 ## 📖 Documentation
 
-- See [SECURITY.md](./SECURITY.md) for comprehensive security documentation
-- See [PRD.md](./PRD.md) for product requirements and design decisions
+Comprehensive documentation available in the [`docs/`](docs/) folder:
+
+- **[SECURITY.md](SECURITY.md)** - Complete security architecture and best practices
+- **[TODO.md](docs/TODO.md)** - Roadmap, planned features, and known issues
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical architecture and future approach
+- **[PRD.md](docs/PRD.md)** - Product requirements and design decisions
+- **Testing Guides** - Comprehensive testing documentation for all features
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see our contributing guidelines (coming soon).
+
+### Development Setup
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Run linter (after ESLint config is added)
+npm run lint
+```
+
+### Current Priorities
+- Add ESLint configuration
+- Implement comprehensive test suite
+- Add CI/CD pipeline
+- Improve mobile responsiveness
+
+See [TODO.md](docs/TODO.md) for complete list.
+
+## 🐛 Known Issues
+
+- ESLint configuration needs migration to v9 format
+- Large bundle size (774KB) - optimization needed
+- No automated test coverage yet
+
+## 📊 Project Status
+
+- ✅ **Core Features**: Complete and production-ready
+- ✅ **Security**: Enterprise-grade client-side encryption
+- ✅ **Documentation**: Comprehensive and up-to-date
+- 🚧 **Testing**: Manual testing only (automated tests planned)
+- 🚧 **CI/CD**: Not yet implemented
 
 ## ⚠️ Important Notes
 
-- This is a **testing and development tool**
-- Not intended for production credential management
-- Consider dedicated secret management solutions for production
-- Ensure compliance with your organization's security policies
+- **Testing Tool Only**: Not intended for production credential management
+- **Test Credentials**: Always use dedicated test/development credentials
+- **Browser Storage**: Data persists only in your browser, no cloud sync
+- **Security Compliance**: Ensure compliance with your organization's policies
 
 ## 📄 License
 
-The Spark Template files and resources from GitHub are licensed under the terms of the MIT license, Copyright GitHub, Inc.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Built with ❤️ using React, TypeScript, and modern web technologies.
+
+## 🙏 Acknowledgments
+
+- Built using the GitHub Spark Template
+- UI components from Radix UI and shadcn/ui
+- Icons from Lucide React and Phosphor Icons
