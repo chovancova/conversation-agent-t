@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp } from '@phosphor-icons/react'
 import { toast } from 'sonner'
@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ChatMessage } from '@/components/ChatMessage'
 import { TypingIndicator } from '@/components/TypingIndicator'
 import { ConversationList } from '@/components/ConversationList'
+import { ConversationSearch } from '@/components/ConversationSearch'
 import { EmptyState } from '@/components/EmptyState'
 import { TokenManager } from '@/components/TokenManager'
 import { TokenStatus } from '@/components/TokenStatus'
@@ -35,6 +36,8 @@ function App() {
   const [conversationsVisible, setConversationsVisible] = useKV<boolean>('conversations-visible', true)
   const [selectedTheme] = useKV<ThemeOption>('selected-theme', 'dark')
   const [customTheme] = useKV<any>('custom-theme', null)
+  const [searchQuery, setSearchQuery] = useKV<string>('search-query', '')
+  const [selectedAgentFilters, setSelectedAgentFilters] = useKV<AgentType[]>('selected-agent-filters', [])
   const [isLoading, setIsLoading] = useState(false)
   const [loadingConversationId, setLoadingConversationId] = useState<string | null>(null)
   const [tokenManagerOpen, setTokenManagerOpen] = useState(false)
@@ -48,6 +51,26 @@ function App() {
 
   const activeConversation = (conversations || []).find((c) => c.id === activeConversationId)
   const splitConversation = (conversations || []).find((c) => c.id === splitConversationId)
+
+  const filteredConversations = useMemo(() => {
+    let filtered = conversations || []
+
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(conv => 
+        conv.title.toLowerCase().includes(query) ||
+        conv.messages.some(msg => msg.content.toLowerCase().includes(query))
+      )
+    }
+
+    if (selectedAgentFilters && selectedAgentFilters.length > 0) {
+      filtered = filtered.filter(conv => 
+        selectedAgentFilters.includes(conv.agentType)
+      )
+    }
+
+    return filtered
+  }, [conversations, searchQuery, selectedAgentFilters])
 
   useEffect(() => {
     if (selectedTheme) {
@@ -303,6 +326,23 @@ function App() {
     setClearAllDialogOpen(false)
   }
 
+  const handleAgentFilterToggle = (agent: AgentType) => {
+    setSelectedAgentFilters((current = []) => {
+      if (current.includes(agent)) {
+        return current.filter(a => a !== agent)
+      } else {
+        return [...current, agent]
+      }
+    })
+  }
+
+  const handleClearFilters = () => {
+    setSearchQuery('')
+    setSelectedAgentFilters([])
+  }
+
+  const hasActiveFilters = (searchQuery && searchQuery.trim() !== '') || (selectedAgentFilters && selectedAgentFilters.length > 0)
+
   const conversationToDeleteData = conversations?.find((c) => c.id === conversationToDelete)
 
   return (
@@ -425,31 +465,60 @@ function App() {
                   <CaretDown size={14} weight="bold" />
                 )}
               </Button>
-              {conversationsVisible && (conversations?.length || 0) > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setClearAllDialogOpen(true)}
-                  className="w-full h-7 mt-2 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash size={14} className="mr-1.5" />
-                  Clear All ({conversations?.length || 0})
-                </Button>
+              {conversationsVisible && (
+                <>
+                  <div className="mt-3">
+                    <ConversationSearch
+                      searchQuery={searchQuery || ''}
+                      onSearchChange={setSearchQuery}
+                      selectedAgents={selectedAgentFilters || []}
+                      onAgentToggle={handleAgentFilterToggle}
+                      onClearFilters={handleClearFilters}
+                      hasActiveFilters={!!hasActiveFilters}
+                    />
+                  </div>
+                  {(conversations?.length || 0) > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setClearAllDialogOpen(true)}
+                      className="w-full h-7 mt-2 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash size={14} className="mr-1.5" />
+                      Clear All ({conversations?.length || 0})
+                    </Button>
+                  )}
+                </>
               )}
             </div>
 
             {conversationsVisible && (
               <ScrollArea className="flex-1 min-h-0">
                 <div className="p-4 space-y-2">
-                  <ConversationList
-                    conversations={conversations || []}
-                    activeId={activeConversationId || null}
-                    splitId={splitConversationId || null}
-                    onSelect={setActiveConversationId}
-                    onDelete={handleDeleteRequest}
-                    onSelectForSplit={setSplitConversationId}
-                    splitMode={splitMode}
-                  />
+                  {hasActiveFilters && filteredConversations.length === 0 && (conversations?.length || 0) > 0 ? (
+                    <div className="flex flex-col items-center justify-center h-40 text-center px-4">
+                      <p className="text-sm font-medium text-foreground mb-1">No matches found</p>
+                      <p className="text-xs text-muted-foreground mb-3">Try adjusting your search or filters</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearFilters}
+                        className="h-7 text-xs"
+                      >
+                        Clear filters
+                      </Button>
+                    </div>
+                  ) : (
+                    <ConversationList
+                      conversations={filteredConversations}
+                      activeId={activeConversationId || null}
+                      splitId={splitConversationId || null}
+                      onSelect={setActiveConversationId}
+                      onDelete={handleDeleteRequest}
+                      onSelectForSplit={setSplitConversationId}
+                      splitMode={splitMode || false}
+                    />
+                  )}
                 </div>
               </ScrollArea>
             )}
