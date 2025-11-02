@@ -37,7 +37,7 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
         return (
           <div
             key={conversation.id}
-            className={`relative rounded-lg transition-all duration-150 group ${
+            className={`relative rounded-lg transition-all duration-150 group overflow-hidden ${
               isActive
                 ? 'bg-accent text-accent-foreground shadow-sm'
                 : isInSplit
@@ -65,7 +65,7 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                       : 'text-muted-foreground'
                   } />
                 </div>
-                <div className="flex-1 min-w-0 pr-16">
+                <div className={`flex-1 min-w-0 ${splitMode && onSelectForSplit && !isActive ? 'pr-20' : 'pr-12'}`}>
                   <h3 className={`font-medium text-sm truncate mb-1 ${
                     isActive 
                       ? 'text-accent-foreground' 
@@ -75,10 +75,10 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                   }`}>
                     {conversation.title}
                   </h3>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge 
                       variant={isActive ? "default" : "secondary"} 
-                      className={`text-[10px] px-1.5 py-0 font-medium h-5 ${
+                      className={`text-[10px] px-1.5 py-0 font-medium h-5 flex-shrink-0 ${
                         isActive 
                           ? 'bg-accent-foreground/15 text-accent-foreground border-0' 
                           : isInSplit
@@ -89,7 +89,7 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                       {agent?.name || conversation.agentType}
                     </Badge>
                     {conversation.messages.length > 0 && (
-                      <span className={`text-xs ${
+                      <span className={`text-xs flex-shrink-0 ${
                         isActive 
                           ? 'text-accent-foreground/60' 
                           : isInSplit
@@ -102,7 +102,7 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                   </div>
                 </div>
               </div>
-              <p className={`text-xs pl-9 ${
+              <p className={`text-xs pl-9 truncate ${
                 isActive 
                   ? 'text-accent-foreground/60' 
                   : isInSplit
@@ -117,7 +117,7 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                 })}
               </p>
             </button>
-            <div className="absolute top-2 right-2 flex gap-1">
+            <div className="absolute top-2 right-2 flex gap-1 items-center">
               {splitMode && onSelectForSplit && !isActive && (
                 <Button
                   variant="ghost"
@@ -126,7 +126,7 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                     e.stopPropagation()
                     onSelectForSplit(conversation.id)
                   }}
-                  className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity ${
+                  className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ${
                     isInSplit
                       ? 'opacity-100 bg-primary/10 text-primary hover:bg-primary/20'
                       : 'hover:bg-primary/10 text-muted-foreground hover:text-primary'
@@ -143,7 +143,7 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                   e.stopPropagation()
                   onDelete(conversation.id)
                 }}
-                className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity ${
+                className={`h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ${
                   isHighlighted 
                     ? isActive
                       ? 'hover:bg-accent-foreground/10 text-accent-foreground'
