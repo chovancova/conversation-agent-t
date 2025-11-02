@@ -754,10 +754,11 @@ function App() {
                             <Plus size={16} weight="bold" />
                           </Button>
                           <TokenStatusIcon
+                            onClick={handleQuickTokenRefresh}
+                            disabled={isLoading}
                           />
                         </div>
-                          />
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -801,10 +802,17 @@ function App() {
                       />
                     </div>
                   </div>
-                      <TokenStatusIcon
+                  <ConversationPane
+                    conversation={splitConversation}
+                    isLoading={isLoading && loadingConversationId === splitConversation.id}
                     onSendMessage={sendMessageToConversation}
                     onAgentChange={handleAgentChange}
-                      />
+                    agentNames={agentNames || {}}
+                    showSplitButton={false}
+                    onCloseSplit={handleCloseSplit}
+                    isPaneA={false}
+                  />
+                </div>
               )}
             </div>
           ) : (
