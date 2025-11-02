@@ -37,8 +37,10 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [encryptOnExport, setEncryptOnExport] = useState(true)
   const [showEncryptDialog, setShowEncryptDialog] = useState(false)
   const [showDecryptDialog, setShowDecryptDialog] = useState(false)
-  const [pendingAction, setPendingAction] = useState<'save' | 'export' | 'load' | null>(null)
+  const [showDecryptImportDialog, setShowDecryptImportDialog] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'save' | 'export' | 'load' | 'import' | null>(null)
   const [tokenToDecrypt, setTokenToDecrypt] = useState<TokenConfig | null>(null)
+  const [importedEncryptedData, setImportedEncryptedData] = useState<any>(null)
 
   const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
 
@@ -70,11 +72,15 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       await handleExportWithEncryption(encryptionPassword)
     } else if (pendingAction === 'load' && tokenToDecrypt) {
       await handleDecryptToken(tokenToDecrypt, encryptionPassword)
+    } else if (pendingAction === 'import' && importedEncryptedData) {
+      await handleDecryptImport(encryptionPassword)
     }
     setPendingAction(null)
     setTokenToDecrypt(null)
+    setImportedEncryptedData(null)
     setShowEncryptDialog(false)
     setShowDecryptDialog(false)
+    setShowDecryptImportDialog(false)
   }
 
   const handleSaveTokenWithEncryption = async (encryptionPassword: string) => {
@@ -148,6 +154,33 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       toast.success('Credentials decrypted successfully')
     } catch (error) {
       toast.error('Failed to decrypt credentials. Check your password.')
+      console.error('Decryption error:', error)
+    }
+  }
+
+  const handleDecryptImport = async (encryptionPassword: string) => {
+    if (!importedEncryptedData) {
+      toast.error('No encrypted import data found')
+      return
+    }
+
+    try {
+      const decrypted = await decryptData(importedEncryptedData, encryptionPassword)
+      const data = JSON.parse(decrypted)
+      
+      if (!data.tokens || !Array.isArray(data.tokens)) {
+        throw new Error('Invalid token configuration file')
+      }
+
+      setSavedTokens((current = []) => {
+        const existingIds = new Set(current.map(t => t.id))
+        const newTokens = data.tokens.filter((t: TokenConfig) => !existingIds.has(t.id))
+        return [...current, ...newTokens]
+      })
+
+      toast.success(`Imported ${data.tokens.length} token configuration(s)`)
+    } catch (error) {
+      toast.error('Failed to decrypt import. Check your password.')
       console.error('Decryption error:', error)
     }
   }
@@ -436,6 +469,13 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       try {
         const content = e.target?.result as string
         const data = JSON.parse(content)
+        
+        if (data.encrypted === true && data.data) {
+          setImportedEncryptedData(data.data)
+          setPendingAction('import')
+          setShowDecryptImportDialog(true)
+          return
+        }
         
         if (!data.tokens || !Array.isArray(data.tokens)) {
           throw new Error('Invalid token configuration file')
@@ -806,6 +846,15 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
           onOpenChange={setShowDecryptDialog}
           onConfirm={handleEncryptionPassword}
           mode="decrypt"
+        />
+
+        <EncryptionPasswordDialog
+          open={showDecryptImportDialog}
+          onOpenChange={setShowDecryptImportDialog}
+          onConfirm={handleEncryptionPassword}
+          mode="decrypt"
+          title="Decrypt Import"
+          description="Enter the password used to encrypt this export file"
         />
       </DialogContent>
     </Dialog>
