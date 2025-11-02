@@ -281,3 +281,16 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
     </div>
   )
 }
+                  className="h-7 w-7 flex-shrink-0 hover:bg-destructive/15 text-muted-foreground hover:text-destructive"
+                  title="Delete"
+                >
+                  <Trash size={14} weight="bold" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
