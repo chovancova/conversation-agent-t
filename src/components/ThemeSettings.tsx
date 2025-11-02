@@ -123,13 +123,16 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `theme-settings-${Date.now()}.json`
+    const filename = `theme-settings-${Date.now()}.json`
+    link.download = filename
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.success('Theme exported successfully')
+    toast.success('Theme settings exported to Downloads folder', {
+      description: `File: ${filename}`
+    })
   }
 
   const handleImportTheme = (event: React.ChangeEvent<HTMLInputElement>) => {

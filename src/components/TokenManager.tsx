@@ -181,13 +181,16 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `token-configs-${Date.now()}.json`
+    const filename = `token-configs-${Date.now()}.json`
+    link.download = filename
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.warning('Exported file contains plaintext credentials - handle securely!')
+    toast.warning('Token configurations exported to Downloads folder', {
+      description: `File: ${filename} - Contains plaintext credentials!`
+    })
   }
 
   const handleImportTokens = (event: React.ChangeEvent<HTMLInputElement>) => {

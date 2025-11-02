@@ -251,13 +251,16 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `agent-settings-${Date.now()}.json`
+    const filename = `agent-settings-${Date.now()}.json`
+    link.download = filename
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    toast.success('Settings exported successfully')
+    toast.success('Agent settings exported to Downloads folder', {
+      description: `File: ${filename}`
+    })
   }
 
   const handleImportSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
