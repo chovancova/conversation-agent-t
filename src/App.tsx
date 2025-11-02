@@ -802,17 +802,10 @@ function App() {
                       />
                     </div>
                   </div>
-                  <ConversationPane
-                    conversation={splitConversation}
-                    isLoading={isLoading && loadingConversationId === splitConversation.id}
+                      <TokenStatusIcon
                     onSendMessage={sendMessageToConversation}
                     onAgentChange={handleAgentChange}
-                    agentNames={agentNames || {}}
-                    showSplitButton={false}
-                    onCloseSplit={handleCloseSplit}
-                    isPaneA={false}
-                  />
-                </div>
+                      />
               )}
             </div>
           ) : (
