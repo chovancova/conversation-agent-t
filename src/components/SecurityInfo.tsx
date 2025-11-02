@@ -59,12 +59,11 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
             </Alert>
 
             <Accordion type="multiple" defaultValue={["guarantees", "security-considerations"]} className="w-full">
-              <AccordionItem value="guarantees" className="border rounded-lg px-4 mb-3">
+                <AccordionTrigger className="hover:no-underline py-4">
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-2">
-                    <Lock size={20} weight="duotone" className="text-primary" />
                     <span className="font-semibold text-base">Privacy & Security Guarantees</span>
-                  </div>
+                    <span className="font-semibold text-base">Privacy & Security Guarantees</span>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
                   <div className="space-y-3 pt-2">
@@ -75,150 +74,141 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
                       <div>
                         <h3 className="font-semibold text-sm mb-1">Zero Server-Side Storage</h3>
                         <p className="text-sm text-muted-foreground">
-                          Your credentials, tokens, and conversations are <strong>never transmitted to any server</strong>. 
+                        <p className="text-sm text-muted-foreground">
+                          All data remains in your browser's local storage on your device only.
                           All data remains in your browser's local storage on your device only.
                         </p>
-                      </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1">
+                    </div>
                         <CheckCircle size={18} weight="fill" className="text-accent" />
-                      </div>
+                      <div className="mt-1">
                       <div>
+                      </div>
+                        <p className="text-sm text-muted-foreground">
                         <h3 className="font-semibold text-sm mb-1">Direct Agent Communication</h3>
                         <p className="text-sm text-muted-foreground">
-                          When you send messages, they go <strong>directly from your browser to the agent endpoints</strong> you configure. 
-                          This application server acts only as a static file host and never proxies or logs your requests.
                         </p>
-                      </div>
+                          This application server acts only as a static file host and never proxies or logs your requests.
                     </div>
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1">
-                        <CheckCircle size={18} weight="fill" className="text-accent" />
                       </div>
-                      <div>
+                      <div className="mt-1">
+                      </div>
+                      <div className="mt-1">
                         <h3 className="font-semibold text-sm mb-1">Browser-Only Encryption</h3>
                         <p className="text-sm text-muted-foreground">
-                          All sensitive data (client secrets, passwords, tokens) is stored using Spark KV with 
+                      <div>
                           encryption at rest in your browser. Your data never leaves your device.
-                        </p>
+                        <p className="text-sm text-muted-foreground">
                       </div>
+                          encryption at rest in your browser. Your data never leaves your device.
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1">
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="mt-1">
-                        <CheckCircle size={18} weight="fill" className="text-accent" />
-                      </div>
-                      <div>
                         <h3 className="font-semibold text-sm mb-1">User-Isolated Storage</h3>
                         <p className="text-sm text-muted-foreground">
                           Your token configurations and conversations are scoped to your user account 
+                        <h3 className="font-semibold text-sm mb-1">User-Isolated Storage</h3>
+                      </div>
+                          Your token configurations and conversations are scoped to your user account 
                           and browser profile. Other users cannot access your data.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
                       <div className="mt-1">
                         <CheckCircle size={18} weight="fill" className="text-accent" />
                       </div>
-                      <div>
                         <h3 className="font-semibold text-sm mb-1">Short-Lived Access Tokens</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Bearer tokens expire after 15 minutes and must be regenerated, limiting exposure window 
-                          if your device is compromised.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
                       <div className="mt-1">
                         <CheckCircle size={18} weight="fill" className="text-accent" />
+                          if your device is compromised.
+                      <div>
+                      </div>
+                        <p className="text-sm text-muted-foreground">
+                    <div className="flex items-start gap-3">
+                          if your device is compromised.
+                        <CheckCircle size={18} weight="fill" className="text-accent" />
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">h3>
+                      <div className="mt-1">
+                          All communication with token endpoints and agents should use HTTPS to prevent 
                       </div>
                       <div>
-                        <h3 className="font-semibold text-sm mb-1">HTTPS Protected Communication</h3>
-                        <p className="text-sm text-muted-foreground">
+                      </div>
+                  </div>
                           All communication with token endpoints and agents should use HTTPS to prevent 
                           man-in-the-middle interception during transit.
                         </p>
-                      </div>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+              <AccordionItem value="security-considerations" className="border rounded-lg px-4 mb-3">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  </div> gap-2">
+                    <Warning size={20} className="text-amber-500" />
+              </AccordionItem>an>
 
               <AccordionItem value="security-considerations" className="border rounded-lg px-4 mb-3">
                 <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center gap-2">
-                    <Warning size={20} className="text-amber-500" />
-                    <span className="font-semibold text-base">Important Security Considerations</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-4">
                   <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50 rounded-lg p-4 space-y-3 mt-2">
                     <div className="flex items-start gap-2">
                       <LockKey size={16} className="text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                       <p className="text-sm text-amber-900 dark:text-amber-200">
                         <strong>Use Test Credentials Only:</strong> This is a development/testing tool. 
-                        Never store production credentials or secrets, even though they stay client-side.
+                <AccordionContent className="pb-4">entials or secrets, even though they stay client-side.
                       </p>
-                    </div>
                     <div className="flex items-start gap-2">
-                      <FileArrowDown size={16} className="text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-2">
+                      <p className="text-sm text-amber-900 dark:text-amber-200">
                       <p className="text-sm text-amber-900 dark:text-amber-200">
                         <strong>Export Files Are Plaintext:</strong> When you export token configurations, 
                         they contain unencrypted credentials. Store these files securely and delete when done.
                       </p>
-                    </div>
                     <div className="flex items-start gap-2">
-                      <Info size={16} className="text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <FileArrowDown size={16} className="text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                       <p className="text-sm text-amber-900 dark:text-amber-200">
-                        <strong>Browser Environment:</strong> While encrypted in browser storage, credentials must be 
+                        <strong>Export Files Are Plaintext:</strong> When you export token configurations, 
                         decrypted in browser memory to use. This is inherent to all client-side applications.
                       </p>
                     </div>
-                    <div className="flex items-start gap-2">
                       <CloudSlash size={16} className="text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-amber-900 dark:text-amber-200">
+                      <Info size={16} className="text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                         <strong>No Server Backup:</strong> Since nothing is stored server-side, clearing your 
-                        browser data or using a different device means losing all configurations and history.
+                        <strong>Browser Environment:</strong> While encrypted in browser storage, credentials must be 
                       </p>
                     </div>
+                  </div>
+              </AccordionItem>
+                      <CloudSlash size={16} className="text-amber-700 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <AccordionItem value="stored-data" className="border rounded-lg px-4 mb-3">
+                        <strong>No Server Backup:</strong> Since nothing is stored server-side, clearing your 
+                        browser data or using a different device means losing all configurations and history.
+                    <Database size={20} weight="duotone" className="text-primary" />
+                    <span className="font-semibold text-base">What Data Is Stored Locally</span>
                   </div>
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="stored-data" className="border rounded-lg px-4 mb-3">
-                <AccordionTrigger className="hover:no-underline py-4">
-                  <div className="flex items-center gap-2">
-                    <Database size={20} weight="duotone" className="text-primary" />
-                    <span className="font-semibold text-base">What Data Is Stored Locally</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-4">
-                  <div className="space-y-3 pt-2">
                     <p className="text-sm text-muted-foreground">
-                      The following data is stored <strong>only in your browser's local storage</strong> 
+                <AccordionTrigger className="hover:no-underline py-4">
                       and is never sent to any server:
                     </p>
                     <div className="space-y-2 text-sm bg-muted/30 rounded-lg p-4">
-                      <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  </div>items-center py-2 border-b border-border/50">
                         <div className="flex flex-col">
-                          <span className="font-medium">Token Configurations</span>
+                <AccordionContent className="pb-4">ium">Token Configurations</span>
                           <span className="text-xs text-muted-foreground">Client IDs, secrets, usernames, passwords</span>
-                        </div>
+                    <p className="text-sm text-muted-foreground">
                         <span className="font-mono text-xs text-muted-foreground">saved-tokens</span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-border/50">
-                        <div className="flex flex-col">
                           <span className="font-medium">Active Access Token</span>
-                          <span className="text-xs text-muted-foreground">Current bearer token (15min expiry)</span>
-                        </div>
+                      <div className="flex justify-between items-center py-2 border-b border-border/50">
+                        <div className="flex flex-col">
                         <span className="font-mono text-xs text-muted-foreground">access-token</span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-border/50">
                         <div className="flex flex-col">
                           <span className="font-medium">Agent Endpoints</span>
-                          <span className="text-xs text-muted-foreground">URLs for your configured agents</span>
+                      <div className="flex justify-between items-center py-2 border-b border-border/50">
                         </div>
-                        <span className="font-mono text-xs text-muted-foreground">agent-endpoints</span>
+                          <span className="font-medium">Active Access Token</span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-border/50">
                         <div className="flex flex-col">
@@ -236,18 +226,18 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
                       </div>
                       <div className="flex justify-between items-center py-2">
                         <div className="flex flex-col">
-                          <span className="font-medium">UI Preferences</span>
+                      </div>references</span>
                           <span className="text-xs text-muted-foreground">Theme, sidebar state, filters</span>
-                        </div>
+                        <div className="flex flex-col">
                         <span className="font-mono text-xs text-muted-foreground">various keys</span>
                       </div>
                     </div>
 
                     <Alert className="border-primary/30 bg-primary/5">
                       <Browsers size={18} className="text-primary" />
-                      <AlertDescription className="text-sm text-muted-foreground">
+                        <div className="flex flex-col">
                         All this data exists <strong>only on this device</strong> in your browser. 
-                        If you use a different browser or device, you'll need to reconfigure everything.
+                          <span className="text-xs text-muted-foreground">Theme, sidebar state, filters</span>
                       </AlertDescription>
                     </Alert>
                   </div>
@@ -260,51 +250,52 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
                     <ShieldCheck size={20} weight="duotone" className="text-primary" />
                     <span className="font-semibold text-base">Best Practices for Client-Side Security</span>
                   </div>
-                </AccordionTrigger>
+                  </div>
                 <AccordionContent className="pb-4">
-                  <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside pt-2">
-                    <li>Use dedicated test/development credentials, never production</li>
+              </AccordionItem>t-muted-foreground list-disc list-inside pt-2">
+r production</li>
                     <li>Rotate credentials regularly and after testing sessions</li>
-                    <li>Clear stored data when switching projects or environments</li>
+                <AccordionTrigger className="hover:no-underline py-4">nvironments</li>
                     <li>Be aware that anyone with physical access to your unlocked device can access stored data</li>
                     <li>Use browser profiles to isolate different project credentials</li>
                     <li>Store exported configuration files in encrypted storage</li>
                     <li>Delete export files immediately after importing elsewhere</li>
                     <li>Use tokens with minimal required permissions</li>
-                    <li>Never commit export files to version control systems</li>
-                    <li>Consider using browser private/incognito mode for temporary testing</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
+                <AccordionContent className="pb-4">
+                  <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside pt-2">
+                    <li>Use dedicated test/development credentials, never production</li>
+                    <li>Rotate credentials regularly and after testing sessions</li>
+                    <li>Clear stored data when switching projects or environments</li>
 
-              <AccordionItem value="clear-data" className="border rounded-lg px-4 border-destructive/30">
+                    <li>Use browser profiles to isolate different project credentials</li>
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-2">
-                    <Database size={20} weight="duotone" className="text-destructive" />
+                    <li>Use tokens with minimal required permissions</li>
                     <span className="font-semibold text-base text-destructive">Clear All Local Data</span>
-                  </div>
+                    <li>Consider using browser private/incognito mode for temporary testing</li>
                 </AccordionTrigger>
-                <AccordionContent className="pb-4">
+                </AccordionContent>
                   <div className="space-y-3 pt-2">
-                    <p className="text-sm text-muted-foreground">
+
                       Permanently delete all stored credentials, tokens, and conversation history from <strong>your browser</strong>.
-                      This removes all local data but does not affect any server-side resources. This action cannot be undone.
+                <AccordionTrigger className="hover:no-underline py-4">e undone.
                     </p>
                     <Button
                       onClick={handleClearAllData}
-                      variant="destructive"
-                      className="w-full"
-                    >
-                      Clear All Stored Data from Browser
-                    </Button>
                   </div>
+                      className="w-full"
+                <AccordionContent className="pb-4">
+                  <div className="space-y-3 pt-2">
+                    </Button>
+                      Permanently delete all stored credentials, tokens, and conversation history from <strong>your browser</strong>.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
-            <div className="h-4"></div>
+                      onClick={handleClearAllData}
           </div>
-        </ScrollArea>
-      </DialogContent>
+                      className="w-full"
+                    >
     </Dialog>
-  )
+                    </Button>
 }
+        </ScrollArea>      </DialogContent>    </Dialog>  )}
