@@ -117,8 +117,8 @@ function App() {
 
   const generateConversationTitle = async (firstMessage: string): Promise<string> => {
     try {
-      const prompt = spark.llmPrompt`Generate a brief, concise title (3-6 words) for a conversation that starts with this message: "${firstMessage}". Return only the title without quotes or extra punctuation.`
-      const title = await spark.llm(prompt, 'gpt-4o-mini')
+      const prompt = (window.spark.llmPrompt as any)`Generate a brief, concise title (3-6 words) for a conversation that starts with this message: "${firstMessage}". Return only the title without quotes or extra punctuation.`
+      const title = await window.spark.llm(prompt, 'gpt-4o-mini')
       return title.trim().replace(/^["']|["']$/g, '')
     } catch (error) {
       console.error('Failed to generate title:', error)
@@ -152,20 +152,21 @@ function App() {
     }
 
     const isFirstMessage = conversation.messages.length === 0
-    const isFirstMessage = conversation.messages.length === 0
+    
+    const updatedMessages = [...conversation.messages, userMessage]
     
     updateConversation(conversation.id, {
-      title: isFirstMessage 
+      messages: updatedMessages,
       title: isFirstMessage 
         ? messageContent.slice(0, 50) + (messageContent.length > 50 ? '...' : '')
         : conversation.title,
     })
+    
     if (isFirstMessage) {
       generateConversationTitle(messageContent).then(generatedTitle => {
         updateConversation(conversation.id, { title: generatedTitle })
       })
     }
-
 
     setLoadingConversationId(conversationId)
     setIsLoading(true)
@@ -544,7 +545,7 @@ function App() {
                       splitId={splitConversationId || null}
                       onSelect={setActiveConversationId}
                       onRename={handleRenameConversation}
-                      onRename={handleRenameConversation}
+                      onDelete={handleDeleteRequest}
                       onSelectForSplit={setSplitConversationId}
                       splitMode={splitMode || false}
                     />
