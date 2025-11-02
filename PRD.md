@@ -13,18 +13,18 @@ A professional testing environment for multiple conversation agents that enables
 ## Essential Features
 
 ### Multi-Agent Chat Interface
-- **Functionality**: Send messages to specialized HTTP-based agents (Account Opening, Payment, Moderator, Card, RAG) and receive responses in a chat format
-- **Purpose**: Core testing mechanism for evaluating agent responses across different business domains with real API integration
+- **Functionality**: Send messages to specialized HTTP-based agents (Account Opening, Payment, Moderator, Card, RAG) and receive responses in a chat format with response time tracking
+- **Purpose**: Core testing mechanism for evaluating agent responses across different business domains with real API integration and latency monitoring
 - **Trigger**: User types message and presses enter or clicks send button
-- **Progression**: User types message → Token validation → HTTP POST to agent endpoint with Bearer auth → Response appears in chat → Ready for next message
-- **Success criteria**: Messages send instantly, responses appear with proper error handling, conversation history persists, different agents accessible
+- **Progression**: User types message → Token validation → HTTP POST to agent endpoint with Bearer auth → Response time tracked → Response appears in chat with latency display → Ready for next message
+- **Success criteria**: Messages send instantly, responses appear with proper error handling and response time in milliseconds/seconds, conversation history persists with timing data, different agents accessible, latency visible for performance testing
 
 ### Token Manager
-- **Functionality**: Generate and manage Bearer authentication tokens with 15-minute expiration via OAuth2-style endpoint, with encrypted storage and security warnings
-- **Purpose**: Secure authentication for agent communication with automatic expiry tracking and user education on credential safety
-- **Trigger**: User clicks Token button in sidebar or when token expires
-- **Progression**: Click token button → Dialog opens → Enter endpoint/credentials → Generate token → Token stored encrypted with expiration → Visual countdown displayed → Security notices shown → Auto-prompt on expiry
-- **Success criteria**: Token generates successfully, expiration clearly shown, expired tokens prevent message sending with helpful prompt, users see encryption status and security warnings
+- **Functionality**: Generate and manage multiple Bearer authentication token configurations with 15-minute expiration via OAuth2-style endpoint, with encrypted storage, security warnings, and per-conversation token selection
+- **Purpose**: Secure authentication for agent communication with automatic expiry tracking, support for multiple credential sets, and user education on credential safety
+- **Trigger**: User clicks Token button in sidebar, selects token configuration in conversation header, or when token expires
+- **Progression**: Click token button → Dialog opens → Create/manage multiple token configurations → Enter endpoint/credentials for each → Generate tokens → Tokens stored encrypted with expiration → Visual countdown displayed → Select token config per conversation → Security notices shown → Auto-prompt on expiry
+- **Success criteria**: Multiple token configurations supported, tokens generate successfully, expiration clearly shown, expired tokens prevent message sending with helpful prompt, users can select different tokens per conversation (especially in split mode), encryption status and security warnings visible
 
 ### Agent Configuration
 - **Functionality**: Configure HTTP POST endpoints for each specialized agent type (Account Opening, Payment, Moderator, Card, RAG) with protocol-specific validation for Custom HTTP, A2A (Agent-to-Agent), and MCP (Model Context Protocol) configurations. Advanced settings include custom headers, request body templates, and response field mappings with real-time validation.
@@ -54,11 +54,11 @@ A professional testing environment for multiple conversation agents that enables
 - **Success criteria**: Agent switches immediately, selection persists, clear visual indication of active agent in conversation list
 
 ### Conversation Management
-- **Functionality**: Start new conversations with agent selection, view conversation history with agent badges, switch between sessions, and open split-screen view to test two agents simultaneously
-- **Purpose**: Test multiple scenarios across different agents without losing previous conversation context, and compare agent behaviors side-by-side
-- **Trigger**: User clicks new conversation with agent selection or selects previous conversation, or clicks Split button to enable dual conversations
-- **Progression**: Click new conversation → Select agent → Current chat clears → Fresh session begins → Previous conversations accessible in sidebar with agent badges → Click Split button → Second conversation pane opens → Select different conversation for split view → Both conversations active simultaneously → Use Columns icon in sidebar to change split conversation → Click X on split pane to close
-- **Success criteria**: Conversations save automatically with agent type, can be resumed at any time, clear visual distinction, split view shows two conversations independently, each pane can send messages separately, split state persists across sessions
+- **Functionality**: Start new conversations with agent selection, view conversation history with agent badges, switch between sessions, open split-screen view to test two agents simultaneously, and configure different token configurations per conversation
+- **Purpose**: Test multiple scenarios across different agents without losing previous conversation context, compare agent behaviors side-by-side, and test with different authentication credentials simultaneously
+- **Trigger**: User clicks new conversation with agent selection or selects previous conversation, or clicks Split button to enable dual conversations, or changes token configuration in conversation header
+- **Progression**: Click new conversation → Select agent → Current chat clears → Fresh session begins → Previous conversations accessible in sidebar with agent badges → Click Split button → Second conversation pane opens → Select different conversation for split view → Both conversations active simultaneously → Select different token configurations per pane → Use Columns icon in sidebar to change split conversation → Click X on split pane to close
+- **Success criteria**: Conversations save automatically with agent type and token configuration, can be resumed at any time, clear visual distinction, split view shows two conversations independently with separate token configs, each pane can send messages with its own credentials separately, split state and token selections persist across sessions
 
 ### Message Export
 - **Functionality**: Copy conversation history including agent metadata for analysis or documentation, with security warnings for export files
@@ -110,10 +110,35 @@ A professional testing environment for multiple conversation agents that enables
 - **Split View Auto-Select**: When opening split view, automatically select first available different conversation, or create new one if none exist
 - **Split View Delete**: If active or split conversation is deleted, gracefully handle by closing that pane or switching to another conversation
 - **Split View Independent Loading**: Show loading indicators independently for each pane when sending messages simultaneously
+- **Per-Conversation Token Selection**: Each conversation can use a different token configuration, enabling testing with multiple credentials simultaneously in split mode
+- **Token Configuration Fallback**: When no specific token is selected for a conversation, use the global default token configuration
+- **Response Time Display**: Show response time for each assistant message in milliseconds (< 1000ms) or seconds (>= 1000ms) with Timer icon
+- **Response Time Errors**: Track and display response time even for failed requests to help diagnose timeout issues
 
 ## Design Direction
 
 The design should feel like a professional developer tool for API testing, with a clean interface that emphasizes configuration clarity, status awareness, and efficient workflows. Technical and purposeful with clear visual feedback for authentication state and agent selection.
+
+## Future Enhancements (TODO)
+
+### Response Statistics Dashboard
+- **Aggregate Metrics**: Display statistics across all conversations including average response time, min/max latency, success/error rates per agent type
+- **Performance Trends**: Visualize response time trends over time with charts showing latency patterns for different agents
+- **Comparison View**: Side-by-side comparison of agent performance metrics (avg response time, reliability, etc.)
+- **Export Statistics**: Export performance data as CSV or JSON for external analysis
+- **Session Analytics**: Track conversation duration, message count, and agent switching patterns
+
+### Advanced Token Management
+- **Token Pool**: Maintain a pool of pre-generated tokens with automatic rotation
+- **Token Analytics**: Track token usage, refresh patterns, and expiration statistics
+- **Batch Token Generation**: Generate multiple tokens for different configurations simultaneously
+
+### Enhanced Split View
+- **Multi-pane Support**: Support for more than 2 concurrent conversations (3-4 panes)
+- **Synchronized Scrolling**: Option to sync scroll position across panes for comparison
+- **Diff View**: Highlight differences in responses when same message sent to different agents
+
+## Design Direction (continued)
 
 ## Color Selection
 
@@ -205,12 +230,13 @@ Subtle, purposeful animations that reinforce state changes without slowing down 
   - PaperPlaneRight (Send message) - directional action
   - Plus (New conversation) - additive action
   - Export (Copy conversation) - data export
-  - Key (Token manager) - authentication/security
+  - Key (Token manager & token selector) - authentication/security
   - Gear (Agent settings) - configuration
   - Robot (Agent/assistant indicator) - agent identity
   - User (User indicator) - human identity
   - Warning (Error indicator) - failure states and security warnings
   - Clock (Token expiration) - time-based indicators
+  - Timer (Response time) - latency measurement indicator
   - CheckCircle (Valid status) - success confirmation
   - XCircle (Invalid status) - error indication
   - ShieldCheck (Security information) - data privacy and encryption status

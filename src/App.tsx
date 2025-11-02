@@ -259,6 +259,8 @@ function App() {
     setIsLoading(true)
     setLoadingConversationId(conversationId)
 
+    const startTime = performance.now()
+
     try {
       const requestBody = buildRequestBody(config, messageContent, conversation.sessionId)
 
@@ -277,6 +279,9 @@ function App() {
         headers,
         body: JSON.stringify(requestBody)
       })
+
+      const endTime = performance.now()
+      const responseTime = endTime - startTime
 
       if (!response.ok) {
         throw new Error(`Agent request failed: ${response.status} ${response.statusText}`)
@@ -299,6 +304,7 @@ function App() {
         role: 'assistant',
         content: responseContent,
         timestamp: Date.now(),
+        responseTime: responseTime,
       }
 
       const updatedConversation = conversations?.find(c => c.id === conversationId)
@@ -314,6 +320,9 @@ function App() {
 
       updateConversation(conversation.id, updatePayload)
     } catch (error) {
+      const endTime = performance.now()
+      const responseTime = endTime - startTime
+
       const updatedConversation = conversations?.find(c => c.id === conversationId)
       const updatedMessages = updatedConversation?.messages || []
 
@@ -322,7 +331,8 @@ function App() {
         role: 'assistant',
         content: error instanceof Error ? error.message : 'Failed to get response from agent',
         timestamp: Date.now(),
-        error: true
+        error: true,
+        responseTime: responseTime,
       }
 
       updateConversation(conversation.id, {
@@ -339,6 +349,15 @@ function App() {
 
   const handleAgentChange = (conversationId: string, agentType: AgentType) => {
     updateConversation(conversationId, { agentType })
+  }
+
+  const handleTokenConfigChange = (conversationId: string, tokenConfigId: string | undefined) => {
+    updateConversation(conversationId, { tokenConfigId })
+    if (tokenConfigId) {
+      toast.success('Token configuration updated for this conversation')
+    } else {
+      toast.success('Using default token configuration')
+    }
   }
 
   const handleOpenSplit = () => {
@@ -762,6 +781,7 @@ function App() {
                   isLoading={isLoading && loadingConversationId === activeConversation.id}
                   onSendMessage={sendMessageToConversation}
                   onAgentChange={handleAgentChange}
+                  onTokenConfigChange={handleTokenConfigChange}
                   agentNames={agentNames || {}}
                   showSplitButton={!splitMode}
                   onOpenSplit={handleOpenSplit}
@@ -802,6 +822,7 @@ function App() {
                     isLoading={isLoading && loadingConversationId === splitConversation.id}
                     onSendMessage={sendMessageToConversation}
                     onAgentChange={handleAgentChange}
+                    onTokenConfigChange={handleTokenConfigChange}
                     onCloseSplit={handleCloseSplit}
                     agentNames={agentNames || {}}
                     isPaneA={false}

@@ -8,6 +8,7 @@ export type Message = {
   content: string
   timestamp: number
   error?: boolean
+  responseTime?: number
 }
 
 export type Conversation = {
@@ -18,6 +19,7 @@ export type Conversation = {
   createdAt: number
   updatedAt: number
   sessionId?: string
+  tokenConfigId?: string
 }
 
 export type AgentConfig = {
@@ -81,7 +83,10 @@ export type AccessToken = {
   expiresAt: number
   refreshCount?: number
   generatedAt?: number
+  tokenConfigId?: string
 }
+
+export type AccessTokenMap = Record<string, AccessToken>
 
 export type AutoRefreshConfig = {
   enabled: boolean

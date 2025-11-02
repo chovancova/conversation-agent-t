@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Robot, User, Warning, Copy, Check } from '@phosphor-icons/react'
+import { Robot, User, Warning, Copy, Check, Timer } from '@phosphor-icons/react'
 import { Message } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,13 @@ export function ChatMessage({ message }: ChatMessageProps) {
     hour: 'numeric',
     minute: '2-digit',
   })
+  
+  const formatResponseTime = (ms: number) => {
+    if (ms < 1000) {
+      return `${Math.round(ms)}ms`
+    }
+    return `${(ms / 1000).toFixed(2)}s`
+  }
 
   const handleCopy = async () => {
     try {
@@ -74,7 +81,18 @@ export function ChatMessage({ message }: ChatMessageProps) {
             )}
           </Button>
         </div>
-        <span className="text-[13px] text-muted-foreground px-1">{time}</span>
+        <div className="flex items-center gap-2 text-[13px] text-muted-foreground px-1">
+          <span>{time}</span>
+          {message.responseTime && !isUser && (
+            <>
+              <span className="text-border">•</span>
+              <div className="flex items-center gap-1">
+                <Timer size={12} weight="bold" />
+                <span className="font-medium">{formatResponseTime(message.responseTime)}</span>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { ChatMessage } from '@/components/ChatMessage'
 import { TypingIndicator } from '@/components/TypingIndicator'
+import { TokenSelector } from '@/components/TokenSelector'
 import { Conversation, Message, AgentType, AccessToken } from '@/lib/types'
 import { AGENTS, getAgentName } from '@/lib/agents'
 import { exportAsText, exportAsMarkdown, exportAsPDF, exportAsPNG } from '@/lib/exportUtils'
@@ -17,6 +18,7 @@ type ConversationPaneProps = {
   isLoading: boolean
   onSendMessage: (conversationId: string, message: string) => Promise<void>
   onAgentChange: (conversationId: string, agentType: AgentType) => void
+  onTokenConfigChange?: (conversationId: string, tokenConfigId: string | undefined) => void
   agentNames: Record<string, string>
   onCloseSplit?: () => void
   showSplitButton?: boolean
@@ -30,6 +32,7 @@ export function ConversationPane({
   isLoading,
   onSendMessage,
   onAgentChange,
+  onTokenConfigChange,
   agentNames,
   onCloseSplit,
   showSplitButton = false,
@@ -128,6 +131,14 @@ export function ConversationPane({
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {onTokenConfigChange && (
+            <TokenSelector
+              conversationId={conversation.id}
+              selectedTokenId={conversation.tokenConfigId}
+              onTokenChange={onTokenConfigChange}
+              compact
+            />
+          )}
           <Select value={conversation.agentType} onValueChange={(value) => onAgentChange(conversation.id, value as AgentType)}>
             <SelectTrigger className="w-[150px] h-8 rounded-lg text-xs">
               <SelectValue />
