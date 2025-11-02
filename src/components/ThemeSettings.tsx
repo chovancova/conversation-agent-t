@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Palette, Check, Plus, Pencil, Swatches, TextAa } from '@phosphor-icons/react'
+import { Palette, Check, Plus, Pencil, Swatches, TextAa, Export, Download, FloppyDisk } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -105,6 +105,73 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
     applyTheme('custom', newCustomTheme)
     setEditingMode(null)
     toast.success('Custom theme saved and applied')
+  }
+
+  const handleExportTheme = () => {
+    const exportData = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      theme: {
+        selectedTheme,
+        customTheme,
+        typography
+      }
+    }
+
+    const dataStr = JSON.stringify(exportData, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `theme-settings-${Date.now()}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    toast.success('Theme exported successfully')
+  }
+
+  const handleImportTheme = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string
+        const data = JSON.parse(content)
+        
+        if (!data.theme) {
+          throw new Error('Invalid theme file format')
+        }
+
+        if (data.theme.customTheme) {
+          setCustomTheme(data.theme.customTheme)
+        }
+        if (data.theme.typography) {
+          setTypography(data.theme.typography)
+          applyTypography(data.theme.typography)
+        }
+        if (data.theme.selectedTheme) {
+          setSelectedTheme(data.theme.selectedTheme)
+          if (data.theme.selectedTheme === 'custom' && data.theme.customTheme) {
+            applyTheme('custom', data.theme.customTheme)
+          } else {
+            applyTheme(data.theme.selectedTheme)
+          }
+        }
+
+        toast.success('Theme imported and applied successfully')
+      } catch (error) {
+        toast.error('Failed to import theme', {
+          description: error instanceof Error ? error.message : 'Invalid file format'
+        })
+        console.error('Import error:', error)
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = ''
   }
 
   const groupedThemes = (Object.keys(themes) as ThemeOption[]).reduce((acc, key) => {
@@ -702,7 +769,32 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
+        <div className="flex justify-between gap-2 pt-4 border-t">
+          <div className="flex gap-2">
+            <Button
+              onClick={handleExportTheme}
+              variant="outline"
+              size="sm"
+            >
+              <Export size={16} className="mr-2" />
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => document.getElementById('import-theme-settings')?.click()}
+            >
+              <Download size={16} className="mr-2" />
+              Import
+            </Button>
+            <input
+              id="import-theme-settings"
+              type="file"
+              accept=".json"
+              onChange={handleImportTheme}
+              className="hidden"
+            />
+          </div>
           <Button onClick={() => onOpenChange(false)}>
             Done
           </Button>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Gear, Robot, Palette, Check, Plus, X, CodeBlock, Info, Flask, Warning, CheckCircle, Sparkle } from '@phosphor-icons/react'
+import { Gear, Robot, Palette, Check, Plus, X, CodeBlock, Info, Flask, Warning, CheckCircle, Sparkle, Export, Download, FloppyDisk } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -234,6 +234,69 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
   }
 
   const getConfig = (agentType: string) => advancedConfigs[agentType] || getDefaultConfig()
+
+  const handleExportSettings = () => {
+    const exportData = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      settings: {
+        endpoints,
+        names,
+        advancedConfigs
+      }
+    }
+
+    const dataStr = JSON.stringify(exportData, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `agent-settings-${Date.now()}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    toast.success('Settings exported successfully')
+  }
+
+  const handleImportSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string
+        const data = JSON.parse(content)
+        
+        if (!data.settings) {
+          throw new Error('Invalid settings file format')
+        }
+
+        if (data.settings.endpoints) {
+          setEndpoints(data.settings.endpoints)
+        }
+        if (data.settings.names) {
+          setNames(data.settings.names)
+        }
+        if (data.settings.advancedConfigs) {
+          setAdvancedConfigs(data.settings.advancedConfigs)
+        }
+
+        toast.success('Settings imported successfully', {
+          description: 'Click "Save Settings" to apply the imported configuration'
+        })
+      } catch (error) {
+        toast.error('Failed to import settings', {
+          description: error instanceof Error ? error.message : 'Invalid file format'
+        })
+        console.error('Import error:', error)
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = ''
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -683,13 +746,41 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            Save Settings
-          </Button>
+        <div className="flex justify-between gap-2 pt-4 border-t">
+          <div className="flex gap-2">
+            <Button
+              onClick={handleExportSettings}
+              variant="outline"
+              size="sm"
+            >
+              <Export size={16} className="mr-2" />
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => document.getElementById('import-agent-settings')?.click()}
+            >
+              <Download size={16} className="mr-2" />
+              Import
+            </Button>
+            <input
+              id="import-agent-settings"
+              type="file"
+              accept=".json"
+              onChange={handleImportSettings}
+              className="hidden"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>
+              <FloppyDisk size={18} className="mr-2" />
+              Save Settings
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
