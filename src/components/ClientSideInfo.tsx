@@ -11,7 +11,7 @@ type ClientSideInfoProps = {
 export function ClientSideInfo({ open, onOpenChange }: ClientSideInfoProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CloudSlash size={24} weight="duotone" className="text-accent" />
