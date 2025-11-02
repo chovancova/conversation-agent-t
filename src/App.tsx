@@ -20,6 +20,7 @@ import { AgentSettings } from '@/components/AgentSettings'
 import { SecurityInfo } from '@/components/SecurityInfo'
 import { ThemeSettings } from '@/components/ThemeSettings'
 import { ConversationPane } from '@/components/ConversationPane'
+import { ClientSideInfo } from '@/components/ClientSideInfo'
 import { Conversation, Message, AgentType, AccessToken, TokenConfig } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 import { ThemeOption, applyTheme } from '@/lib/themes'
@@ -43,6 +44,7 @@ function App() {
   const [tokenManagerOpen, setTokenManagerOpen] = useState(false)
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
   const [securityInfoOpen, setSecurityInfoOpen] = useState(false)
+  const [clientSideInfoOpen, setClientSideInfoOpen] = useState(false)
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false)
   const [tokenStatusExpanded, setTokenStatusExpanded] = useState(true)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -351,6 +353,7 @@ function App() {
       <TokenManager open={tokenManagerOpen} onOpenChange={setTokenManagerOpen} />
       <AgentSettings open={agentSettingsOpen} onOpenChange={setAgentSettingsOpen} />
       <SecurityInfo open={securityInfoOpen} onOpenChange={setSecurityInfoOpen} />
+      <ClientSideInfo open={clientSideInfoOpen} onOpenChange={setClientSideInfoOpen} />
       <ThemeSettings open={themeSettingsOpen} onOpenChange={setThemeSettingsOpen} />
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -526,24 +529,24 @@ function App() {
             )}
           </div>
           
-          <div className="p-4 border-t border-border bg-muted/20 flex-shrink-0">
-            <div className="mb-3 px-3 py-2.5 rounded-lg bg-accent/10 border border-accent/30">
-              <div className="flex items-center gap-2 mb-1">
-                <CloudSlash size={14} weight="bold" className="text-accent flex-shrink-0" />
-                <span className="text-xs font-bold text-accent uppercase tracking-wide">Client-Side Only</span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                All data stored locally in your browser. Zero server storage.
-              </p>
-            </div>
+          <div className="p-4 border-t border-border bg-muted/20 flex-shrink-0 space-y-2">
+            <Button 
+              onClick={() => setClientSideInfoOpen(true)} 
+              variant="ghost" 
+              size="sm"
+              className="w-full justify-start h-8 px-2 text-muted-foreground hover:text-accent hover:bg-accent/10"
+            >
+              <CloudSlash size={16} className="mr-2 flex-shrink-0" />
+              <span className="text-xs font-semibold">Client-Side Only</span>
+            </Button>
             <Button 
               onClick={() => setSecurityInfoOpen(true)} 
               variant="ghost" 
               size="sm"
-              className="w-full justify-start h-9 text-muted-foreground hover:text-foreground hover:bg-muted"
+              className="w-full justify-start h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-muted"
             >
-              <ShieldCheck size={16} className="mr-2" />
-              Security & Privacy Info
+              <ShieldCheck size={16} className="mr-2 flex-shrink-0" />
+              <span className="text-xs">Security & Privacy</span>
             </Button>
           </div>
         </aside>

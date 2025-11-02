@@ -29,8 +29,8 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <ShieldCheck size={24} weight="duotone" className="text-accent" />
             Security & Data Privacy
@@ -40,8 +40,8 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 py-4">
-          <div className="space-y-6 pr-4">
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-6 pr-4 py-2">
             <Alert className="border-accent/50 bg-accent/5">
               <CloudSlash size={20} className="text-accent" />
               <AlertTitle className="text-accent font-bold">100% Client-Side Storage</AlertTitle>
