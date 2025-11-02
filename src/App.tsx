@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -527,6 +527,15 @@ function App() {
           </div>
           
           <div className="p-4 border-t border-border bg-muted/20 flex-shrink-0">
+            <div className="mb-3 px-3 py-2.5 rounded-lg bg-accent/10 border border-accent/30">
+              <div className="flex items-center gap-2 mb-1">
+                <CloudSlash size={14} weight="bold" className="text-accent flex-shrink-0" />
+                <span className="text-xs font-bold text-accent uppercase tracking-wide">Client-Side Only</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                All data stored locally in your browser. Zero server storage.
+              </p>
+            </div>
             <Button 
               onClick={() => setSecurityInfoOpen(true)} 
               variant="ghost" 
@@ -534,7 +543,7 @@ function App() {
               className="w-full justify-start h-9 text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               <ShieldCheck size={16} className="mr-2" />
-              Security Info
+              Security & Privacy Info
             </Button>
           </div>
         </aside>
