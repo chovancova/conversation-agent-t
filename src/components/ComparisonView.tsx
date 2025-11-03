@@ -6,11 +6,11 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Clock, CheckCircle, XCircle, ArrowsLeftRight, TextAa, FileArrowDown } from '@phosphor-icons/react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Clock, CheckCircle, XCircle, ArrowsLeftRight, TextAa, FileArrowDown, SmileyXEyes, Smiley, SmileyMeh, FunnelSimple, Tag, TextAlignLeft } from '@phosphor-icons/react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
 import { getAgentName } from '@/lib/agents'
-import { highlightDifferences } from '@/lib/diffUtils'
-import { generateComparisonReport, exportComparisonAsJSON, exportComparisonAsMarkdown } from '@/lib/comparisonExport'
+import { highlightDifferences, extractKeyPhrases, analyzeResponseTone, compareResponseMetrics } from '@/lib/diffUtils'
+import { generateComparisonReport, exportComparisonAsJSON, exportComparisonAsMarkdown, exportComparisonAsCSV } from '@/lib/comparisonExport'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -82,13 +82,21 @@ const MessageCard = ({
   label, 
   isOnlyOne,
   highlightDiff,
-  diffHighlights
+  diffHighlights,
+  showAnalytics,
+  tone,
+  keyPhrases,
+  wordCount
 }: { 
   message?: Message; 
   label: string;
   isOnlyOne?: boolean;
   highlightDiff?: boolean;
   diffHighlights?: Array<{ text: string; highlight: boolean }>;
+  showAnalytics?: boolean;
+  tone?: { sentiment: 'positive' | 'neutral' | 'negative'; confidence: number };
+  keyPhrases?: string[];
+  wordCount?: number;
 }) => {
   if (!message) {
     return (
@@ -106,18 +114,33 @@ const MessageCard = ({
     ? 'bg-amber-500/10 border-amber-500/30'
     : 'bg-card'
 
+  const getToneIcon = () => {
+    if (!tone) return null
+    if (tone.sentiment === 'positive') return <Smiley size={14} weight="fill" className="text-emerald-600" />
+    if (tone.sentiment === 'negative') return <SmileyXEyes size={14} weight="fill" className="text-red-600" />
+    return <SmileyMeh size={14} weight="fill" className="text-amber-600" />
+  }
+
   return (
     <Card className={`p-4 ${bgClass} transition-colors`}>
       <div className="flex items-center justify-between mb-2">
         <Badge variant="secondary" className="text-xs font-semibold">
           {label}
         </Badge>
-        {message.responseTime !== undefined && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock size={12} />
-            <span>{message.responseTime.toFixed(0)}ms</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {message.responseTime !== undefined && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock size={12} />
+              <span>{message.responseTime.toFixed(0)}ms</span>
+            </div>
+          )}
+          {showAnalytics && wordCount !== undefined && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <TextAlignLeft size={12} />
+              <span>{wordCount}w</span>
+            </div>
+          )}
+        </div>
       </div>
       {diffHighlights && diffHighlights.length > 0 ? (
         <p className="text-sm text-foreground whitespace-pre-wrap break-words leading-relaxed">
@@ -137,6 +160,27 @@ const MessageCard = ({
           {message.content}
         </p>
       )}
+      {showAnalytics && (tone || (keyPhrases && keyPhrases.length > 0)) && (
+        <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+          {tone && (
+            <div className="flex items-center gap-2">
+              {getToneIcon()}
+              <span className="text-xs text-muted-foreground capitalize">
+                {tone.sentiment} tone
+              </span>
+            </div>
+          )}
+          {keyPhrases && keyPhrases.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {keyPhrases.map((phrase, idx) => (
+                <Badge key={idx} variant="outline" className="text-xs px-1.5 py-0.5">
+                  {phrase}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {message.error && (
         <div className="mt-2 pt-2 border-t border-destructive/20">
           <p className="text-xs text-destructive font-medium">Error Response</p>
@@ -154,6 +198,8 @@ export function ComparisonView({
   agentNames = {}
 }: ComparisonViewProps) {
   const [showDiffHighlights, setShowDiffHighlights] = useState(true)
+  const [filterMode, setFilterMode] = useState<'all' | 'different' | 'identical'>('all')
+  const [showAnalytics, setShowAnalytics] = useState(true)
   const comparisons = useMemo(() => {
     if (!conversationA || !conversationB) return []
 
@@ -237,6 +283,13 @@ export function ComparisonView({
     }
   }, [comparisons, conversationA, conversationB])
 
+  const filteredComparisons = useMemo(() => {
+    if (filterMode === 'all') return comparisons
+    if (filterMode === 'identical') return comparisons.filter(c => c.type === 'same')
+    if (filterMode === 'different') return comparisons.filter(c => c.type === 'different' || c.type === 'only-a' || c.type === 'only-b')
+    return comparisons
+  }, [comparisons, filterMode])
+
   if (!conversationA || !conversationB) return null
 
   const agentNameA = agentNames[conversationA.agentType] || getAgentName(conversationA.agentType)
@@ -254,6 +307,12 @@ export function ComparisonView({
     toast.success('Comparison exported as Markdown')
   }
 
+  const handleExportCSV = () => {
+    const report = generateComparisonReport(conversationA, conversationB, agentNameA, agentNameB)
+    exportComparisonAsCSV(report)
+    toast.success('Comparison exported as CSV')
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
@@ -266,6 +325,34 @@ export function ComparisonView({
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <FunnelSimple size={16} weight="bold" />
+                    Filter: {filterMode === 'all' ? 'All' : filterMode === 'different' ? 'Different' : 'Identical'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuCheckboxItem
+                    checked={filterMode === 'all'}
+                    onCheckedChange={() => setFilterMode('all')}
+                  >
+                    Show All ({comparisons.length})
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={filterMode === 'different'}
+                    onCheckedChange={() => setFilterMode('different')}
+                  >
+                    Show Different Only ({stats.different + stats.onlyA + stats.onlyB})
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={filterMode === 'identical'}
+                    onCheckedChange={() => setFilterMode('identical')}
+                  >
+                    Show Identical Only ({stats.same})
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 variant="outline"
                 size="sm"
@@ -274,6 +361,15 @@ export function ComparisonView({
               >
                 <TextAa size={16} weight="bold" />
                 {showDiffHighlights ? 'Hide' : 'Show'} Highlights
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                className="gap-2"
+              >
+                <Tag size={16} weight="bold" />
+                {showAnalytics ? 'Hide' : 'Show'} Analytics
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -288,6 +384,9 @@ export function ComparisonView({
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExportMarkdown}>
                     Export as Markdown
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportCSV}>
+                    Export as CSV
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -343,12 +442,16 @@ export function ComparisonView({
 
         <ScrollArea className="flex-1 px-6">
           <div className="py-4 space-y-6">
-            {comparisons.length === 0 ? (
+            {filteredComparisons.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No messages to compare</p>
+                <p className="text-muted-foreground">
+                  {comparisons.length === 0 
+                    ? 'No messages to compare' 
+                    : `No ${filterMode === 'identical' ? 'identical' : 'different'} responses found`}
+                </p>
               </div>
             ) : (
-              comparisons.map((comparison, index) => {
+              filteredComparisons.map((comparison, index) => {
                 const similarity = comparison.messageA && comparison.messageB 
                   ? calculateSimilarity(comparison.messageA.content, comparison.messageB.content)
                   : 0
@@ -356,6 +459,26 @@ export function ComparisonView({
                 const diffData = comparison.messageA && comparison.messageB && showDiffHighlights
                   ? highlightDifferences(comparison.messageA.content, comparison.messageB.content)
                   : null
+
+                const toneA = comparison.messageA && showAnalytics
+                  ? analyzeResponseTone(comparison.messageA.content)
+                  : undefined
+
+                const toneB = comparison.messageB && showAnalytics
+                  ? analyzeResponseTone(comparison.messageB.content)
+                  : undefined
+
+                const keyPhrasesA = comparison.messageA && showAnalytics
+                  ? extractKeyPhrases(comparison.messageA.content, 3)
+                  : undefined
+
+                const keyPhrasesB = comparison.messageB && showAnalytics
+                  ? extractKeyPhrases(comparison.messageB.content, 3)
+                  : undefined
+
+                const metrics = comparison.messageA && comparison.messageB && showAnalytics
+                  ? compareResponseMetrics(comparison.messageA.content, comparison.messageB.content)
+                  : undefined
 
                 return (
                   <div key={index} className="space-y-3">
@@ -376,6 +499,20 @@ export function ComparisonView({
                       />
                     </div>
 
+                    {metrics && showAnalytics && (
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground px-2">
+                        <span>Length: {metrics.wordCountA}w vs {metrics.wordCountB}w</span>
+                        {metrics.lengthDiffPercent !== 0 && (
+                          <span className={cn(
+                            "font-semibold",
+                            metrics.lengthDiffPercent > 0 ? "text-blue-600" : "text-purple-600"
+                          )}>
+                            ({metrics.lengthDiffPercent > 0 ? '+' : ''}{metrics.lengthDiffPercent}%)
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4">
                       <MessageCard 
                         message={comparison.messageA} 
@@ -383,6 +520,10 @@ export function ComparisonView({
                         isOnlyOne={comparison.type === 'only-a'}
                         highlightDiff={comparison.type === 'different'}
                         diffHighlights={diffData?.highlightedA}
+                        showAnalytics={showAnalytics}
+                        tone={toneA}
+                        keyPhrases={keyPhrasesA}
+                        wordCount={metrics?.wordCountA}
                       />
                       <MessageCard 
                         message={comparison.messageB} 
@@ -390,10 +531,14 @@ export function ComparisonView({
                         isOnlyOne={comparison.type === 'only-b'}
                         highlightDiff={comparison.type === 'different'}
                         diffHighlights={diffData?.highlightedB}
+                        showAnalytics={showAnalytics}
+                        tone={toneB}
+                        keyPhrases={keyPhrasesB}
+                        wordCount={metrics?.wordCountB}
                       />
                     </div>
 
-                    {index < comparisons.length - 1 && (
+                    {index < filteredComparisons.length - 1 && (
                       <Separator className="mt-6" />
                     )}
                   </div>

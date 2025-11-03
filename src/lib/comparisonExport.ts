@@ -226,3 +226,39 @@ export function exportComparisonAsMarkdown(report: ComparisonReport): void {
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
 }
+
+export function exportComparisonAsCSV(report: ComparisonReport): void {
+  const escapeCSV = (str: string) => {
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`
+    }
+    return str
+  }
+
+  let csv = 'Exchange,User Message,Agent A Response,Agent A Time (ms),Agent A Error,Agent B Response,Agent B Time (ms),Agent B Error,Similarity %\n'
+  
+  report.exchanges.forEach(exchange => {
+    const row = [
+      exchange.index,
+      escapeCSV(exchange.userMessage || ''),
+      escapeCSV(exchange.responseA?.content || 'No response'),
+      exchange.responseA?.responseTime?.toFixed(0) || '',
+      exchange.responseA?.error ? 'Yes' : 'No',
+      escapeCSV(exchange.responseB?.content || 'No response'),
+      exchange.responseB?.responseTime?.toFixed(0) || '',
+      exchange.responseB?.error ? 'Yes' : 'No',
+      exchange.similarity?.toString() || ''
+    ]
+    csv += row.join(',') + '\n'
+  })
+
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `comparison-report-${new Date(report.timestamp).toISOString().split('T')[0]}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}

@@ -45,6 +45,113 @@ export function calculateWordDiff(textA: string, textB: string): { partsA: DiffP
   return { partsA, partsB }
 }
 
+export function extractKeyPhrases(text: string, topN: number = 5): string[] {
+  const commonWords = new Set([
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
+    'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should',
+    'could', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'i',
+    'you', 'he', 'she', 'it', 'we', 'they', 'what', 'which', 'who', 'when',
+    'where', 'why', 'how', 'please', 'thank', 'thanks'
+  ])
+
+  const words = text.toLowerCase().match(/\b[a-z]{3,}\b/g) || []
+  const filtered = words.filter(w => !commonWords.has(w))
+  
+  const frequency: Record<string, number> = {}
+  filtered.forEach(word => {
+    frequency[word] = (frequency[word] || 0) + 1
+  })
+
+  return Object.entries(frequency)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([word]) => word)
+}
+
+export function analyzeResponseTone(text: string): {
+  sentiment: 'positive' | 'neutral' | 'negative'
+  confidence: number
+  indicators: string[]
+} {
+  const positiveWords = [
+    'success', 'successful', 'complete', 'completed', 'approved', 'confirmed',
+    'great', 'excellent', 'good', 'perfect', 'wonderful', 'happy', 'pleased',
+    'thank', 'thanks', 'welcome', 'help', 'support', 'yes', 'absolutely'
+  ]
+  
+  const negativeWords = [
+    'error', 'fail', 'failed', 'failure', 'reject', 'rejected', 'denied',
+    'unable', 'cannot', 'can\'t', 'won\'t', 'issue', 'problem', 'incorrect',
+    'invalid', 'missing', 'sorry', 'apologize', 'unfortunately', 'no'
+  ]
+
+  const lowerText = text.toLowerCase()
+  const words = lowerText.match(/\b[a-z']+\b/g) || []
+
+  const foundPositive = positiveWords.filter(word => lowerText.includes(word))
+  const foundNegative = negativeWords.filter(word => lowerText.includes(word))
+
+  const positiveCount = foundPositive.length
+  const negativeCount = foundNegative.length
+  const totalSentiment = positiveCount + negativeCount
+
+  if (totalSentiment === 0) {
+    return { sentiment: 'neutral', confidence: 50, indicators: [] }
+  }
+
+  const positiveRatio = positiveCount / totalSentiment
+
+  if (positiveRatio > 0.6) {
+    return {
+      sentiment: 'positive',
+      confidence: Math.min(95, 60 + positiveRatio * 35),
+      indicators: foundPositive.slice(0, 3)
+    }
+  } else if (positiveRatio < 0.4) {
+    return {
+      sentiment: 'negative',
+      confidence: Math.min(95, 60 + (1 - positiveRatio) * 35),
+      indicators: foundNegative.slice(0, 3)
+    }
+  } else {
+    return {
+      sentiment: 'neutral',
+      confidence: 50 + Math.abs(0.5 - positiveRatio) * 40,
+      indicators: []
+    }
+  }
+}
+
+export function compareResponseMetrics(textA: string, textB: string): {
+  lengthDiff: number
+  lengthDiffPercent: number
+  wordCountA: number
+  wordCountB: number
+  sentenceCountA: number
+  sentenceCountB: number
+} {
+  const wordCountA = textA.split(/\s+/).filter(w => w.length > 0).length
+  const wordCountB = textB.split(/\s+/).filter(w => w.length > 0).length
+  
+  const sentenceCountA = textA.split(/[.!?]+/).filter(s => s.trim().length > 0).length
+  const sentenceCountB = textB.split(/[.!?]+/).filter(s => s.trim().length > 0).length
+
+  const lengthDiff = textB.length - textA.length
+  const lengthDiffPercent = textA.length > 0 
+    ? Math.round((lengthDiff / textA.length) * 100)
+    : 0
+
+  return {
+    lengthDiff,
+    lengthDiffPercent,
+    wordCountA,
+    wordCountB,
+    sentenceCountA,
+    sentenceCountB
+  }
+}
+
 export function calculateSimilarityPercentage(textA: string, textB: string): number {
   if (textA === textB) return 100
   
