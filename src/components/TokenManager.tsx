@@ -18,6 +18,7 @@ import { encryptData, decryptData } from '@/lib/encryption'
 import { getJWTExpiration } from '@/lib/jwt'
 import { validateEndpointSecurity } from '@/lib/security'
 import { ClientCertificateSetup } from '@/components/ClientCertificateSetup'
+import { buildProxiedUrl } from '@/lib/corsProxy'
 
 type TokenManagerProps = {
   open: boolean
@@ -39,6 +40,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [useJWTExpiration, setUseJWTExpiration] = useState(false)
   const [ignoreCertErrors, setIgnoreCertErrors] = useState(false)
   const [proxyUrl, setProxyUrl] = useState('')
+  const [corsProxy, setCorsProxy] = useState('')
+  const [useCorsProxy, setUseCorsProxy] = useState(false)
   const [clientCertificate, setClientCertificate] = useState<ClientCertificateConfig>({
     enabled: false
   })
@@ -64,6 +67,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       setUseJWTExpiration(selectedToken.useJWTExpiration || false)
       setIgnoreCertErrors(selectedToken.ignoreCertErrors || false)
       setProxyUrl(selectedToken.proxyUrl || '')
+      setCorsProxy(selectedToken.corsProxy || '')
+      setUseCorsProxy(selectedToken.useCorsProxy || false)
       setClientCertificate(selectedToken.clientCertificate || { enabled: false })
       if (selectedToken.isEncrypted) {
         setClientId('••••••••')
@@ -113,7 +118,9 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         clientId,
         clientSecret,
         username,
-        password
+        password,
+        proxyUrl,
+        corsProxy
       })
 
       const encrypted = await encryptData(credentialsData, encryptionPassword)
@@ -130,7 +137,9 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         useFormEncoded,
         useJWTExpiration,
         ignoreCertErrors,
-        proxyUrl,
+        proxyUrl: proxyUrl ? '••••••••' : '',
+        corsProxy: corsProxy ? '••••••••' : '',
+        useCorsProxy,
         clientCertificate: clientCertificate.enabled ? clientCertificate : undefined
       }
 
@@ -171,6 +180,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       setClientSecret(credentials.clientSecret)
       setUsername(credentials.username)
       setPassword(credentials.password)
+      setProxyUrl(credentials.proxyUrl || '')
+      setCorsProxy(credentials.corsProxy || '')
       setShowForm(true)
 
       toast.success('Credentials decrypted successfully')
@@ -224,15 +235,21 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         token.username, 
         token.password,
         token.useFormEncoded || false,
-        token.useJWTExpiration || false
+        token.useJWTExpiration || false,
+        token.useCorsProxy || false,
+        token.corsProxy || ''
       )
     }
   }
 
-  const handleGenerateTokenDirect = async (ep: string, cid: string, csecret: string, uname: string, pwd: string, formEncoded = false, jwtExp = false) => {
+  const handleGenerateTokenDirect = async (ep: string, cid: string, csecret: string, uname: string, pwd: string, formEncoded = false, jwtExp = false, useCorsProxyFlag = false, corsProxyUrl = '') => {
     setIsGenerating(true)
 
     try {
+      const finalEndpoint = useCorsProxyFlag && corsProxyUrl 
+        ? buildProxiedUrl(ep, corsProxyUrl)
+        : ep
+
       const headers: Record<string, string> = {}
       let body: string
 
@@ -255,7 +272,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         })
       }
 
-      const response = await fetch(ep, {
+      const response = await fetch(finalEndpoint, {
         method: 'POST',
         headers,
         body
@@ -292,7 +309,13 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
 
       toast.success('Access token generated successfully')
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to generate token')
+      let errorMessage = error instanceof Error ? error.message : 'Failed to generate token'
+      
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('CORS')) {
+        errorMessage = 'CORS error: Enable "Use CORS Proxy" to bypass browser restrictions'
+      }
+      
+      toast.error(errorMessage)
       console.error('Token generation error:', error)
     } finally {
       setIsGenerating(false)
@@ -308,6 +331,10 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     setIsGenerating(true)
 
     try {
+      const finalEndpoint = useCorsProxy && corsProxy 
+        ? buildProxiedUrl(endpoint, corsProxy)
+        : endpoint
+
       const headers: Record<string, string> = {}
       let body: string
 
@@ -330,7 +357,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         })
       }
 
-      const response = await fetch(endpoint, {
+      const response = await fetch(finalEndpoint, {
         method: 'POST',
         headers,
         body
@@ -367,7 +394,13 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
 
       toast.success('Access token generated successfully')
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to generate token')
+      let errorMessage = error instanceof Error ? error.message : 'Failed to generate token'
+      
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('CORS')) {
+        errorMessage = 'CORS error: Enable "Use CORS Proxy" to bypass browser restrictions'
+      }
+      
+      toast.error(errorMessage)
       console.error('Token generation error:', error)
     } finally {
       setIsGenerating(false)
@@ -398,6 +431,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         useJWTExpiration,
         ignoreCertErrors,
         proxyUrl,
+        corsProxy,
+        useCorsProxy,
         clientCertificate: clientCertificate.enabled ? clientCertificate : undefined
       }
 
@@ -443,6 +478,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     setUseJWTExpiration(false)
     setIgnoreCertErrors(false)
     setProxyUrl('')
+    setCorsProxy('')
+    setUseCorsProxy(false)
     setShowForm(true)
   }
 
@@ -846,23 +883,67 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                   <Input
                     id="proxy-url"
                     type="url"
-                    placeholder="https://proxy.example.com:8080"
+                    placeholder="https://username:password@proxy.example.com:8080 or https://proxy.example.com:8080"
                     value={proxyUrl}
                     onChange={(e) => setProxyUrl(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Configure a proxy server if required by your network
+                    Configure a proxy server with optional embedded credentials (username:password@host)
                   </p>
                 </div>
+
+                <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                  <div className="flex flex-col flex-1">
+                    <Label htmlFor="use-cors-proxy" className="text-sm font-semibold cursor-pointer">
+                      Use CORS Proxy
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Route requests through a CORS proxy to bypass browser CORS restrictions
+                    </p>
+                  </div>
+                  <Switch
+                    id="use-cors-proxy"
+                    checked={useCorsProxy}
+                    onCheckedChange={setUseCorsProxy}
+                  />
+                </div>
+
+                {useCorsProxy && (
+                  <div className="space-y-2">
+                    <Label htmlFor="cors-proxy" className="text-sm font-semibold">
+                      CORS Proxy URL
+                    </Label>
+                    <Input
+                      id="cors-proxy"
+                      type="url"
+                      placeholder="https://cors-anywhere.herokuapp.com/ or https://api.allorigins.win/raw?url="
+                      value={corsProxy}
+                      onChange={(e) => setCorsProxy(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Target URL will be appended to this proxy URL. Can include credentials (username:password@host)
+                    </p>
+                    <Alert className="border-accent/50 bg-accent/10">
+                      <ShieldCheck size={16} className="text-accent" />
+                      <AlertDescription className="text-xs text-foreground">
+                        <div className="font-semibold mb-1">CORS Proxy Examples:</div>
+                        <div>• https://cors-anywhere.herokuapp.com/</div>
+                        <div>• https://api.allorigins.win/raw?url=</div>
+                        <div>• Your own proxy with credentials: https://user:pass@myproxy.com/</div>
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
               </div>
 
-              {(ignoreCertErrors || proxyUrl) && (
+              {(ignoreCertErrors || proxyUrl || useCorsProxy) && (
                 <Alert className="border-amber-500/50 bg-amber-500/10">
                   <Warning size={16} className="text-amber-500" />
-                  <AlertTitle className="text-sm font-semibold text-amber-900 dark:text-amber-200">Browser Limitations</AlertTitle>
+                  <AlertTitle className="text-sm font-semibold text-amber-900 dark:text-amber-200">Browser & Network Notes</AlertTitle>
                   <AlertDescription className="text-xs text-amber-900 dark:text-amber-200">
                     {ignoreCertErrors && <div>• Certificate validation is controlled by the browser. Self-signed certificates may still be blocked.</div>}
                     {proxyUrl && <div>• Proxy settings are informational only. Browser fetch API uses system proxy settings automatically.</div>}
+                    {useCorsProxy && <div>• CORS Proxy routes your requests through a third-party server to bypass browser CORS restrictions.</div>}
                     <div className="mt-1 font-semibold">💡 This is a client-side app - all requests come from your browser, not a server.</div>
                   </AlertDescription>
                 </Alert>

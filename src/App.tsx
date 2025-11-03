@@ -36,6 +36,7 @@ import { ThemeOption, applyTheme } from '@/lib/themes'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 import { SessionTimeout, clearSensitiveData } from '@/lib/security'
 import { createAutoBackup } from '@/lib/dataManager'
+import { buildProxiedUrl } from '@/lib/corsProxy'
 
 function App() {
   const [conversations, setConversations] = useKV<Conversation[]>('conversations', [])
@@ -73,6 +74,7 @@ function App() {
   const [setupComplete] = useKV<boolean>('setup-complete', false)
   const [wizardDismissed, setWizardDismissed] = useKV<boolean>('wizard-dismissed', false)
   const [savedTokens] = useKV<TokenConfig[]>('saved-tokens', [])
+  const [selectedTokenId] = useKV<string | null>('selected-token-id', null)
   const [setupWizardOpen, setSetupWizardOpen] = useState(false)
   const [sessionTimeoutEnabled] = useKV<boolean>('session-timeout-enabled', true)
   const [sessionTimeoutWarning, setSessionTimeoutWarning] = useState(false)
@@ -344,6 +346,14 @@ function App() {
       return
     }
 
+    const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
+    const useCorsProxy = selectedToken?.useCorsProxy || false
+    const corsProxy = selectedToken?.corsProxy || ''
+
+    const finalEndpoint = useCorsProxy && corsProxy 
+      ? buildProxiedUrl(endpoint, corsProxy)
+      : endpoint
+
     const agentConfig = agentAdvancedConfigs?.[conversation.agentType]
     const defaultConfig: AgentAdvancedConfig = {
       protocol: 'custom',
@@ -401,7 +411,7 @@ function App() {
         }
       })
 
-      const response = await fetch(endpoint, {
+      const response = await fetch(finalEndpoint, {
         method: 'POST',
         headers,
         body: JSON.stringify(requestBody)
@@ -453,20 +463,32 @@ function App() {
       const updatedConversation = conversations?.find(c => c.id === conversationId)
       const updatedMessages = updatedConversation?.messages || []
 
-      const errorMessage: Message = {
+      let errorMessage = error instanceof Error ? error.message : 'Failed to get response from agent'
+      
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('CORS')) {
+        errorMessage = 'CORS error: The server is blocking cross-origin requests. Enable "Use CORS Proxy" in Token Manager to bypass this restriction.'
+      }
+
+      const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: error instanceof Error ? error.message : 'Failed to get response from agent',
+        content: errorMessage,
         timestamp: Date.now(),
         error: true,
         responseTime: responseTime,
       }
 
       updateConversation(conversation.id, {
-        messages: [...updatedMessages, errorMessage],
+        messages: [...updatedMessages, errorMsg],
       })
 
-      toast.error('Failed to get response. Check console for details.')
+      if (errorMessage.includes('CORS')) {
+        toast.error('CORS Error Detected', {
+          description: 'Enable CORS Proxy in Token Manager to fix this'
+        })
+      } else {
+        toast.error('Failed to get response. Check console for details.')
+      }
       console.error('Error getting agent response:', error)
     } finally {
       setIsLoading(false)

@@ -20,6 +20,8 @@ export type Conversation = {
   updatedAt: number
   sessionId?: string
   tokenConfigId?: string
+  corsProxy?: string
+  useCorsProxy?: boolean
 }
 
 export type AgentConfig = {
@@ -74,6 +76,8 @@ export type TokenConfig = {
   ignoreCertErrors?: boolean
   proxyUrl?: string
   clientCertificate?: ClientCertificateConfig
+  corsProxy?: string
+  useCorsProxy?: boolean
 }
 
 export type EncryptedTokenConfig = {
