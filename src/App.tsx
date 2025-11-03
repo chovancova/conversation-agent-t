@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh, ArrowsLeftRight, X as XIcon, Rocket } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh, ArrowsLeftRight, X as XIcon, Rocket, Database } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -29,11 +29,13 @@ import { KeyboardShortcuts } from '@/components/KeyboardShortcuts'
 import { ComparisonView } from '@/components/ComparisonView'
 import { ComparisonSelector } from '@/components/ComparisonSelector'
 import { SessionTimeoutWarning } from '@/components/SessionTimeoutWarning'
+import { DataManager } from '@/components/DataManager'
 import { Conversation, Message, AgentType, AccessToken, TokenConfig, AgentAdvancedConfig } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 import { ThemeOption, applyTheme } from '@/lib/themes'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 import { SessionTimeout, clearSensitiveData } from '@/lib/security'
+import { createAutoBackup } from '@/lib/dataManager'
 
 function App() {
   const [conversations, setConversations] = useKV<Conversation[]>('conversations', [])
@@ -58,6 +60,7 @@ function App() {
   const [clientSideInfoOpen, setClientSideInfoOpen] = useState(false)
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false)
   const [soundSettingsOpen, setSoundSettingsOpen] = useState(false)
+  const [dataManagerOpen, setDataManagerOpen] = useState(false)
   const [tokenStatusExpanded, setTokenStatusExpanded] = useState(true)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null)
@@ -72,6 +75,8 @@ function App() {
   const [sessionTimeoutEnabled] = useKV<boolean>('session-timeout-enabled', true)
   const [sessionTimeoutWarning, setSessionTimeoutWarning] = useState(false)
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(5)
+  const [autoBackupEnabled] = useKV<boolean>('auto-backup-enabled', true)
+  const [lastBackupTime] = useKV<number>('last-backup-time', 0)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const sessionTimeoutRef = useRef<SessionTimeout | null>(null)
 
@@ -140,6 +145,32 @@ function App() {
     }
   }, [sessionTimeoutEnabled])
 
+  useEffect(() => {
+    if (!autoBackupEnabled) return
+
+    const AUTO_BACKUP_INTERVAL = 30 * 60 * 1000
+
+    const performAutoBackup = async () => {
+      const now = Date.now()
+      const timeSinceLastBackup = now - (lastBackupTime || 0)
+
+      if (timeSinceLastBackup >= AUTO_BACKUP_INTERVAL && (conversations?.length || 0) > 0) {
+        try {
+          await createAutoBackup()
+          await window.spark.kv.set('last-backup-time', now)
+        } catch (error) {
+          console.error('Auto-backup failed:', error)
+        }
+      }
+    }
+
+    const interval = setInterval(performAutoBackup, 5 * 60 * 1000)
+
+    performAutoBackup()
+
+    return () => clearInterval(interval)
+  }, [autoBackupEnabled, lastBackupTime, conversations])
+
   const handleSessionTimeout = async () => {
     toast.info('Session expired due to inactivity', {
       description: 'Clearing sensitive data for security...'
@@ -183,6 +214,12 @@ function App() {
         setTimeout(() => searchInputRef.current?.focus(), 100)
       },
       description: 'Focus search',
+    },
+    {
+      key: 'e',
+      ctrlOrCmd: true,
+      callback: () => setDataManagerOpen(true),
+      description: 'Open Data Manager',
     },
     {
       key: '\\',
@@ -623,6 +660,7 @@ function App() {
       <ClientSideInfo open={clientSideInfoOpen} onOpenChange={setClientSideInfoOpen} />
       <ThemeSettings open={themeSettingsOpen} onOpenChange={setThemeSettingsOpen} />
       <SoundSettings open={soundSettingsOpen} onOpenChange={setSoundSettingsOpen} />
+      <DataManager open={dataManagerOpen} onOpenChange={setDataManagerOpen} />
       <ConversationSelector 
         open={conversationSelectorOpen} 
         onOpenChange={setConversationSelectorOpen}
@@ -744,6 +782,18 @@ function App() {
               >
                 <SpeakerHigh size={16} className="mr-1.5" />
                 Sounds
+              </Button>
+            </div>
+
+            <div className="flex gap-2 mb-3">
+              <Button 
+                onClick={() => setDataManagerOpen(true)} 
+                variant="outline" 
+                size="sm"
+                className="h-9 w-full"
+              >
+                <Database size={16} className="mr-1.5" />
+                Data Manager
               </Button>
             </div>
 
