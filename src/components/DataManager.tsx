@@ -22,6 +22,7 @@ import {
   deleteBackup,
   formatFileSize,
   exportSelectedConversations,
+  clearAllData,
   type ImportOptions,
   type ImportResult,
   type BackupMetadata,
@@ -56,6 +57,7 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
   
   const [backups, setBackups] = useState<BackupMetadata[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [clearIncludeTokens, setClearIncludeTokens] = useState(false)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -231,6 +233,23 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
     setExportSelectedIds([])
   }
 
+  const handleClearAllData = async () => {
+    setIsLoading(true)
+    try {
+      await clearAllData(clearIncludeTokens)
+      toast.success('All data cleared successfully', {
+        description: 'The page will reload to reset the application state'
+      })
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+    } catch (error) {
+      toast.error('Failed to clear data: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -246,7 +265,7 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="export" className="gap-2">
                 <FileArrowDown size={16} weight="bold" />
                 Export
@@ -258,6 +277,10 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
               <TabsTrigger value="backups" className="gap-2" onClick={loadBackups}>
                 <HardDrives size={16} weight="bold" />
                 Backups
+              </TabsTrigger>
+              <TabsTrigger value="clear" className="gap-2">
+                <Trash size={16} weight="bold" />
+                Clear
               </TabsTrigger>
             </TabsList>
 
@@ -625,6 +648,103 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Close
                 </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="clear" className="space-y-4 mt-4">
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="space-y-4">
+                  <Alert className="border-destructive/50 bg-destructive/10">
+                    <WarningCircle size={20} className="text-destructive" />
+                    <AlertDescription className="text-sm">
+                      <strong className="font-semibold">Warning:</strong> Clearing data is permanent and cannot be undone. Consider creating a backup before proceeding.
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm">What will be cleared:</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle size={16} className="text-destructive mt-0.5 flex-shrink-0" weight="fill" />
+                        <div>
+                          <div className="font-medium">All Conversations</div>
+                          <div className="text-xs text-muted-foreground">
+                            {(conversations || []).length} conversation{(conversations || []).length !== 1 ? 's' : ''} will be permanently deleted
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle size={16} className="text-destructive mt-0.5 flex-shrink-0" weight="fill" />
+                        <div>
+                          <div className="font-medium">Agent Configuration</div>
+                          <div className="text-xs text-muted-foreground">All agent endpoints and custom names</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle size={16} className="text-destructive mt-0.5 flex-shrink-0" weight="fill" />
+                        <div>
+                          <div className="font-medium">Setup Wizard State</div>
+                          <div className="text-xs text-muted-foreground">The setup wizard will appear again on next load</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle size={16} className="text-destructive mt-0.5 flex-shrink-0" weight="fill" />
+                        <div>
+                          <div className="font-medium">UI Preferences</div>
+                          <div className="text-xs text-muted-foreground">Sidebar state, filters, and search history</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                      <div className="flex flex-col flex-1">
+                        <Label htmlFor="clear-include-tokens" className="text-sm font-semibold cursor-pointer">
+                          Also Clear Token Configurations
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Remove saved token configurations and active access tokens
+                        </p>
+                      </div>
+                      <Checkbox
+                        id="clear-include-tokens"
+                        checked={clearIncludeTokens}
+                        onCheckedChange={(checked) => setClearIncludeTokens(checked as boolean)}
+                      />
+                    </div>
+                  </div>
+
+                  <Alert>
+                    <Info size={16} className="text-primary" />
+                    <AlertDescription className="text-sm">
+                      <strong className="font-semibold">Recommendation:</strong> Create a backup in the Backups tab before clearing data. Theme preferences and sound settings will be preserved.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </ScrollArea>
+
+              <Separator />
+
+              <div className="flex justify-between gap-2">
+                <Button variant="outline" onClick={() => setActiveTab('backups')}>
+                  Create Backup First
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleClearAllData} 
+                    disabled={isLoading}
+                  >
+                    <Trash size={16} className="mr-2" weight="bold" />
+                    Clear All Data
+                  </Button>
+                </div>
               </div>
             </TabsContent>
           </Tabs>

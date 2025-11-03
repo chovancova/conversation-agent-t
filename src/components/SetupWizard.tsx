@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, Circle, Robot, Key, Gear, Rocket, CaretRight, CaretLeft, Eye, EyeSlash, Info } from '@phosphor-icons/react'
+import { Switch } from '@/components/ui/switch'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { CheckCircle, Circle, Robot, Key, Gear, Rocket, CaretRight, CaretLeft, Eye, EyeSlash, Info, Warning, ShieldWarning } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { AccessToken, TokenConfig, AgentType } from '@/lib/types'
 import { AGENTS } from '@/lib/agents'
@@ -41,6 +43,7 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
   const [showPassword, setShowPassword] = useState(false)
   const [isGeneratingToken, setIsGeneratingToken] = useState(false)
   const [tokenGenerated, setTokenGenerated] = useState(false)
+  const [ignoreCertErrors, setIgnoreCertErrors] = useState(false)
 
   const [selectedAgent, setSelectedAgent] = useState<AgentType>('account-opening')
   const [agentEndpoint, setAgentEndpoint] = useState('')
@@ -105,7 +108,8 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
         clientSecret: clientSecret,
         username: username,
         password: password,
-        isEncrypted: false
+        isEncrypted: false,
+        ignoreCertErrors: ignoreCertErrors
       }
 
       await setSavedTokens([tokenConfig])
@@ -386,6 +390,32 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
                     </div>
                   </div>
                 </div>
+
+                <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                  <div className="flex flex-col flex-1">
+                    <Label htmlFor="setup-ignore-cert-errors" className="text-sm font-semibold cursor-pointer">
+                      Ignore Certificate Errors
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Enable for self-signed certs or ERR_CERT_AUTHORITY_INVALID errors
+                    </p>
+                  </div>
+                  <Switch
+                    id="setup-ignore-cert-errors"
+                    checked={ignoreCertErrors}
+                    onCheckedChange={setIgnoreCertErrors}
+                    disabled={tokenGenerated}
+                  />
+                </div>
+
+                {ignoreCertErrors && (
+                  <Alert className="border-amber-500/50 bg-amber-500/10">
+                    <Warning size={16} className="text-amber-500" />
+                    <AlertDescription className="text-xs text-amber-900 dark:text-amber-200">
+                      This is a client-side app running in your browser. Certificate validation is controlled by your browser's security settings. Self-signed certificates may still require you to accept them manually in your browser.
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 {tokenGenerated ? (
                   <div className="flex items-center gap-2 p-4 rounded-xl border border-primary bg-primary/5">

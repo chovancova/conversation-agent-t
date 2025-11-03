@@ -472,3 +472,25 @@ export async function exportSelectedConversations(conversationIds: string[]): Pr
 
   return pkg
 }
+
+export async function clearAllData(includeTokens: boolean = false): Promise<void> {
+  const keysToDelete = [
+    'conversations',
+    'activeConversationId',
+    'splitConversationId',
+    'split-mode',
+    'agent-endpoints',
+    'agent-names',
+    'agent-advanced-configs',
+    'setup-complete',
+    'wizard-dismissed',
+    'search-query',
+    'selected-agent-filters'
+  ]
+
+  if (includeTokens) {
+    keysToDelete.push('saved-tokens', 'selected-token-id', 'access-token', 'decrypted-credentials-cache')
+  }
+
+  await Promise.all(keysToDelete.map(key => window.spark.kv.delete(key)))
+}

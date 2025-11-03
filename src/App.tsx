@@ -71,6 +71,7 @@ function App() {
   const [comparisonViewOpen, setComparisonViewOpen] = useState(false)
   const [comparisonConversations, setComparisonConversations] = useState<{ a: Conversation | null; b: Conversation | null }>({ a: null, b: null })
   const [setupComplete] = useKV<boolean>('setup-complete', false)
+  const [wizardDismissed, setWizardDismissed] = useKV<boolean>('wizard-dismissed', false)
   const [setupWizardOpen, setSetupWizardOpen] = useState(false)
   const [sessionTimeoutEnabled] = useKV<boolean>('session-timeout-enabled', true)
   const [sessionTimeoutWarning, setSessionTimeoutWarning] = useState(false)
@@ -114,13 +115,21 @@ function App() {
   }, [selectedTheme, customTheme])
 
   useEffect(() => {
-    if (!setupComplete && !setupWizardOpen) {
-      const timer = setTimeout(() => {
-        setSetupWizardOpen(true)
-      }, 500)
-      return () => clearTimeout(timer)
+    const checkSetupNeeded = async () => {
+      const hasSavedTokens = ((await window.spark.kv.get<any[]>('saved-tokens')) || []).length > 0
+      const hasAgentEndpoints = Object.keys(agentEndpoints || {}).length > 0
+      const hasMinimalSetup = hasSavedTokens || hasAgentEndpoints
+      
+      if (!setupComplete && !wizardDismissed && !setupWizardOpen && !hasMinimalSetup) {
+        const timer = setTimeout(() => {
+          setSetupWizardOpen(true)
+        }, 500)
+        return () => clearTimeout(timer)
+      }
     }
-  }, [setupComplete, setupWizardOpen])
+    
+    checkSetupNeeded()
+  }, [setupComplete, wizardDismissed, setupWizardOpen, agentEndpoints])
 
   useEffect(() => {
     if (sessionTimeoutEnabled && !sessionTimeoutRef.current) {
@@ -640,6 +649,14 @@ function App() {
     }
   }
 
+  const handleSetupWizardClose = (open: boolean) => {
+    if (!open && !setupComplete) {
+      setWizardDismissed(true)
+      toast.info('Setup wizard dismissed. You can reopen it anytime from the sidebar.')
+    }
+    setSetupWizardOpen(open)
+  }
+
   const handleReorderConversation = (conversationId: string, newIndex: number) => {
     setConversations((current = []) => {
       const sourceIndex = current.findIndex(c => c.id === conversationId)
@@ -669,7 +686,7 @@ function App() {
       />
       <SetupWizard 
         open={setupWizardOpen} 
-        onOpenChange={setSetupWizardOpen}
+        onOpenChange={handleSetupWizardClose}
         onComplete={handleSetupWizardComplete}
       />
       <TokenManager open={tokenManagerOpen} onOpenChange={setTokenManagerOpen} />
