@@ -101,7 +101,7 @@ npm run dev
 
 **Output Example:**
 ```
-  VITE v6.4.1  ready in 234 ms
+  VITE v6.x.x  ready in 234 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
@@ -125,7 +125,8 @@ npm run dev
 # Start dev server (default)
 npm run dev
 
-# Kill process on port 5000 (if needed)
+# Kill process on port 5000 (if needed for other purposes)
+# Note: Dev server runs on 5173, this is for port 5000 specifically
 npm run kill
 
 # Run linter to check code style
@@ -416,8 +417,8 @@ If you encounter issues not covered here:
 
 ```bash
 # Development
-npm run dev              # Start dev server
-npm run kill             # Kill process on port 5000
+npm run dev              # Start dev server (runs on port 5173)
+npm run kill             # Kill process on port 5000 (legacy/other services)
 
 # Building
 npm run build            # Build for production
