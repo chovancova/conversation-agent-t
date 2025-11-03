@@ -956,7 +956,10 @@ function App() {
                 </Button>
               </header>
               <div className="flex-1">
-                <EmptyState />
+                <EmptyState 
+                  onCreateConversation={() => createNewConversation('account-opening')}
+                  onSetupAuth={() => setTokenManagerOpen(true)}
+                />
               </div>
             </div>
           )}
