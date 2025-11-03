@@ -979,32 +979,30 @@ function App() {
               <header className="h-14 border-b border-border px-3 flex items-center bg-card/50 backdrop-blur-sm flex-shrink-0">
                 <Button
                   variant="ghost"
-                  onCreateConversation={() => {
-                    if (!setupComplete) {
-                      setSetupWizardOpen(true)
-                    } else {
-                      createNewConversation('account-opening')
-                    }
-                  }}
-                  onSetupAuth={() => {
-                    if (!setupComplete) {
-                      setSetupWizardOpen(true)
-                    } else {
-                      setTokenManagerOpen(true)
-                    }
-                  }}
-                      createNewConversation('account-opening')
-                    }
-                  }}
-                  onSetupAuth={() => {
-                    if (!setupComplete) {
-                      setSetupWizardOpen(true)
-                    } else {
-                      setTokenManagerOpen(true)
-                    }
-                  }}
-                />
-              </div>
+                  size="icon"
+                  onClick={() => setSidebarOpen((current) => !current)}
+                  className="h-9 w-9 rounded-xl hover:bg-muted transition-all"
+                  title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+                >
+                  <List size={20} weight="bold" />
+                </Button>
+              </header>
+              <EmptyState
+                onCreateConversation={() => {
+                  if (!setupComplete) {
+                    setSetupWizardOpen(true)
+                  } else {
+                    createNewConversation('account-opening')
+                  }
+                }}
+                onSetupAuth={() => {
+                  if (!setupComplete) {
+                    setSetupWizardOpen(true)
+                  } else {
+                    setTokenManagerOpen(true)
+                  }
+                }}
+              />
             </div>
           )}
         </main>
