@@ -14,7 +14,7 @@ export type CORSProxyConfig = {
   }
 }
 
-export function buildProxiedUrl(targetUrl: string, proxyUrl: string): string {
+export const buildProxiedUrl = (targetUrl: string, proxyUrl: string): string => {
   if (!proxyUrl || !targetUrl) {
     return targetUrl
   }
@@ -30,10 +30,7 @@ export function buildProxiedUrl(targetUrl: string, proxyUrl: string): string {
   return `${proxyUrl}/${targetUrl}`
 }
 
-export function extractCredentialsFromProxyUrl(proxyUrl: string): {
-  cleanUrl: string
-  credentials?: { username: string; password: string }
-} {
+export const extractCredentialsFromProxyUrl = (proxyUrl: string) => {
   try {
     const url = new URL(proxyUrl)
     
@@ -53,11 +50,11 @@ export function extractCredentialsFromProxyUrl(proxyUrl: string): {
   }
 }
 
-export function buildProxyUrlWithCredentials(
+export const buildProxyUrlWithCredentials = (
   baseUrl: string,
   username?: string,
   password?: string
-): string {
+): string => {
   if (!username || !password) {
     return baseUrl
   }
@@ -72,7 +69,7 @@ export function buildProxyUrlWithCredentials(
   }
 }
 
-export function sanitizeProxyUrlForDisplay(proxyUrl: string): string {
+export const sanitizeProxyUrlForDisplay = (proxyUrl: string): string => {
   try {
     const url = new URL(proxyUrl)
     
