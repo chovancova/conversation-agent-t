@@ -224,7 +224,25 @@ Customize reading experience:
 
 ## 📖 Documentation
 
-Comprehensive documentation available in the [`docs/`](docs/) folder:
+### Wiki Documentation
+
+**📚 [Visit the Wiki](https://github.com/chovancova/conversation-agent-t/wiki)** for comprehensive documentation:
+
+- **[Getting Started](wiki/Getting-Started.md)** - Quick start guide (5 minutes)
+- **[Installation](wiki/Installation.md)** - Detailed installation instructions
+- **[Configuration](wiki/Configuration.md)** - Token and agent setup
+- **[Features](wiki/Features.md)** - Complete feature documentation
+- **[Security](wiki/Security.md)** - Security architecture and best practices
+- **[API Reference](wiki/API-Reference.md)** - Protocol specifications
+- **[Architecture](wiki/Architecture.md)** - Technical architecture
+- **[Contributing](wiki/Contributing.md)** - Contribution guidelines
+- **[Troubleshooting](wiki/Troubleshooting.md)** - Common issues and solutions
+
+See **[WIKI.md](WIKI.md)** for accessing and using the wiki documentation.
+
+### Additional Documentation
+
+Documentation available in the [`docs/`](docs/) folder:
 
 - **[SECURITY.md](SECURITY.md)** - Complete security architecture and best practices
 - **[TODO.md](docs/TODO.md)** - Roadmap, planned features, and known issues
