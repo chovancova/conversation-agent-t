@@ -1,5 +1,6 @@
 import { Check } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 type ColorPalette = {
   name: string
@@ -142,52 +143,93 @@ type ColorPalettePickerProps = {
 
 export function ColorPalettePicker({ selectedPalette, onSelect }: ColorPalettePickerProps) {
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {predefinedPalettes.map((palette) => {
-        const isSelected = selectedPalette?.name === palette.name
-        
-        return (
-          <Button
-            key={palette.name}
-            variant="outline"
-            className={`h-auto p-3 flex flex-col items-start gap-2 transition-all hover:shadow-md ${
-              isSelected ? 'ring-2 ring-primary border-primary' : ''
-            }`}
-            onClick={() => onSelect(palette)}
-          >
-            <div className="flex items-center justify-between w-full">
-              <span className="text-sm font-medium">{palette.name}</span>
-              {isSelected && (
-                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary">
-                  <Check size={12} weight="bold" className="text-primary-foreground" />
-                </div>
-              )}
-            </div>
-            <div className="flex gap-1.5 w-full">
-              <div 
-                className="w-8 h-8 rounded border-2 border-border/60"
-                style={{ backgroundColor: palette.colors.background }}
-                title="Background"
-              />
-              <div 
-                className="w-8 h-8 rounded border-2 border-border/60"
-                style={{ backgroundColor: palette.colors.card }}
-                title="Card"
-              />
-              <div 
-                className="w-8 h-8 rounded border-2 border-border/60"
-                style={{ backgroundColor: palette.colors.primary }}
-                title="Primary"
-              />
-              <div 
-                className="w-8 h-8 rounded border-2 border-border/60"
-                style={{ backgroundColor: palette.colors.accent }}
-                title="Accent"
-              />
-            </div>
-          </Button>
-        )
-      })}
-    </div>
+    <TooltipProvider delayDuration={300}>
+      <div className="grid grid-cols-2 gap-3">
+        {predefinedPalettes.map((palette) => {
+          const isSelected = selectedPalette?.name === palette.name
+          
+          return (
+            <Button
+              key={palette.name}
+              variant="outline"
+              className={`h-auto p-3 flex flex-col items-start gap-2 transition-all hover:shadow-md ${
+                isSelected ? 'ring-2 ring-primary border-primary' : ''
+              }`}
+              onClick={() => onSelect(palette)}
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="text-sm font-medium">{palette.name}</span>
+                {isSelected && (
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary">
+                    <Check size={12} weight="bold" className="text-primary-foreground" />
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-1.5 w-full">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div 
+                      className="w-8 h-8 rounded border-2 border-border/60 cursor-help transition-transform hover:scale-110"
+                      style={{ backgroundColor: palette.colors.background }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="font-mono text-xs">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="font-semibold text-foreground">Background</div>
+                      <div className="text-muted-foreground">{palette.colors.background}</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div 
+                      className="w-8 h-8 rounded border-2 border-border/60 cursor-help transition-transform hover:scale-110"
+                      style={{ backgroundColor: palette.colors.card }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="font-mono text-xs">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="font-semibold text-foreground">Card</div>
+                      <div className="text-muted-foreground">{palette.colors.card}</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div 
+                      className="w-8 h-8 rounded border-2 border-border/60 cursor-help transition-transform hover:scale-110"
+                      style={{ backgroundColor: palette.colors.primary }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="font-mono text-xs">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="font-semibold text-foreground">Primary</div>
+                      <div className="text-muted-foreground">{palette.colors.primary}</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div 
+                      className="w-8 h-8 rounded border-2 border-border/60 cursor-help transition-transform hover:scale-110"
+                      style={{ backgroundColor: palette.colors.accent }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="font-mono text-xs">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="font-semibold text-foreground">Accent</div>
+                      <div className="text-muted-foreground">{palette.colors.accent}</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </Button>
+          )
+        })}
+      </div>
+    </TooltipProvider>
   )
 }
