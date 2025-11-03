@@ -517,6 +517,17 @@ function App() {
       <ClientSideInfo open={clientSideInfoOpen} onOpenChange={setClientSideInfoOpen} />
       <ThemeSettings open={themeSettingsOpen} onOpenChange={setThemeSettingsOpen} />
       <SoundSettings open={soundSettingsOpen} onOpenChange={setSoundSettingsOpen} />
+      <ConversationSelector 
+        open={conversationSelectorOpen} 
+        onOpenChange={setConversationSelectorOpen}
+        conversations={conversations || []}
+        onSelect={handleSelectSplitConversation}
+        currentConversationId={splitConversationId || null}
+        agentNames={agentNames || {}}
+        title="Switch Conversation (Pane B)"
+        description="Choose a different conversation to display in the split pane"
+      />
+      <KeyboardShortcuts open={keyboardShortcutsOpen} onOpenChange={setKeyboardShortcutsOpen} />
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
