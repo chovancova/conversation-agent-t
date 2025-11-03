@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh, ArrowsLeftRight } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh, ArrowsLeftRight, X } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -670,16 +670,39 @@ function App() {
               </Button>
             </div>
 
-            <Button 
-              onClick={handleOpenComparison} 
-              variant="outline" 
-              size="sm"
-              className="w-full h-9 mb-3"
-              disabled={(conversations?.length || 0) < 2}
-            >
-              <ArrowsLeftRight size={16} className="mr-1.5" />
-              Compare Conversations
-            </Button>
+            <div className="flex gap-2 mb-3">
+              <Button 
+                onClick={splitMode ? handleCloseSplit : handleOpenSplit} 
+                variant={splitMode ? "default" : "outline"}
+                size="sm"
+                className="h-9 flex-1"
+                disabled={!activeConversation}
+                title={splitMode ? "Close split view (Ctrl+\\)" : "Open split view (Ctrl+\\)"}
+              >
+                {splitMode ? (
+                  <>
+                    <X size={16} className="mr-1.5" weight="bold" />
+                    Close Split
+                  </>
+                ) : (
+                  <>
+                    <Columns size={16} className="mr-1.5" weight="bold" />
+                    Split View
+                  </>
+                )}
+              </Button>
+              <Button 
+                onClick={handleOpenComparison} 
+                variant="outline" 
+                size="sm"
+                className="h-9 flex-1"
+                disabled={(conversations?.length || 0) < 2}
+                title="Compare conversations (Ctrl+C)"
+              >
+                <ArrowsLeftRight size={16} className="mr-1.5" />
+                Compare
+              </Button>
+            </div>
           </div>
 
           <div className="px-4 py-3 border-b border-border bg-muted/30 flex-shrink-0">
