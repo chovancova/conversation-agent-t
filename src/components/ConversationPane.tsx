@@ -183,14 +183,14 @@ export function ConversationPane({
           </DropdownMenu>
           {showSplitButton && onOpenSplit && (
             <Button 
-              variant="outline" 
+              variant="default" 
               size="sm" 
               onClick={onOpenSplit} 
-              className="h-8 px-2.5 rounded-lg text-xs"
-              title="Open split view"
+              className="h-8 px-3 rounded-lg text-xs bg-primary hover:bg-primary/90"
+              title="Open split view (Ctrl+\)"
             >
-              <Columns size={14} className="mr-1.5" />
-              Split
+              <Columns size={14} className="mr-1.5" weight="bold" />
+              Split View
             </Button>
           )}
           {onCloseSplit && (

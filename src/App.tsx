@@ -522,7 +522,7 @@ function App() {
         onOpenChange={setConversationSelectorOpen}
         conversations={conversations || []}
         onSelect={handleSelectSplitConversation}
-        currentConversationId={splitConversationId}
+        currentConversationId={splitConversationId || null}
         agentNames={agentNames || {}}
         title="Switch Conversation (Pane B)"
         description="Choose a different conversation to display in the split pane"
@@ -715,6 +715,15 @@ function App() {
           
           <div className="p-4 border-t border-border bg-muted/20 flex-shrink-0 space-y-2">
             <Button 
+              onClick={() => setKeyboardShortcutsOpen(true)} 
+              variant="ghost" 
+              size="sm"
+              className="w-full justify-start h-8 px-2 text-muted-foreground hover:text-primary hover:bg-primary/10"
+            >
+              <Keyboard size={16} className="mr-2 flex-shrink-0" />
+              <span className="text-xs">Keyboard Shortcuts</span>
+            </Button>
+            <Button 
               onClick={() => setClientSideInfoOpen(true)} 
               variant="ghost" 
               size="sm"
@@ -760,9 +769,30 @@ function App() {
                             onClick={() => createNewConversation('account-opening')}
                             disabled={isLoading}
                             className="h-8 w-8 rounded-lg"
-                            title="New conversation"
+                            title="New conversation (Ctrl+N)"
                           >
                             <Plus size={16} weight="bold" />
+                          </Button>
+                          {!splitMode && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={handleOpenSplit}
+                              disabled={isLoading}
+                              className="h-8 w-8 rounded-lg"
+                              title="Open split view (Ctrl+\)"
+                            >
+                              <Columns size={16} weight="bold" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setKeyboardShortcutsOpen(true)}
+                            className="h-8 w-8 rounded-lg"
+                            title="Keyboard shortcuts (?)"
+                          >
+                            <Keyboard size={16} weight="bold" />
                           </Button>
                           <TokenStatusIcon
                             onClick={handleQuickTokenRefresh}
