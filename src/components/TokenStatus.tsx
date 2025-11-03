@@ -460,9 +460,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                 
                 {!hasTimeRemaining && !selectedToken && (
                   <div className="px-2 py-2 bg-destructive/5 border border-destructive/20 rounded-md">
-                    <p className="text-xs text-destructive/90 leading-relaxed">
-                      No token configuration selected. Please set up a token in settings.
-                    </p>
+                    <p className="text-xs text-destructive/90 leading-relaxed">No token configuration selected. Please set up a token in settings.</p>
                   </div>
                 )}
 
@@ -661,7 +659,6 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
           </CardContent>
         </Card>
       </TooltipProvider>
-
       <EncryptionPasswordDialog
         open={showDecryptDialog}
         onOpenChange={setShowDecryptDialog}
@@ -671,5 +668,5 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
         description="Enter your encryption password to unlock credentials for token generation and auto-refresh."
       />
     </>
-  )
+  );
 }
