@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh, ArrowsLeftRight, X as XIcon } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh, ArrowsLeftRight, X as XIcon, Rocket } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { TokenManager } from '@/components/TokenManager'
 import { TokenStatus } from '@/components/TokenStatus'
 import { TokenStatusIcon } from '@/components/TokenStatusIcon'
+import { SetupWizard } from '@/components/SetupWizard'
 import { AgentSettings } from '@/components/AgentSettings'
 import { SecurityInfo } from '@/components/SecurityInfo'
 import { ThemeSettings } from '@/components/ThemeSettings'
@@ -64,6 +65,8 @@ function App() {
   const [comparisonSelectorOpen, setComparisonSelectorOpen] = useState(false)
   const [comparisonViewOpen, setComparisonViewOpen] = useState(false)
   const [comparisonConversations, setComparisonConversations] = useState<{ a: Conversation | null; b: Conversation | null }>({ a: null, b: null })
+  const [setupComplete] = useKV<boolean>('setup-complete', false)
+  const [setupWizardOpen, setSetupWizardOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const activeConversation = (conversations || []).find((c) => c.id === activeConversationId)
@@ -98,6 +101,15 @@ function App() {
       }
     }
   }, [selectedTheme, customTheme])
+
+  useEffect(() => {
+    if (!setupComplete && !setupWizardOpen) {
+      const timer = setTimeout(() => {
+        setSetupWizardOpen(true)
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [setupComplete, setupWizardOpen])
 
   useKeyboardShortcuts([
     {
@@ -534,9 +546,20 @@ function App() {
 
   const conversationToDeleteData = conversations?.find((c) => c.id === conversationToDelete)
 
+  const handleSetupWizardComplete = () => {
+    if ((conversations?.length || 0) === 0) {
+      createNewConversation('account-opening')
+    }
+  }
+
   return (
     <>
       <Toaster position="top-right" />
+      <SetupWizard 
+        open={setupWizardOpen} 
+        onOpenChange={setSetupWizardOpen}
+        onComplete={handleSetupWizardComplete}
+      />
       <TokenManager open={tokenManagerOpen} onOpenChange={setTokenManagerOpen} />
       <AgentSettings open={agentSettingsOpen} onOpenChange={setAgentSettingsOpen} />
       <SecurityInfo open={securityInfoOpen} onOpenChange={setSecurityInfoOpen} />
@@ -786,6 +809,15 @@ function App() {
           
           <div className="p-4 border-t border-border bg-muted/20 flex-shrink-0 space-y-2">
             <Button 
+              onClick={() => setSetupWizardOpen(true)} 
+              variant="ghost" 
+              size="sm"
+              className="w-full justify-start h-8 px-2 text-muted-foreground hover:text-primary hover:bg-primary/10"
+            >
+              <Rocket size={16} className="mr-2 flex-shrink-0" />
+              <span className="text-xs font-semibold">Setup Wizard</span>
+            </Button>
+            <Button 
               onClick={() => setKeyboardShortcutsOpen(true)} 
               variant="ghost" 
               size="sm"
@@ -957,8 +989,20 @@ function App() {
               </header>
               <div className="flex-1">
                 <EmptyState 
-                  onCreateConversation={() => createNewConversation('account-opening')}
-                  onSetupAuth={() => setTokenManagerOpen(true)}
+                  onCreateConversation={() => {
+                    if (!setupComplete) {
+                      setSetupWizardOpen(true)
+                    } else {
+                      createNewConversation('account-opening')
+                    }
+                  }}
+                  onSetupAuth={() => {
+                    if (!setupComplete) {
+                      setSetupWizardOpen(true)
+                    } else {
+                      setTokenManagerOpen(true)
+                    }
+                  }}
                 />
               </div>
             </div>
