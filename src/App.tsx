@@ -72,6 +72,7 @@ function App() {
   const [comparisonConversations, setComparisonConversations] = useState<{ a: Conversation | null; b: Conversation | null }>({ a: null, b: null })
   const [setupComplete] = useKV<boolean>('setup-complete', false)
   const [wizardDismissed, setWizardDismissed] = useKV<boolean>('wizard-dismissed', false)
+  const [savedTokens] = useKV<TokenConfig[]>('saved-tokens', [])
   const [setupWizardOpen, setSetupWizardOpen] = useState(false)
   const [sessionTimeoutEnabled] = useKV<boolean>('session-timeout-enabled', true)
   const [sessionTimeoutWarning, setSessionTimeoutWarning] = useState(false)
@@ -116,7 +117,7 @@ function App() {
 
   useEffect(() => {
     const checkSetupNeeded = async () => {
-      const hasSavedTokens = ((await window.spark.kv.get<any[]>('saved-tokens')) || []).length > 0
+      const hasSavedTokens = (savedTokens || []).length > 0
       const hasAgentEndpoints = Object.keys(agentEndpoints || {}).length > 0
       const hasMinimalSetup = hasSavedTokens || hasAgentEndpoints
       
@@ -129,7 +130,7 @@ function App() {
     }
     
     checkSetupNeeded()
-  }, [setupComplete, wizardDismissed, setupWizardOpen, agentEndpoints])
+  }, [setupComplete, wizardDismissed, setupWizardOpen, agentEndpoints, savedTokens])
 
   useEffect(() => {
     if (sessionTimeoutEnabled && !sessionTimeoutRef.current) {

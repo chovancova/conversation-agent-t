@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -11,11 +11,12 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CheckCircle, Circle, Robot, Key, Gear, Rocket, CaretRight, CaretLeft, Eye, EyeSlash, Info, Warning, ShieldWarning } from '@phosphor-icons/react'
+import { CheckCircle, Circle, Robot, Key, Gear, Rocket, CaretRight, CaretLeft, Eye, EyeSlash, Info, Warning, ShieldWarning, Upload, Download } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { AccessToken, TokenConfig, AgentType } from '@/lib/types'
 import { AGENTS } from '@/lib/agents'
 import { cn } from '@/lib/utils'
+import { generateExportPackage, downloadExportPackage, importDataPackage, type ImportOptions } from '@/lib/dataManager'
 
 interface SetupWizardProps {
   open: boolean
@@ -49,6 +50,9 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
   const [agentEndpoint, setAgentEndpoint] = useState('')
   const [agentCustomName, setAgentCustomName] = useState('')
   const [configuredAgents, setConfiguredAgents] = useState<AgentType[]>([])
+  const [isImporting, setIsImporting] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const steps: WizardStep[] = ['welcome', 'token', 'agents', 'complete']
   const currentStepIndex = steps.indexOf(currentStep)
@@ -201,6 +205,83 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
     return false
   }
 
+  const handleImportSettings = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsImporting(true)
+
+    try {
+      const text = await file.text()
+      const pkg = JSON.parse(text)
+
+      const importOptions: ImportOptions = {
+        includeConversations: false,
+        includeAgentSettings: true,
+        includeTokenConfigs: true,
+        includePreferences: false,
+        mergeStrategy: 'merge'
+      }
+
+      const result = await importDataPackage(pkg, importOptions)
+
+      if (result.success) {
+        toast.success('Settings imported successfully', {
+          description: `Imported ${result.imported.agentSettings} agent settings and ${result.imported.tokenConfigs} token configs`
+        })
+
+        if (result.imported.tokenConfigs > 0) {
+          setTokenGenerated(true)
+        }
+
+        if (result.imported.agentSettings > 0) {
+          const endpoints = await window.spark.kv.get<Record<string, string>>('agent-endpoints') || {}
+          const configuredTypes = Object.keys(endpoints) as AgentType[]
+          setConfiguredAgents(configuredTypes)
+        }
+
+        if (result.warnings.length > 0) {
+          result.warnings.forEach(warning => {
+            toast.warning(warning)
+          })
+        }
+      } else {
+        toast.error('Failed to import settings', {
+          description: result.errors.join(', ')
+        })
+      }
+    } catch (error) {
+      toast.error('Failed to import settings', {
+        description: error instanceof Error ? error.message : 'Invalid file format'
+      })
+    } finally {
+      setIsImporting(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleExportSettings = async () => {
+    setIsExporting(true)
+
+    try {
+      const pkg = await generateExportPackage(false, true, true, false)
+      
+      downloadExportPackage(pkg, `agent-tester-settings-${Date.now()}.json`)
+      
+      toast.success('Settings exported successfully', {
+        description: 'Your configuration has been downloaded'
+      })
+    } catch (error) {
+      toast.error('Failed to export settings', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   const renderStepIndicator = () => (
     <div className="flex items-center justify-between mb-6">
       {steps.map((step, index) => (
@@ -293,6 +374,39 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <div className="flex-1 h-px bg-border"></div>
+                  <span className="font-medium">Already have settings?</span>
+                  <div className="flex-1 h-px bg-border"></div>
+                </div>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportSettings}
+                  className="hidden"
+                />
+
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isImporting}
+                  variant="outline"
+                  className="w-full h-11"
+                  size="lg"
+                >
+                  <Upload size={18} weight="bold" className="mr-2" />
+                  {isImporting ? 'Importing...' : 'Import Settings from File'}
+                </Button>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Import your previously exported agent and token configurations to get started quickly
+                </p>
               </div>
             </div>
           )}
@@ -552,6 +666,31 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
                     </div>
                   )}
                 </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <div className="flex-1 h-px bg-border"></div>
+                  <span className="font-medium">Save your configuration</span>
+                  <div className="flex-1 h-px bg-border"></div>
+                </div>
+
+                <Button
+                  onClick={handleExportSettings}
+                  disabled={isExporting}
+                  variant="outline"
+                  className="w-full h-11"
+                  size="lg"
+                >
+                  <Download size={18} weight="bold" className="mr-2" />
+                  {isExporting ? 'Exporting...' : 'Export Settings to File'}
+                </Button>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Save your configuration to easily restore it later or use it on another device
+                </p>
               </div>
             </div>
           )}
