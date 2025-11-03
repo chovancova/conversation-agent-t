@@ -613,6 +613,7 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                             </div>
                           )
                         })}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -833,7 +834,13 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
             </ScrollArea>
           </TabsContent>
 
-Content value="accessibility" className="mt-6">
+          <TabsContent value="accessibility" className="mt-6">
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Contrast Analysis</h4>
+                  <Card className="p-4">
+                    <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Total Color Pairs</span>
                         <span className="font-mono font-semibold">{contrastResults.size}</span>
@@ -926,42 +933,6 @@ Content value="accessibility" className="mt-6">
           </Button>
         </div>
       </DialogContent>
-        </Tabs>
-
-        <div className="flex justify-between gap-2 pt-4 border-t">
-          <div className="flex gap-2">
-            <Button
-              onClick={handleExportTheme}
-              variant="outline"
-              size="sm"
-            >
-              <Export size={16} className="mr-2" />
-              Export
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => document.getElementById('import-theme-settings')?.click()}
-            >
-              <Download size={16} className="mr-2" />
-              Import
-            </Button>
-            <input
-              id="import-theme-settings"
-              type="file"
-              accept=".json"
-              onChange={handleImportTheme}
-              className="hidden"
-            />
-          </div>
-          <Button onClick={() => onOpenChange(false)}>
-            Done
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
     </Dialog>
   )
 }
