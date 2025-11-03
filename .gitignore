@@ -24,31 +24,11 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment and secrets
 .env
-.env.*
-!.env.example
-*.pem
-*.key
-*.cert
-
-# Testing and reports
 **/agent-eval-report*
-coverage/
-.nyc_output/
-
-# Build artifacts
 packages
 pids
 .file-manifest
-
-# Development
 .devcontainer/
+
 .spark-workbench-id
-
-# OS specific
-Thumbs.db
-
-# Exported data (may contain sensitive info)
-*-export.json
-*-config-export.json
