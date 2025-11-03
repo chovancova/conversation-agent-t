@@ -15,12 +15,16 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
   const handleClearAllData = async () => {
     try {
       const keys = await window.spark.kv.keys()
-      for (const key of keys) {
-        await window.spark.kv.delete(key)
-      }
+      
+      const deletePromises = keys.map(key => window.spark.kv.delete(key))
+      await Promise.all(deletePromises)
+      
       toast.success('All stored data cleared from your browser')
       onOpenChange(false)
-      window.location.reload()
+      
+      setTimeout(() => {
+        window.location.reload()
+      }, 500)
     } catch (error) {
       toast.error('Failed to clear data')
       console.error('Clear data error:', error)
