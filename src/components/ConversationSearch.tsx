@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { MagnifyingGlass, X, Funnel } from '@phosphor-icons/react'
+import { MagnifyingGlass, X as XIcon, Funnel } from '@phosphor-icons/react'
 import { AgentType } from '@/lib/types'
 import { AGENTS } from '@/lib/agents'
 
@@ -49,7 +49,7 @@ export const ConversationSearch = forwardRef<HTMLInputElement, ConversationSearc
             onClick={() => onSearchChange('')}
             className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
           >
-            <X size={14} weight="bold" />
+            <XIcon size={14} weight="bold" />
           </Button>
         )}
       </div>

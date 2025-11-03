@@ -1,5 +1,16 @@
 import { useRef, useState } from 'react'
-import { PaperPlaneRight, Export, Robot, Columns, X, TextT, FilePdf, Image, ClipboardText, CaretUpDown } from '@phosphor-icons/react'
+import { 
+  PaperPlaneRight, 
+  Export, 
+  Robot, 
+  Columns, 
+  X as XIcon, 
+  TextT, 
+  FilePdf, 
+  Image, 
+  ClipboardText, 
+  CaretUpDown 
+} from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -201,7 +212,7 @@ export function ConversationPane({
               className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
               title="Close split view"
             >
-              <X size={16} weight="bold" />
+              <XIcon size={16} weight="bold" />
             </Button>
           )}
         </div>
