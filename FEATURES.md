@@ -26,6 +26,7 @@ Each conversation maintains its own message history and context, allowing you to
 - **Conversation History** - All messages are automatically saved and can be resumed later
 - **Conversation Titles** - Each conversation displays a descriptive title based on the first message
 - **Delete Conversations** - Remove individual conversations or clear all conversations at once
+- **Drag-and-Drop Organization** - Reorder conversations by dragging them to your preferred position
 
 ### Split-Screen Mode
 View and interact with two conversations side by side:

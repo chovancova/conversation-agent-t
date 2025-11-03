@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getAgentConfig } from '@/lib/agents'
-import { Chat, Robot, Trash, Columns, PencilSimple, Check, X, ChatCircle, Clock } from '@phosphor-icons/react'
+import { Chat, Robot, Trash, Columns, PencilSimple, Check, X, ChatCircle, Clock, DotsSixVertical } from '@phosphor-icons/react'
 
 type ConversationListProps = {
   conversations: Conversation[]
@@ -13,13 +13,16 @@ type ConversationListProps = {
   onSelect: (id: string) => void
   onDelete: (id: string) => void
   onRename: (id: string, newTitle: string) => void
+  onReorder?: (conversationId: string, newIndex: number) => void
   onSelectForSplit?: (id: string) => void
   splitMode?: boolean
 }
 
-export function ConversationList({ conversations, activeId, splitId, onSelect, onDelete, onRename, onSelectForSplit, splitMode }: ConversationListProps) {
+export function ConversationList({ conversations, activeId, splitId, onSelect, onDelete, onRename, onReorder, onSelectForSplit, splitMode }: ConversationListProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -54,6 +57,49 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
     } else if (e.key === 'Escape') {
       handleCancelEdit()
     }
+  }
+
+  const handleDragStart = (e: React.DragEvent, conversationId: string) => {
+    setDraggedId(conversationId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', conversationId)
+  }
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedId(null)
+    setDragOverId(null)
+  }
+
+  const handleDragOver = (e: React.DragEvent, conversationId: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    
+    if (draggedId && draggedId !== conversationId) {
+      setDragOverId(conversationId)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (e.currentTarget === e.target) {
+      setDragOverId(null)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    
+    const sourceId = e.dataTransfer.getData('text/plain')
+    
+    if (sourceId && sourceId !== targetId && onReorder) {
+      const targetIndex = conversations.findIndex(c => c.id === targetId)
+      
+      if (targetIndex !== -1) {
+        onReorder(sourceId, targetIndex)
+      }
+    }
+    
+    setDraggedId(null)
+    setDragOverId(null)
   }
 
   const formatDate = (timestamp: number) => {
@@ -92,6 +138,13 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
 
   return (
     <div className="flex flex-col gap-2">
+      {!onReorder && conversations.length > 1 && (
+        <div className="px-3 py-2 bg-muted/30 rounded-lg border border-border/50 mb-1">
+          <p className="text-xs text-muted-foreground text-center">
+            Clear filters to reorder conversations
+          </p>
+        </div>
+      )}
       {conversations.map((conversation) => {
         const agent = getAgentConfig(conversation.agentType)
         const isActive = activeId === conversation.id
@@ -99,24 +152,44 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
         const isHighlighted = isActive || isInSplit
         const isEditing = editingId === conversation.id
         const hasMessages = conversation.messages.length > 0
+        const isDragging = draggedId === conversation.id
+        const isDragOver = dragOverId === conversation.id
         
         return (
           <div
             key={conversation.id}
+            draggable={!isEditing && !!onReorder}
+            onDragStart={(e) => onReorder && handleDragStart(e, conversation.id)}
+            onDragEnd={onReorder ? handleDragEnd : undefined}
+            onDragOver={(e) => onReorder && handleDragOver(e, conversation.id)}
+            onDragLeave={onReorder ? handleDragLeave : undefined}
+            onDrop={(e) => onReorder && handleDrop(e, conversation.id)}
             className={`relative rounded-xl transition-all duration-200 group ${
               isActive
                 ? 'bg-gradient-to-br from-primary/15 to-accent/10 shadow-sm ring-1 ring-primary/20'
                 : isInSplit
                 ? 'bg-accent/10 shadow-sm ring-1 ring-accent/30'
                 : 'bg-card hover:bg-muted/50 hover:shadow-sm'
-            }`}
+            } ${isDragOver && onReorder ? 'ring-2 ring-primary shadow-lg scale-[1.02] bg-primary/5' : ''} ${isDragging && onReorder ? 'opacity-30 scale-95' : ''}`}
           >
             <button
               onClick={() => !isEditing && onSelect(conversation.id)}
-              className="w-full text-left p-3.5"
+              className="w-full text-left p-3.5 cursor-pointer"
               disabled={isEditing}
             >
               <div className="flex items-start gap-3 mb-2.5">
+                {onReorder && (
+                  <div
+                    className={`flex items-center justify-center w-5 h-9 flex-shrink-0 cursor-grab active:cursor-grabbing ${
+                      isHighlighted
+                        ? 'text-primary/50'
+                        : 'text-muted-foreground/30 group-hover:text-muted-foreground/60'
+                    } transition-colors`}
+                    title="Drag to reorder"
+                  >
+                    <DotsSixVertical size={20} weight="bold" />
+                  </div>
+                )}
                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
                   isActive 
                     ? 'bg-primary/20 ring-1 ring-primary/30' 

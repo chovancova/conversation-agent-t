@@ -640,6 +640,24 @@ function App() {
     }
   }
 
+  const handleReorderConversation = (conversationId: string, newIndex: number) => {
+    setConversations((current = []) => {
+      const sourceIndex = current.findIndex(c => c.id === conversationId)
+      
+      if (sourceIndex === -1 || sourceIndex === newIndex) {
+        return current
+      }
+
+      const reordered = [...current]
+      const [movedConversation] = reordered.splice(sourceIndex, 1)
+      reordered.splice(newIndex, 0, movedConversation)
+
+      return reordered
+    })
+    
+    toast.success('Conversation order updated')
+  }
+
   return (
     <>
       <Toaster position="top-right" />
@@ -906,6 +924,7 @@ function App() {
                       onSelect={setActiveConversationId}
                       onRename={handleRenameConversation}
                       onDelete={handleDeleteRequest}
+                      onReorder={!hasActiveFilters ? handleReorderConversation : undefined}
                       splitMode={splitMode || false}
                     />
                   )}
