@@ -518,9 +518,9 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                                         {theme.description}
                                       </p>
                                       
-                                      <div className="space-y-2">
-                                        <div className="text-xs text-muted-foreground font-medium text-center">Color Palette</div>
-                                        <div className="flex gap-1.5 justify-center">
+                                      <div className="space-y-2 flex flex-col items-center">
+                                        <div className="text-xs text-muted-foreground font-medium">Color Palette</div>
+                                        <div className="flex gap-1.5">
                                           <div 
                                             className="w-12 h-12 rounded-lg border-2 border-border/60 shadow-sm transition-transform hover:scale-105"
                                             style={{ backgroundColor: theme.colors.background }}
