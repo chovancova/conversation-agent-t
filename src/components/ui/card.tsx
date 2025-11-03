@@ -11,7 +11,15 @@ function Card({ className, ...props }: ComponentProps<"div">) {
         className,
         "text-base",
         "text-card-foreground flex flex-col gap-6 rounded-xl py-6 shadow-sm border cursor-pointer transition-all border-destructive/2 bg-destructive/10 text-base",
-        "text-card-foreground flex flex-col gap-6 rounded-xl py-6 shadow-sm border cursor-pointer transition-all border-destructive/20 bg-destructive/10 text-base"
+        "text-card-foreground flex flex-col gap-6 rounded-xl py-6 shadow-sm border cursor-pointer transition-all border-destructive/20 bg-destructive/10 text-base",
+        "text-card-foreground flex flex-col gap- rounded-xl py-6 shadow-sm border cursor-pointer transition-all border-destructive/20 bg-destructive/10 text-base",
+        "text-card-foreground flex flex-col gap-3 rounded-xl py-6 shadow-sm border cursor-pointer transition-all border-destructive/20 bg-destructive/10 text-base",
+        "text-card-foreground flex flex-col gap- rounded-xl py-6 shadow-sm border cursor-pointer transition-all border-destructive/20 bg-destructive/10 text-base",
+        "text-card-foreground flex flex-col gap-2 rounded-xl py-6 shadow-sm border cursor-pointer transition-all border-destructive/20 bg-destructive/10 text-base",
+        "text-card-foreground flex flex-col gap-2 rounded-xl py- shadow-sm border cursor-pointer transition-all border-destructive/20 bg-destructive/10 text-base",
+        "text-card-foreground flex flex-col gap-2 rounded-xl py-2 shadow-sm border cursor-pointer transition-all border-destructive/20 bg-destructive/10 text-base",
+        "text-card-foreground flex flex-col gap-2 rounded-xl py-2 shadow-sm border cursor-pointer transition-all border-destructive/2 bg-destructive/10 text-base",
+        "text-card-foreground flex flex-col gap-2 rounded-xl py-2 shadow-sm border cursor-pointer transition-all border-destructive/2 bg-destructive/1 text-base"
       )}
       {...props}
     />
@@ -68,10 +76,10 @@ function CardContent({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="card-content"
-      className={cn("px-6", className)}
+      className={cn("px-6", className, "p-", "p-3", "p-", "p-2")}
       {...props}
     />
-  )
+  );
 }
 
 function CardFooter({ className, ...props }: ComponentProps<"div">) {

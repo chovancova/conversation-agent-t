@@ -187,7 +187,7 @@ function App() {
     try {
       const prompt = (window.spark.llmPrompt as any)`Generate a brief, concise title (3-6 words) for a conversation that starts with this message: ${firstMessage}. Return only the title without quotes or extra punctuation.`
       const title = await window.spark.llm(prompt, 'gpt-4o-mini')
-      return title.trim().replace(/^["']|["']$/g, '')
+      return title.trim().replace(/^["']|["']$/g, '');
     } catch (error) {
       console.error('Failed to generate title:', error)
       return firstMessage.slice(0, 50) + (firstMessage.length > 50 ? '...' : '')
@@ -568,7 +568,6 @@ function App() {
         conversationB={comparisonConversations.b}
         agentNames={agentNames || {}}
       />
-      
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -585,7 +584,6 @@ function App() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
       <AlertDialog open={clearAllDialogOpen} onOpenChange={setClearAllDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -602,7 +600,6 @@ function App() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
       <div className="flex h-screen bg-background overflow-hidden">
         <aside className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 ease-in-out border-r border-border bg-card flex flex-col h-full overflow-hidden flex-shrink-0`}>
           <div className="p-5 border-b border-border flex-shrink-0">
@@ -705,7 +702,7 @@ function App() {
             </div>
           </div>
 
-          <div className="px-4 py-3 border-b border-border bg-muted/30 flex-shrink-0">
+          <div className="px-4 py-2 border-b border-border bg-muted/30 flex-shrink-0">
             <TokenStatus 
               onOpenTokenManager={() => setTokenManagerOpen(true)}
               isExpanded={tokenStatusExpanded}
@@ -966,7 +963,7 @@ function App() {
         </main>
       </div>
     </>
-  )
+  );
 }
 
 export default App

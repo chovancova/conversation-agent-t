@@ -445,7 +445,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
               </Tooltip>
 
               {isExpanded && (
-              <div className="space-y-3 pt-0.5" onClick={(e) => e.stopPropagation()}>
+              <div className="space-y-2 pt-0.5" onClick={(e) => e.stopPropagation()}>
                 {hasTimeRemaining && (
                   <div className="flex items-center justify-between px-1">
                     <span className="text-xs text-muted-foreground">Time remaining</span>
@@ -459,7 +459,7 @@ export function TokenStatus({ onOpenTokenManager, isExpanded, onToggle }: TokenS
                 )}
                 
                 {!hasTimeRemaining && !selectedToken && (
-                  <div className="px-2 py-2 bg-destructive/5 border border-destructive/20 rounded-md">
+                  <div className="hidden">
                     <p className="text-xs text-destructive/90 leading-relaxed">
 </p>
                   </div>
