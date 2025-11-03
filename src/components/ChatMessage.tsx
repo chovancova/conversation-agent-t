@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useKV } from '@github/spark/hooks'
 import { Robot, User, Warning, Copy, Check, Timer } from '@phosphor-icons/react'
-import { Message } from '@/lib/types'
+import { Message, NotificationPreferences } from '@/lib/types'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -11,6 +12,14 @@ type ChatMessageProps = {
 
 export function ChatMessage({ message }: ChatMessageProps) {
   const [copied, setCopied] = useState(false)
+  const [notificationPreferences] = useKV<NotificationPreferences>('notification-preferences', {
+    tokenRefresh: true,
+    tokenExpiring: true,
+    tokenExpired: true,
+    tokenGenerated: true,
+    showResponseTime: true,
+    showSuccessRate: true,
+  })
   const isUser = message.role === 'user'
   const time = new Date(message.timestamp).toLocaleTimeString('en-US', {
     hour: 'numeric',
@@ -83,7 +92,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </div>
         <div className="flex items-center gap-2 text-[13px] text-muted-foreground px-1">
           <span>{time}</span>
-          {message.responseTime && !isUser && (
+          {message.responseTime && !isUser && notificationPreferences?.showResponseTime !== false && (
             <>
               <span className="text-border">•</span>
               <div className="flex items-center gap-1">

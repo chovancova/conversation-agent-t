@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh, ArrowsLeftRight, X as XIcon, Rocket, Database } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh, ArrowsLeftRight, X as XIcon, Rocket, Database, ChartBar, Bell } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -30,7 +30,9 @@ import { ComparisonView } from '@/components/ComparisonView'
 import { ComparisonSelector } from '@/components/ComparisonSelector'
 import { SessionTimeoutWarning } from '@/components/SessionTimeoutWarning'
 import { DataManager } from '@/components/DataManager'
-import { Conversation, Message, AgentType, AccessToken, TokenConfig, AgentAdvancedConfig } from '@/lib/types'
+import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
+import { NotificationSettings } from '@/components/NotificationSettings'
+import { Conversation, Message, AgentType, AccessToken, TokenConfig, AgentAdvancedConfig, NotificationPreferences } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 import { ThemeOption, applyTheme } from '@/lib/themes'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
@@ -62,6 +64,16 @@ function App() {
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false)
   const [soundSettingsOpen, setSoundSettingsOpen] = useState(false)
   const [dataManagerOpen, setDataManagerOpen] = useState(false)
+  const [analyticsDashboardOpen, setAnalyticsDashboardOpen] = useState(false)
+  const [notificationSettingsOpen, setNotificationSettingsOpen] = useState(false)
+  const [notificationPreferences] = useKV<NotificationPreferences>('notification-preferences', {
+    tokenRefresh: true,
+    tokenExpiring: true,
+    tokenExpired: true,
+    tokenGenerated: true,
+    showResponseTime: true,
+    showSuccessRate: true,
+  })
   const [tokenStatusExpanded, setTokenStatusExpanded] = useState(true)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null)
@@ -261,6 +273,13 @@ function App() {
         }
       },
       description: 'Compare conversations',
+    },
+    {
+      key: 'a',
+      ctrlOrCmd: true,
+      shift: true,
+      callback: () => setAnalyticsDashboardOpen(true),
+      description: 'Open Analytics Dashboard',
     },
   ], true)
 
@@ -593,7 +612,10 @@ function App() {
       }
 
       await window.spark.kv.set('access-token', newAccessToken)
-      toast.success('Access token refreshed successfully')
+      
+      if (notificationPreferences?.tokenRefresh !== false) {
+        toast.success('Access token refreshed successfully')
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to generate token')
       console.error('Token generation error:', error)
@@ -719,6 +741,8 @@ function App() {
       <ThemeSettings open={themeSettingsOpen} onOpenChange={setThemeSettingsOpen} />
       <SoundSettings open={soundSettingsOpen} onOpenChange={setSoundSettingsOpen} />
       <DataManager open={dataManagerOpen} onOpenChange={setDataManagerOpen} />
+      <AnalyticsDashboard open={analyticsDashboardOpen} onOpenChange={setAnalyticsDashboardOpen} />
+      <NotificationSettings open={notificationSettingsOpen} onOpenChange={setNotificationSettingsOpen} />
       <ConversationSelector 
         open={conversationSelectorOpen} 
         onOpenChange={setConversationSelectorOpen}
@@ -855,10 +879,31 @@ function App() {
                 onClick={() => setDataManagerOpen(true)} 
                 variant="outline" 
                 size="sm"
-                className="h-9 w-full"
+                className="h-9 flex-1"
               >
                 <Database size={16} className="mr-1.5" />
-                Data Manager
+                Data
+              </Button>
+              <Button 
+                onClick={() => setAnalyticsDashboardOpen(true)} 
+                variant="outline" 
+                size="sm"
+                className="h-9 flex-1"
+              >
+                <ChartBar size={16} className="mr-1.5" />
+                Analytics
+              </Button>
+            </div>
+
+            <div className="flex gap-2 mb-3">
+              <Button 
+                onClick={() => setNotificationSettingsOpen(true)} 
+                variant="outline" 
+                size="sm"
+                className="h-9 w-full"
+              >
+                <Bell size={16} className="mr-1.5" />
+                Notifications
               </Button>
             </div>
 

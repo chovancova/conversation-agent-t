@@ -17,6 +17,8 @@ import { AgentConfig, AgentAdvancedConfig, CustomHeader, AgentProtocol } from '@
 import { AGENTS } from '@/lib/agents'
 import { themes, ThemeOption, applyTheme } from '@/lib/themes'
 import { validateProtocolConfig, getProtocolDefaults, ValidationResult } from '@/lib/protocolValidation'
+import { validateEndpoint, validateAgentConfiguration } from '@/lib/validation'
+import { EndpointValidator } from '@/components/EndpointValidator'
 import { ProtocolGuide } from '@/components/ProtocolGuide'
 
 type AgentSettingsProps = {
@@ -33,6 +35,7 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
   const [names, setNames] = useState<Record<string, string>>({})
   const [advancedConfigs, setAdvancedConfigs] = useState<Record<string, AgentAdvancedConfig>>({})
   const [validationResults, setValidationResults] = useState<Record<string, ValidationResult>>({})
+  const [endpointValidations, setEndpointValidations] = useState<Record<string, ReturnType<typeof validateEndpoint>>>({})
 
   const getDefaultConfig = (): AgentAdvancedConfig => ({
     protocol: 'custom',
@@ -52,6 +55,13 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
   useEffect(() => {
     if (agentEndpoints) {
       setEndpoints(agentEndpoints)
+      const validations: Record<string, ReturnType<typeof validateEndpoint>> = {}
+      Object.entries(agentEndpoints).forEach(([agentType, endpoint]) => {
+        if (endpoint) {
+          validations[agentType] = validateEndpoint(endpoint)
+        }
+      })
+      setEndpointValidations(validations)
     }
   }, [agentEndpoints])
 
@@ -71,6 +81,12 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
     setEndpoints(prev => ({
       ...prev,
       [agentType]: value
+    }))
+    
+    const validation = validateEndpoint(value)
+    setEndpointValidations(prev => ({
+      ...prev,
+      [agentType]: validation
     }))
   }
 
@@ -490,6 +506,9 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
                         value={endpoints[agent.type] || ''}
                         onChange={(e) => handleEndpointChange(agent.type, e.target.value)}
                       />
+                      {endpointValidations[agent.type] && (
+                        <EndpointValidator result={endpointValidations[agent.type]} />
+                      )}
                       <p className="text-xs text-muted-foreground">
                         This endpoint will receive POST requests with Bearer authentication
                       </p>

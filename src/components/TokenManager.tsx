@@ -18,7 +18,7 @@ import { encryptData, decryptData } from '@/lib/encryption'
 import { getJWTExpiration } from '@/lib/jwt'
 import { validateEndpointSecurity } from '@/lib/security'
 import { ClientCertificateSetup } from '@/components/ClientCertificateSetup'
-import { buildProxiedUrl } from '@/lib/corsProxy'
+import { buildProxiedUrl, COMMON_CORS_PROXIES } from '@/lib/corsProxy'
 
 type TokenManagerProps = {
   open: boolean
@@ -910,26 +910,57 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
 
                 {useCorsProxy && (
                   <div className="space-y-2">
-                    <Label htmlFor="cors-proxy" className="text-sm font-semibold">
-                      CORS Proxy URL
+                    <Label htmlFor="cors-proxy-select" className="text-sm font-semibold">
+                      Select CORS Proxy
                     </Label>
-                    <Input
-                      id="cors-proxy"
-                      type="url"
-                      placeholder="https://cors-anywhere.herokuapp.com/ or https://api.allorigins.win/raw?url="
-                      value={corsProxy}
-                      onChange={(e) => setCorsProxy(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Target URL will be appended to this proxy URL. Can include credentials (username:password@host)
-                    </p>
+                    <Select
+                      value={corsProxy || 'custom'}
+                      onValueChange={(value) => {
+                        if (value !== 'custom') {
+                          setCorsProxy(value)
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="cors-proxy-select">
+                        <SelectValue placeholder="Select a CORS proxy..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMMON_CORS_PROXIES.map((proxy) => (
+                          <SelectItem key={proxy.name} value={proxy.url || 'custom'}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{proxy.name}</span>
+                              <span className="text-xs text-muted-foreground">{proxy.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="cors-proxy" className="text-sm font-semibold">
+                        CORS Proxy URL
+                      </Label>
+                      <Input
+                        id="cors-proxy"
+                        type="url"
+                        placeholder="https://cors-anywhere.herokuapp.com/ or custom URL"
+                        value={corsProxy}
+                        onChange={(e) => setCorsProxy(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Target URL will be appended to this proxy URL. Can include credentials (username:password@host)
+                      </p>
+                    </div>
+                    
                     <Alert className="border-accent/50 bg-accent/10">
                       <ShieldCheck size={16} className="text-accent" />
                       <AlertDescription className="text-xs text-foreground">
-                        <div className="font-semibold mb-1">CORS Proxy Examples:</div>
-                        <div>• https://cors-anywhere.herokuapp.com/</div>
-                        <div>• https://api.allorigins.win/raw?url=</div>
-                        <div>• Your own proxy with credentials: https://user:pass@myproxy.com/</div>
+                        <div className="font-semibold mb-1">Common CORS Proxies:</div>
+                        {COMMON_CORS_PROXIES.filter(p => p.url).slice(0, 5).map((proxy, i) => (
+                          <div key={i}>• {proxy.name} - {proxy.description}</div>
+                        ))}
+                        <div className="mt-2 font-semibold">Custom proxy with credentials:</div>
+                        <div>• https://user:pass@myproxy.com/</div>
                       </AlertDescription>
                     </Alert>
                   </div>

@@ -1,7 +1,12 @@
 export const COMMON_CORS_PROXIES = [
-  { name: 'CORS Anywhere', url: 'https://cors-anywhere.herokuapp.com/', requiresAuth: false },
-  { name: 'AllOrigins', url: 'https://api.allorigins.win/raw?url=', requiresAuth: false },
-  { name: 'Custom Proxy', url: '', requiresAuth: false },
+  { name: 'CORS Anywhere', url: 'https://cors-anywhere.herokuapp.com/', requiresAuth: false, description: 'Popular CORS proxy service' },
+  { name: 'AllOrigins', url: 'https://api.allorigins.win/raw?url=', requiresAuth: false, description: 'No-auth CORS proxy with URL encoding' },
+  { name: 'CORS.SH', url: 'https://cors.sh/', requiresAuth: false, description: 'Fast and reliable CORS proxy' },
+  { name: 'Proxy.CORS.SH', url: 'https://proxy.cors.sh/', requiresAuth: false, description: 'Alternative CORS.SH endpoint' },
+  { name: 'CORS Proxy', url: 'https://corsproxy.io/?', requiresAuth: false, description: 'Simple CORS proxy with query params' },
+  { name: 'ThingProxy', url: 'https://thingproxy.freeboard.io/fetch/', requiresAuth: false, description: 'Freeboard CORS proxy service' },
+  { name: 'CrossOrigin.me', url: 'https://crossorigin.me/', requiresAuth: false, description: 'Basic CORS proxy service' },
+  { name: 'Custom Proxy', url: '', requiresAuth: false, description: 'Enter your own proxy URL' },
 ]
 
 export type CORSProxyConfig = {

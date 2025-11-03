@@ -108,3 +108,19 @@ export type AutoRefreshConfig = {
   currentRefreshes: number
   startTime: number | null
 }
+
+export type NotificationPreferences = {
+  tokenRefresh: boolean
+  tokenExpiring: boolean
+  tokenExpired: boolean
+  tokenGenerated: boolean
+  showResponseTime: boolean
+  showSuccessRate: boolean
+}
+
+export type AnalyticsPreferences = {
+  enabled: boolean
+  trackResponseTime: boolean
+  trackSuccessRate: boolean
+  showInMessages: boolean
+}
