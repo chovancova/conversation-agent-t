@@ -1,8 +1,9 @@
-import { CloudSlash, CheckCircle, Database, Browsers, ShieldCheck } from '@phosphor-icons/react'
+import { CloudSlash, CheckCircle, Database, Browsers, ShieldCheck, FileText } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Button } from '@/components/ui/button'
 
 type ClientSideInfoProps = {
   open: boolean
@@ -29,14 +30,20 @@ export function ClientSideInfo({ open, onOpenChange }: ClientSideInfoProps) {
           <div className="space-y-5 py-6 pr-4">
             <Alert className="border-accent/50 bg-accent/5">
               <CloudSlash size={20} className="text-accent flex-shrink-0" />
-              <AlertTitle className="text-accent font-bold text-base">Zero Server Storage</AlertTitle>
+              <AlertTitle className="text-accent font-bold text-base">100% Client-Side Application</AlertTitle>
               <AlertDescription className="text-sm space-y-2 mt-2">
                 <p className="font-semibold text-foreground">
-                  NO data is ever sent to or stored on any server.
+                  NO data is EVER sent to or stored on ANY server.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
-                  All credentials, tokens, conversations, and settings are stored exclusively in your browser's 
-                  local storage using Spark KV. The application server never sees, processes, or stores any of your data.
+                  This application runs entirely in your browser. All credentials, tokens, conversations, and settings 
+                  are stored exclusively in your browser's local storage using Spark KV. The application server only 
+                  serves the static HTML/JS/CSS files - it never sees, processes, logs, or stores any of your data.
+                </p>
+                <p className="text-foreground font-semibold mt-3">
+                  ✓ Zero server communication for data storage<br/>
+                  ✓ Zero analytics or tracking<br/>
+                  ✓ Zero data collection of any kind
                 </p>
               </AlertDescription>
             </Alert>
@@ -155,7 +162,7 @@ export function ClientSideInfo({ open, onOpenChange }: ClientSideInfoProps) {
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="device-specific" className="border rounded-lg px-4">
+              <AccordionItem value="device-specific" className="border rounded-lg px-4 mb-3">
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center gap-2">
                     <Browsers size={20} className="text-primary" />
@@ -170,7 +177,81 @@ export function ClientSideInfo({ open, onOpenChange }: ClientSideInfoProps) {
                   </p>
                 </AccordionContent>
               </AccordionItem>
+
+              <AccordionItem value="browser-limitations" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={20} weight="duotone" className="text-primary" />
+                    <span className="font-semibold text-base">Browser Security & Limitations</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <div className="space-y-3 pt-2">
+                    <div className="p-3 rounded-lg bg-muted/30">
+                      <h4 className="font-semibold text-sm mb-2">Certificate Validation</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-2">
+                        If you see <code className="text-xs bg-destructive/20 px-1 py-0.5 rounded">ERR_CERT_AUTHORITY_INVALID</code> errors, 
+                        your browser is blocking connections to endpoints with self-signed or untrusted certificates.
+                      </p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        <strong>Solutions:</strong>
+                      </p>
+                      <ul className="text-sm text-muted-foreground space-y-1 mt-1 ml-4">
+                        <li>• Visit the endpoint URL directly in your browser and accept the certificate warning</li>
+                        <li>• Install the self-signed certificate in your OS/browser trust store</li>
+                        <li>• Use a valid SSL certificate from a trusted authority</li>
+                        <li>• Note: The "Ignore Certificate Errors" setting in Token Manager is informational only - browsers enforce certificate validation for security</li>
+                      </ul>
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-muted/30">
+                      <h4 className="font-semibold text-sm mb-2">Proxy Configuration</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Browser fetch API automatically uses your system's proxy settings. The proxy field in Token Manager 
+                        is for documentation purposes - you cannot override proxy settings from JavaScript for security reasons.
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-muted/30">
+                      <h4 className="font-semibold text-sm mb-2">CORS (Cross-Origin Requests)</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Since requests go directly from your browser to agent endpoints, those endpoints must have proper 
+                        CORS headers configured to allow requests from this origin. This is a browser security feature, 
+                        not a limitation of this application.
+                      </p>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
+
+            <Alert className="border-primary/50 bg-primary/5">
+              <FileText size={20} className="text-primary flex-shrink-0" />
+              <AlertTitle className="text-primary font-bold text-base">Documentation</AlertTitle>
+              <AlertDescription className="text-sm space-y-2 mt-2">
+                <p className="text-muted-foreground">
+                  For detailed information about certificate validation, proxy configuration, and client-side architecture:
+                </p>
+                <div className="flex flex-col gap-2 mt-2">
+                  <a 
+                    href="/CERTIFICATE_AND_PROXY_GUIDE.md" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-semibold text-sm"
+                  >
+                    📄 Certificate & Proxy Configuration Guide
+                  </a>
+                  <a 
+                    href="/CLIENT_SIDE_CONFIRMATION.md" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-semibold text-sm"
+                  >
+                    📄 100% Client-Side Architecture Confirmation
+                  </a>
+                </div>
+              </AlertDescription>
+            </Alert>
 
             <div className="h-4"></div>
           </div>

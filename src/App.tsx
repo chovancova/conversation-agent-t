@@ -748,7 +748,14 @@ function App() {
                 <h1 className="text-xl font-bold tracking-tight text-foreground leading-tight">
                   Agent Tester
                 </h1>
-                <p className="text-xs text-muted-foreground font-medium">Multi-Agent Testing</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs text-muted-foreground font-medium">Multi-Agent Testing</p>
+                  <span className="text-muted-foreground">•</span>
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-accent/15">
+                    <CloudSlash size={10} weight="fill" className="text-accent" />
+                    <span className="text-[10px] font-bold text-accent uppercase tracking-wide">Client-Side</span>
+                  </div>
+                </div>
               </div>
             </div>
 

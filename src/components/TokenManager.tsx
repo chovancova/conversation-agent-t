@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning } from '@phosphor-icons/react'
+import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning, CloudSlash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,6 +35,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [password, setPassword] = useState('')
   const [useFormEncoded, setUseFormEncoded] = useState(false)
   const [useJWTExpiration, setUseJWTExpiration] = useState(false)
+  const [ignoreCertErrors, setIgnoreCertErrors] = useState(false)
+  const [proxyUrl, setProxyUrl] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [encryptOnSave, setEncryptOnSave] = useState(true)
@@ -55,6 +57,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       setEndpoint(selectedToken.endpoint)
       setUseFormEncoded(selectedToken.useFormEncoded || false)
       setUseJWTExpiration(selectedToken.useJWTExpiration || false)
+      setIgnoreCertErrors(selectedToken.ignoreCertErrors || false)
+      setProxyUrl(selectedToken.proxyUrl || '')
       if (selectedToken.isEncrypted) {
         setClientId('••••••••')
         setClientSecret('••••••••')
@@ -118,7 +122,9 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         password: '',
         isEncrypted: true,
         useFormEncoded,
-        useJWTExpiration
+        useJWTExpiration,
+        ignoreCertErrors,
+        proxyUrl
       }
 
       setSavedTokens((current = []) => {
@@ -382,7 +388,9 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         password,
         isEncrypted: false,
         useFormEncoded,
-        useJWTExpiration
+        useJWTExpiration,
+        ignoreCertErrors,
+        proxyUrl
       }
 
       setSavedTokens((current = []) => {
@@ -425,6 +433,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     setPassword('')
     setUseFormEncoded(false)
     setUseJWTExpiration(false)
+    setIgnoreCertErrors(false)
+    setProxyUrl('')
     setShowForm(true)
   }
 
@@ -579,7 +589,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
             Token Manager
           </DialogTitle>
           <DialogDescription>
-            Generate and manage Bearer authentication tokens for agent communication
+            Generate and manage Bearer authentication tokens. Configure certificate validation and proxy settings for your network environment.
           </DialogDescription>
         </DialogHeader>
 
@@ -804,7 +814,51 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                     onCheckedChange={setUseJWTExpiration}
                   />
                 </div>
+
+                <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                  <div className="flex flex-col flex-1">
+                    <Label htmlFor="ignore-cert-errors" className="text-sm font-semibold cursor-pointer">
+                      Ignore Certificate Errors
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      For self-signed certificates or ERR_CERT_AUTHORITY_INVALID errors (dev only)
+                    </p>
+                  </div>
+                  <Switch
+                    id="ignore-cert-errors"
+                    checked={ignoreCertErrors}
+                    onCheckedChange={setIgnoreCertErrors}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="proxy-url" className="text-sm font-semibold">
+                    Proxy URL (Optional)
+                  </Label>
+                  <Input
+                    id="proxy-url"
+                    type="url"
+                    placeholder="https://proxy.example.com:8080"
+                    value={proxyUrl}
+                    onChange={(e) => setProxyUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Configure a proxy server if required by your network
+                  </p>
+                </div>
               </div>
+
+              {(ignoreCertErrors || proxyUrl) && (
+                <Alert className="border-amber-500/50 bg-amber-500/10">
+                  <Warning size={16} className="text-amber-500" />
+                  <AlertTitle className="text-sm font-semibold text-amber-900 dark:text-amber-200">Browser Limitations</AlertTitle>
+                  <AlertDescription className="text-xs text-amber-900 dark:text-amber-200">
+                    {ignoreCertErrors && <div>• Certificate validation is controlled by the browser. Self-signed certificates may still be blocked.</div>}
+                    {proxyUrl && <div>• Proxy settings are informational only. Browser fetch API uses system proxy settings automatically.</div>}
+                    <div className="mt-1 font-semibold">💡 This is a client-side app - all requests come from your browser, not a server.</div>
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
                 <div className="flex items-center gap-2">
@@ -958,9 +1012,16 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
 
           <Alert className="border-accent/50 bg-accent/5">
             <ShieldCheck size={18} className="text-accent" />
-            <AlertTitle className="text-sm font-semibold">Client-Side Encryption</AlertTitle>
-            <AlertDescription className="text-xs">
-              Credentials are encrypted using AES-256-GCM with PBKDF2 key derivation (100,000 iterations). Encryption happens entirely in your browser - passwords never leave your device.
+            <AlertTitle className="text-sm font-semibold">100% Client-Side Application</AlertTitle>
+            <AlertDescription className="text-xs space-y-1">
+              <p>
+                <strong>All data stays in your browser.</strong> Credentials are encrypted using AES-256-GCM with PBKDF2 
+                key derivation (100,000 iterations). Encryption happens entirely in your browser - passwords never leave your device.
+              </p>
+              <p className="text-muted-foreground pt-1">
+                ⚠️ Certificate validation and proxy settings are controlled by your browser's security policies. 
+                See the "Client-Side Only" info panel for details on handling certificate errors.
+              </p>
             </AlertDescription>
           </Alert>
         </div>

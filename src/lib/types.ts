@@ -64,6 +64,8 @@ export type TokenConfig = {
   isEncrypted?: boolean
   useFormEncoded?: boolean
   useJWTExpiration?: boolean
+  ignoreCertErrors?: boolean
+  proxyUrl?: string
 }
 
 export type EncryptedTokenConfig = {
