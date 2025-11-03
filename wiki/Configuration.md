@@ -414,5 +414,5 @@ See [[Troubleshooting|Troubleshooting]] page for common configuration issues and
 
 ---
 
-**Previous**: [[Installation|Installation]]  
-**Next**: [[Security|Security]]
+**Previous**: [[Installation]]  
+**Next**: [[Security]]

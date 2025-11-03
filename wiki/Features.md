@@ -431,7 +431,7 @@ JSON-RPC 2.0 based protocol for model interactions.
 
 ## Upcoming Features
 
-See [[Roadmap]] for planned features:
+See [TODO.md](https://github.com/chovancova/conversation-agent-t/blob/main/docs/TODO.md) for planned features:
 
 - 🔍 Search and filter conversations
 - 📊 Advanced analytics dashboard
@@ -454,5 +454,5 @@ Have an idea for a new feature?
 
 ---
 
-**Previous**: [[Security|Security]]  
+**Previous**: [[Security]]  
 **Next**: [[API Reference|API-Reference]]

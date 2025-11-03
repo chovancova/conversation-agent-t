@@ -181,4 +181,4 @@ Having issues? Check the [[Troubleshooting|Troubleshooting]] page for common pro
 ---
 
 **Previous**: [[Home]]  
-**Next**: [[Installation|Installation]]
+**Next**: [[Installation]]

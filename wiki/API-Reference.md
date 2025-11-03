@@ -624,5 +624,5 @@ For API-related questions:
 
 ---
 
-**Previous**: [[Features|Features]]  
-**Next**: [[Architecture|Architecture]]
+**Previous**: [[Features]]  
+**Next**: [[Architecture]]

@@ -624,5 +624,5 @@ Sometimes cached data causes issues:
 
 ---
 
-**Previous**: [[Contributing|Contributing]]  
-**Next**: [[Home|Wiki Home]]
+**Previous**: [[Contributing]]  
+**Next**: [[Home]]

@@ -538,5 +538,5 @@ For security questions or concerns:
 
 ---
 
-**Previous**: [[Configuration|Configuration]]  
-**Next**: [[Features|Features]]
+**Previous**: [[Configuration]]  
+**Next**: [[Features]]

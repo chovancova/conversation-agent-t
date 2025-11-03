@@ -292,4 +292,4 @@ Ensure these are not blocked by browser settings or extensions.
 ---
 
 **Previous**: [[Getting Started|Getting-Started]]  
-**Next**: [[Configuration|Configuration]]
+**Next**: [[Configuration]]

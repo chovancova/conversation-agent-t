@@ -652,5 +652,5 @@ Still have questions?
 
 Thank you for contributing to Multi-Agent Tester! 🙏
 
-**Previous**: [[Architecture|Architecture]]  
-**Next**: [[Troubleshooting|Troubleshooting]]
+**Previous**: [[Architecture]]  
+**Next**: [[Troubleshooting]]
