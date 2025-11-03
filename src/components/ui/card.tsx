@@ -9,7 +9,9 @@ function Card({ className, ...props }: ComponentProps<"div">) {
       className={cn(
         "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
         className,
-        "text-base"
+        "text-base",
+        "text-card-foreground flex flex-col gap-6 rounded-xl py-6 shadow-sm border cursor-pointer transition-all border-destructive/2 bg-destructive/10 text-base",
+        "text-card-foreground flex flex-col gap-6 rounded-xl py-6 shadow-sm border cursor-pointer transition-all border-destructive/20 bg-destructive/10 text-base"
       )}
       {...props}
     />
