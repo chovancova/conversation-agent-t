@@ -58,8 +58,11 @@ The following data is stored **exclusively in your browser**:
 ### Encryption Details
 
 - **Storage Location**: Spark KV storage in your browser (client-side encrypted storage)
-- **Encryption**: All data stored via `useKV` and `spark.kv` APIs is encrypted at rest in your browser
-- **Scope**: Data is scoped to your user account and browser profile
+- **Token Configuration Encryption**: Optional AES-256-GCM encryption with PBKDF2 key derivation (100,000 iterations) for stored credentials
+- **Export Encryption**: Optional password-protected encryption for exported configuration files
+- **Encryption Scope**: All encryption happens entirely in your browser - encryption passwords never leave your device
+- **Base Storage**: All data stored via `useKV` and `spark.kv` APIs is persisted in your browser
+- **User Scope**: Data is scoped to your user account and browser profile
 - **Persistence**: Data persists between sessions and page refreshes on this device only
 - **Server Access**: **ZERO** - The application server never sees, processes, or stores any of your data
 
@@ -106,14 +109,19 @@ Response Stored in Browser Only
 ### ✅ What This App Does Right
 
 1. **Client-Side Only Storage**: Zero server-side data storage or transmission
-2. **Encrypted Browser Storage**: All credentials stored via Spark KV are encrypted at rest in your browser
-3. **Direct Communication**: Browser talks directly to your configured endpoints, no proxy
-4. **User-Isolated Storage**: Your data is scoped to your user account and browser profile
-5. **Token Expiration**: Access tokens expire after 15 minutes
-6. **Bearer Auth**: Uses industry-standard Bearer token authentication
-7. **HTTPS Required**: All agent endpoints should use HTTPS
-8. **Password Input Types**: Passwords use `type="password"` for visual protection
-9. **No Server Logging**: The app server never sees your data to log it
+2. **AES-256-GCM Encryption**: Optional strong encryption for stored credentials using industry-standard cryptography
+3. **PBKDF2 Key Derivation**: 100,000 iterations for password-based encryption keys
+4. **Direct Communication**: Browser talks directly to your configured endpoints, no proxy
+5. **User-Isolated Storage**: Your data is scoped to your user account and browser profile
+6. **Token Expiration**: Access tokens expire after 15 minutes (or based on JWT expiration)
+7. **Bearer Auth**: Uses industry-standard Bearer token authentication
+8. **HTTPS Validation**: Warns when endpoints don't use HTTPS
+9. **Password Input Types**: Passwords use `type="password"` for visual protection
+10. **Password Strength Checking**: Real-time feedback on encryption password strength
+11. **Session Timeout**: Optional automatic logout after inactivity (30 minutes with 5 minute warning)
+12. **Secure Memory Clearing**: Sensitive data cleared from memory on timeout
+13. **No Server Logging**: The app server never sees your data to log it
+14. **Encrypted Exports**: Option to password-protect exported configuration files
 
 ### ⚠️ Important Security Considerations
 
@@ -121,7 +129,8 @@ Response Stored in Browser Only
 
 2. **Physical Device Access**: Anyone with physical access to your unlocked device can potentially access the stored data. Always lock your device when not in use.
 
-3. **Export Functionality**: When you export token configurations, they are exported as **plain JSON** containing credentials. Treat these files as highly sensitive:
+3. **Export Functionality**: When you export token configurations, they can be optionally encrypted with a password. However, unencrypted exports contain **plain JSON** with credentials. Treat these files as highly sensitive:
+   - Use encrypted export option when possible
    - Store in encrypted storage only
    - Delete immediately after use
    - Never commit to version control

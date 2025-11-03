@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen } from '@phosphor-icons/react'
+import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +15,7 @@ import { useCountdown } from '@/hooks/use-countdown'
 import { EncryptionPasswordDialog } from '@/components/EncryptionPasswordDialog'
 import { encryptData, decryptData } from '@/lib/encryption'
 import { getJWTExpiration } from '@/lib/jwt'
+import { validateEndpointSecurity } from '@/lib/security'
 
 type TokenManagerProps = {
   open: boolean
@@ -46,6 +47,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [importedEncryptedData, setImportedEncryptedData] = useState<any>(null)
 
   const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
+  const endpointValidation = endpoint ? validateEndpointSecurity(endpoint) : null
 
   useEffect(() => {
     if (selectedToken) {
@@ -698,6 +700,30 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                   value={endpoint}
                   onChange={(e) => setEndpoint(e.target.value)}
                 />
+                {endpointValidation && (
+                  <>
+                    {endpointValidation.errors.length > 0 && (
+                      <Alert variant="destructive" className="mt-2">
+                        <ShieldWarning size={16} />
+                        <AlertDescription className="text-xs ml-2">
+                          {endpointValidation.errors.map((error, i) => (
+                            <div key={i}>• {error}</div>
+                          ))}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    {endpointValidation.warnings.length > 0 && (
+                      <Alert className="mt-2 border-amber-500/50 bg-amber-500/10">
+                        <Warning size={16} className="text-amber-500" />
+                        <AlertDescription className="text-xs ml-2 text-amber-900 dark:text-amber-200">
+                          {endpointValidation.warnings.map((warning, i) => (
+                            <div key={i}>• {warning}</div>
+                          ))}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="space-y-2">

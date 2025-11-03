@@ -28,10 +28,12 @@ import { ConversationSelector } from '@/components/ConversationSelector'
 import { KeyboardShortcuts } from '@/components/KeyboardShortcuts'
 import { ComparisonView } from '@/components/ComparisonView'
 import { ComparisonSelector } from '@/components/ComparisonSelector'
+import { SessionTimeoutWarning } from '@/components/SessionTimeoutWarning'
 import { Conversation, Message, AgentType, AccessToken, TokenConfig, AgentAdvancedConfig } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 import { ThemeOption, applyTheme } from '@/lib/themes'
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
+import { SessionTimeout, clearSensitiveData } from '@/lib/security'
 
 function App() {
   const [conversations, setConversations] = useKV<Conversation[]>('conversations', [])
@@ -67,7 +69,11 @@ function App() {
   const [comparisonConversations, setComparisonConversations] = useState<{ a: Conversation | null; b: Conversation | null }>({ a: null, b: null })
   const [setupComplete] = useKV<boolean>('setup-complete', false)
   const [setupWizardOpen, setSetupWizardOpen] = useState(false)
+  const [sessionTimeoutEnabled] = useKV<boolean>('session-timeout-enabled', true)
+  const [sessionTimeoutWarning, setSessionTimeoutWarning] = useState(false)
+  const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(5)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const sessionTimeoutRef = useRef<SessionTimeout | null>(null)
 
   const activeConversation = (conversations || []).find((c) => c.id === activeConversationId)
   const splitConversation = (conversations || []).find((c) => c.id === splitConversationId)
@@ -110,6 +116,51 @@ function App() {
       return () => clearTimeout(timer)
     }
   }, [setupComplete, setupWizardOpen])
+
+  useEffect(() => {
+    if (sessionTimeoutEnabled && !sessionTimeoutRef.current) {
+      sessionTimeoutRef.current = new SessionTimeout(
+        30,
+        5,
+        () => {
+          handleSessionTimeout()
+        },
+        (minutesRemaining) => {
+          setSessionTimeoutMinutes(minutesRemaining)
+          setSessionTimeoutWarning(true)
+        }
+      )
+    }
+
+    return () => {
+      if (sessionTimeoutRef.current) {
+        sessionTimeoutRef.current.destroy()
+        sessionTimeoutRef.current = null
+      }
+    }
+  }, [sessionTimeoutEnabled])
+
+  const handleSessionTimeout = async () => {
+    toast.info('Session expired due to inactivity', {
+      description: 'Clearing sensitive data for security...'
+    })
+    
+    await clearSensitiveData(['access-token', 'decrypted-credentials-cache'])
+    
+    setSessionTimeoutWarning(false)
+    
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  }
+
+  const handleContinueSession = () => {
+    setSessionTimeoutWarning(false)
+    if (sessionTimeoutRef.current) {
+      sessionTimeoutRef.current.resetTimer()
+    }
+    toast.success('Session continued')
+  }
 
   useKeyboardShortcuts([
     {
@@ -555,6 +606,12 @@ function App() {
   return (
     <>
       <Toaster position="top-right" />
+      <SessionTimeoutWarning
+        open={sessionTimeoutWarning}
+        minutesRemaining={sessionTimeoutMinutes}
+        onContinue={handleContinueSession}
+        onLogout={handleSessionTimeout}
+      />
       <SetupWizard 
         open={setupWizardOpen} 
         onOpenChange={setSetupWizardOpen}

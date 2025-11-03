@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator'
 
 type EncryptionPasswordDialogProps = {
   open: boolean
@@ -117,6 +118,9 @@ export function EncryptionPasswordDialog({
                 )}
               </Button>
             </div>
+            {mode === 'encrypt' && password && (
+              <PasswordStrengthIndicator password={password} className="mt-2" />
+            )}
           </div>
 
           {mode === 'encrypt' && (

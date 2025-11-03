@@ -1,10 +1,13 @@
-import { ShieldCheck, LockKey, FileArrowDown, Warning, CheckCircle, Info, Browsers, Database, CloudSlash, Trash } from '@phosphor-icons/react'
+import { ShieldCheck, LockKey, FileArrowDown, Warning, CheckCircle, Info, Browsers, Database, CloudSlash, Trash, Clock } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
+import { useKV } from '@github/spark/hooks'
 
 type SecurityInfoProps = {
   open: boolean
@@ -12,6 +15,8 @@ type SecurityInfoProps = {
 }
 
 export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
+  const [sessionTimeoutEnabled, setSessionTimeoutEnabled] = useKV<boolean>('session-timeout-enabled', true)
+  
   const handleClearAllData = async () => {
     try {
       const keys = await window.spark.kv.keys()
@@ -102,10 +107,10 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
                         <CheckCircle size={18} weight="fill" className="text-accent" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-sm mb-1">Browser-Only Encryption</h3>
+                        <h3 className="font-semibold text-sm mb-1">AES-256-GCM Encryption</h3>
                         <p className="text-sm text-muted-foreground">
-                          While Spark KV provides base64 encoding, it's not true encryption. However, with proper browser 
-                          encryption at rest in your browser, your data never leaves your device.
+                          Credentials can be encrypted using AES-256-GCM with PBKDF2 key derivation (100,000 iterations).
+                          All encryption happens in your browser - passwords never leave your device. Encrypted data is stored in Spark KV.
                         </p>
                       </div>
                     </div>
@@ -281,6 +286,50 @@ export function SecurityInfo({ open, onOpenChange }: SecurityInfoProps) {
                     <li>Use tokens with minimal required permissions</li>
                     <li>Consider using browser private/incognito mode for temporary testing</li>
                   </ul>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="security-features" className="border rounded-lg px-4 mb-3">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-2">
+                    <Clock size={20} weight="duotone" className="text-primary" />
+                    <span className="font-semibold text-base">Security Features</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                      <div className="flex flex-col flex-1">
+                        <Label htmlFor="session-timeout" className="text-sm font-semibold cursor-pointer">
+                          Session Timeout
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Automatically clear sensitive data after 30 minutes of inactivity (5 minute warning)
+                        </p>
+                      </div>
+                      <Switch
+                        id="session-timeout"
+                        checked={sessionTimeoutEnabled}
+                        onCheckedChange={(checked) => {
+                          setSessionTimeoutEnabled(checked)
+                          toast.success(checked ? 'Session timeout enabled' : 'Session timeout disabled', {
+                            description: checked ? 'Page will reload to activate' : 'Disabled for this session'
+                          })
+                          if (checked) {
+                            setTimeout(() => window.location.reload(), 1000)
+                          }
+                        }}
+                      />
+                    </div>
+                    
+                    <Alert className="border-accent/50 bg-accent/5">
+                      <Info size={18} className="text-accent" />
+                      <AlertDescription className="text-sm">
+                        When enabled, access tokens and cached credentials will be automatically cleared after 30 minutes 
+                        of inactivity to protect against unauthorized access on unattended devices.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
                 </AccordionContent>
               </AccordionItem>
 
