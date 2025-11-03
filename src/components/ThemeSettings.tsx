@@ -604,7 +604,7 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                                             style={{ backgroundColor: theme.colors.accent }}
                                             title="Accent"
                                           />
-                                        </div>
+                                      </div>
                                       </div>
                                     </div>
                                   </div>
@@ -613,7 +613,6 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                             </div>
                           )
                         })}
-                      </div>
                     </div>
                   ))}
                 </div>
@@ -834,39 +833,7 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="accessibility" className="mt-6">
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Eye size={24} weight="duotone" className="text-primary" />
-                    <h3 className="font-semibold text-lg">Color Contrast Analysis</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    WCAG 2.1 contrast requirements ensure text is readable for users with visual impairments. 
-                    <span className="block mt-1 text-xs">
-                      AA requires 4.5:1 for normal text, AAA requires 7:1. Large text (18pt+) has lower requirements.
-                    </span>
-                  </p>
-
-                  <div className="space-y-3">
-                    {Array.from(contrastResults.entries()).map(([pairName, result]) => (
-                      <ContrastIndicator 
-                        key={pairName} 
-                        pairName={pairName} 
-                        result={result}
-                        showDetails={true}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">WCAG Compliance Summary</h4>
-                  <Card className="p-4">
-                    <div className="space-y-3 text-sm">
+Content value="accessibility" className="mt-6">
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">Total Color Pairs</span>
                         <span className="font-mono font-semibold">{contrastResults.size}</span>
@@ -959,6 +926,42 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
           </Button>
         </div>
       </DialogContent>
+        </Tabs>
+
+        <div className="flex justify-between gap-2 pt-4 border-t">
+          <div className="flex gap-2">
+            <Button
+              onClick={handleExportTheme}
+              variant="outline"
+              size="sm"
+            >
+              <Export size={16} className="mr-2" />
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => document.getElementById('import-theme-settings')?.click()}
+            >
+              <Download size={16} className="mr-2" />
+              Import
+            </Button>
+            <input
+              id="import-theme-settings"
+              type="file"
+              accept=".json"
+              onChange={handleImportTheme}
+              className="hidden"
+            />
+          </div>
+          <Button onClick={() => onOpenChange(false)}>
+            Done
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
     </Dialog>
   )
 }
