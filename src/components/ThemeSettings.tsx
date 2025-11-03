@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Palette, Check, Plus, Pencil, Swatches, TextAa, Export, Download, FloppyDisk } from '@phosphor-icons/react'
+import { Palette, Check, Plus, Pencil, Swatches, TextAa, Export, Download, FloppyDisk, Eye } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -14,6 +14,8 @@ import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ColorPalettePicker, predefinedPalettes } from '@/components/ColorPalettePicker'
 import { themes, ThemeOption, ThemeColors, applyTheme, hexToOklch, fontOptions, TypographySettings, applyTypography } from '@/lib/themes'
+import { analyzeThemeContrast, getContrastResult } from '@/lib/contrast'
+import { ContrastIndicator } from '@/components/ContrastIndicator'
 
 type ThemeSettingsProps = {
   open: boolean
@@ -191,6 +193,34 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
     nature: 'Nature-Inspired',
   }
 
+  const currentThemeColors = useMemo(() => {
+    if (selectedTheme === 'custom' && customTheme) {
+      return customTheme
+    }
+    return themes[selectedTheme || 'dark'].colors
+  }, [selectedTheme, customTheme])
+
+  const contrastResults = useMemo(() => {
+    return analyzeThemeContrast(currentThemeColors)
+  }, [currentThemeColors])
+
+  const customColorsContrast = useMemo(() => {
+    const tempColors = {
+      background: hexToOklch(customColors.background),
+      foreground: hexToOklch(customColors.foreground),
+      card: hexToOklch(customColors.card),
+      primary: hexToOklch(customColors.primary),
+      accent: hexToOklch(customColors.accent),
+    }
+    return analyzeThemeContrast({
+      ...tempColors,
+      cardForeground: tempColors.foreground,
+      primaryForeground: tempColors.background,
+      accentForeground: tempColors.background,
+      mutedForeground: tempColors.foreground,
+    })
+  }, [customColors])
+
   if (editingMode === 'palette') {
     return (
       <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); setEditingMode(null) }}>
@@ -215,7 +245,14 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
               <Separator />
               
               <div>
-                <h4 className="text-sm font-semibold mb-3">Preview</h4>
+                <h4 className="text-sm font-semibold mb-3">Preview & Accessibility</h4>
+                
+                <div className="mb-4 space-y-2">
+                  {Array.from(customColorsContrast.entries()).slice(0, 4).map(([name, result]) => (
+                    <ContrastIndicator key={name} pairName={name} result={result} showDetails={true} />
+                  ))}
+                </div>
+
                 <Card 
                   className="p-6 border-2"
                   style={{ 
@@ -398,7 +435,14 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
               <Separator />
 
               <div>
-                <h4 className="text-sm font-semibold mb-3">Preview</h4>
+                <h4 className="text-sm font-semibold mb-3">Preview & Accessibility</h4>
+                
+                <div className="mb-4 space-y-2">
+                  {Array.from(customColorsContrast.entries()).slice(0, 4).map(([name, result]) => (
+                    <ContrastIndicator key={name} pairName={name} result={result} showDetails={true} />
+                  ))}
+                </div>
+
                 <Card 
                   className="p-6 border-2"
                   style={{ 
@@ -468,10 +512,11 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
         </DialogHeader>
 
         <Tabs defaultValue="presets" className="flex-1">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="presets">Preset Themes</TabsTrigger>
             <TabsTrigger value="custom">Create Custom</TabsTrigger>
             <TabsTrigger value="typography">Typography</TabsTrigger>
+            <TabsTrigger value="accessibility">Accessibility</TabsTrigger>
           </TabsList>
 
           <TabsContent value="presets" className="mt-6">
@@ -487,6 +532,10 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                         {themeKeys.map((themeKey) => {
                           const theme = themes[themeKey]
                           const isSelected = selectedTheme === themeKey
+                          const themeContrast = analyzeThemeContrast(theme.colors)
+                          const avgContrast = Array.from(themeContrast.values()).reduce((sum, r) => sum + r.ratio, 0) / themeContrast.size
+                          const aaaCount = Array.from(themeContrast.values()).filter(r => r.wcagAAA).length
+                          const aaCount = Array.from(themeContrast.values()).filter(r => r.wcagAA).length
                           
                           return (
                             <div key={themeKey} className="relative">
@@ -514,9 +563,23 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                                           </div>
                                         )}
                                       </div>
-                                      <p className="text-sm text-muted-foreground mb-4">
+                                      <p className="text-sm text-muted-foreground mb-3">
                                         {theme.description}
                                       </p>
+                                      
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <div className="text-xs text-muted-foreground">Accessibility:</div>
+                                        <div className="flex gap-1">
+                                          {Array.from(themeContrast.entries()).slice(0, 3).map(([name, result]) => (
+                                            <ContrastIndicator key={name} pairName={name} result={result} />
+                                          ))}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground ml-auto">
+                                          {aaaCount > 0 && `${aaaCount} AAA`}
+                                          {aaaCount > 0 && aaCount > aaaCount && ' · '}
+                                          {aaCount > aaaCount && `${aaCount - aaaCount} AA`}
+                                        </div>
+                                      </div>
                                       
                                       <div className="space-y-2 flex flex-col items-center">
                                         <div className="text-xs text-muted-foreground font-medium">Color Palette</div>
@@ -766,6 +829,99 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
                       </div>
                     </div>
                   </Card>
+                </div>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="accessibility" className="mt-6">
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Eye size={24} weight="duotone" className="text-primary" />
+                    <h3 className="font-semibold text-lg">Color Contrast Analysis</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    WCAG 2.1 contrast requirements ensure text is readable for users with visual impairments. 
+                    <span className="block mt-1 text-xs">
+                      AA requires 4.5:1 for normal text, AAA requires 7:1. Large text (18pt+) has lower requirements.
+                    </span>
+                  </p>
+
+                  <div className="space-y-3">
+                    {Array.from(contrastResults.entries()).map(([pairName, result]) => (
+                      <ContrastIndicator 
+                        key={pairName} 
+                        pairName={pairName} 
+                        result={result}
+                        showDetails={true}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">WCAG Compliance Summary</h4>
+                  <Card className="p-4">
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Total Color Pairs</span>
+                        <span className="font-mono font-semibold">{contrastResults.size}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex items-center justify-between">
+                        <span className="text-green-600 dark:text-green-400">AAA Compliant</span>
+                        <span className="font-mono font-semibold">
+                          {Array.from(contrastResults.values()).filter(r => r.wcagAAA).length}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600 dark:text-blue-400">AA Compliant</span>
+                        <span className="font-mono font-semibold">
+                          {Array.from(contrastResults.values()).filter(r => r.wcagAA).length}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-yellow-600 dark:text-yellow-400">AA Large Text Only</span>
+                        <span className="font-mono font-semibold">
+                          {Array.from(contrastResults.values()).filter(r => !r.wcagAA && r.wcagAALarge).length}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-red-600 dark:text-red-400">Non-Compliant</span>
+                        <span className="font-mono font-semibold">
+                          {Array.from(contrastResults.values()).filter(r => !r.wcagAALarge).length}
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Accessibility Guidelines</h4>
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                    <div className="flex gap-2">
+                      <span className="font-bold text-green-600 dark:text-green-400 min-w-[60px]">AAA (7:1)</span>
+                      <span>Enhanced contrast for users with low vision or color deficiencies</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="font-bold text-blue-600 dark:text-blue-400 min-w-[60px]">AA (4.5:1)</span>
+                      <span>Minimum contrast for normal text (most common requirement)</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="font-bold text-yellow-600 dark:text-yellow-400 min-w-[60px]">AA Large</span>
+                      <span>Minimum 3:1 for large text (18pt+ or 14pt+ bold)</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="font-bold text-red-600 dark:text-red-400 min-w-[60px]">Fail</span>
+                      <span>Does not meet accessibility standards</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </ScrollArea>
