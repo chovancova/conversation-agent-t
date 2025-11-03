@@ -11,12 +11,14 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CheckCircle, Circle, Robot, Key, Gear, Rocket, CaretRight, CaretLeft, Eye, EyeSlash, Info, Warning, ShieldWarning, Upload, Download } from '@phosphor-icons/react'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { CheckCircle, Circle, Robot, Key, Gear, Rocket, CaretRight, CaretLeft, Eye, EyeSlash, Info, Warning, ShieldWarning, Upload, Download, Certificate } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import { AccessToken, TokenConfig, AgentType } from '@/lib/types'
+import { AccessToken, TokenConfig, AgentType, ClientCertificateConfig } from '@/lib/types'
 import { AGENTS } from '@/lib/agents'
 import { cn } from '@/lib/utils'
 import { generateExportPackage, downloadExportPackage, importDataPackage, type ImportOptions } from '@/lib/dataManager'
+import { ClientCertificateSetup } from '@/components/ClientCertificateSetup'
 
 interface SetupWizardProps {
   open: boolean
@@ -45,6 +47,10 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
   const [isGeneratingToken, setIsGeneratingToken] = useState(false)
   const [tokenGenerated, setTokenGenerated] = useState(false)
   const [ignoreCertErrors, setIgnoreCertErrors] = useState(false)
+  const [proxyUrl, setProxyUrl] = useState('')
+  const [clientCertificate, setClientCertificate] = useState<ClientCertificateConfig>({
+    enabled: false
+  })
 
   const [selectedAgent, setSelectedAgent] = useState<AgentType>('account-opening')
   const [agentEndpoint, setAgentEndpoint] = useState('')
@@ -113,7 +119,9 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
         username: username,
         password: password,
         isEncrypted: false,
-        ignoreCertErrors: ignoreCertErrors
+        ignoreCertErrors: ignoreCertErrors,
+        proxyUrl: proxyUrl || undefined,
+        clientCertificate: clientCertificate.enabled ? clientCertificate : undefined
       }
 
       await setSavedTokens([tokenConfig])
@@ -505,31 +513,64 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
-                  <div className="flex flex-col flex-1">
-                    <Label htmlFor="setup-ignore-cert-errors" className="text-sm font-semibold cursor-pointer">
-                      Ignore Certificate Errors
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Enable for self-signed certs or ERR_CERT_AUTHORITY_INVALID errors
-                    </p>
-                  </div>
-                  <Switch
-                    id="setup-ignore-cert-errors"
-                    checked={ignoreCertErrors}
-                    onCheckedChange={setIgnoreCertErrors}
-                    disabled={tokenGenerated}
-                  />
-                </div>
+                <Accordion type="single" collapsible className="border rounded-lg">
+                  <AccordionItem value="advanced" className="border-none">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        <Gear size={16} className="text-muted-foreground" />
+                        <span className="text-sm font-semibold">Advanced Options</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4 space-y-4">
+                      <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                        <div className="flex flex-col flex-1">
+                          <Label htmlFor="setup-ignore-cert-errors" className="text-sm font-semibold cursor-pointer">
+                            Ignore Certificate Errors
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Enable for self-signed certs or ERR_CERT_AUTHORITY_INVALID errors
+                          </p>
+                        </div>
+                        <Switch
+                          id="setup-ignore-cert-errors"
+                          checked={ignoreCertErrors}
+                          onCheckedChange={setIgnoreCertErrors}
+                          disabled={tokenGenerated}
+                        />
+                      </div>
 
-                {ignoreCertErrors && (
-                  <Alert className="border-amber-500/50 bg-amber-500/10">
-                    <Warning size={16} className="text-amber-500" />
-                    <AlertDescription className="text-xs text-amber-900 dark:text-amber-200">
-                      This is a client-side app running in your browser. Certificate validation is controlled by your browser's security settings. Self-signed certificates may still require you to accept them manually in your browser.
-                    </AlertDescription>
-                  </Alert>
-                )}
+                      {ignoreCertErrors && (
+                        <Alert className="border-amber-500/50 bg-amber-500/10">
+                          <Warning size={16} className="text-amber-500" />
+                          <AlertDescription className="text-xs text-amber-900 dark:text-amber-200">
+                            This is a client-side app running in your browser. Certificate validation is controlled by your browser's security settings. Self-signed certificates may still require you to accept them manually in your browser.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label htmlFor="proxy-url">Proxy URL (Optional)</Label>
+                        <Input
+                          id="proxy-url"
+                          placeholder="https://proxy.example.com"
+                          value={proxyUrl}
+                          onChange={(e) => setProxyUrl(e.target.value)}
+                          disabled={tokenGenerated}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          If your token endpoint requires a proxy, enter the proxy URL here
+                        </p>
+                      </div>
+
+                      <Separator />
+
+                      <ClientCertificateSetup
+                        value={clientCertificate}
+                        onChange={setClientCertificate}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
 
                 {tokenGenerated ? (
                   <div className="flex items-center gap-2 p-4 rounded-xl border border-primary bg-primary/5">

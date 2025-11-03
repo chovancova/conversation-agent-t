@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning, CloudSlash } from '@phosphor-icons/react'
+import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning, CloudSlash, Certificate } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,12 +10,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
-import { TokenConfig, AccessToken } from '@/lib/types'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { TokenConfig, AccessToken, ClientCertificateConfig } from '@/lib/types'
 import { useCountdown } from '@/hooks/use-countdown'
 import { EncryptionPasswordDialog } from '@/components/EncryptionPasswordDialog'
 import { encryptData, decryptData } from '@/lib/encryption'
 import { getJWTExpiration } from '@/lib/jwt'
 import { validateEndpointSecurity } from '@/lib/security'
+import { ClientCertificateSetup } from '@/components/ClientCertificateSetup'
 
 type TokenManagerProps = {
   open: boolean
@@ -37,6 +39,9 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [useJWTExpiration, setUseJWTExpiration] = useState(false)
   const [ignoreCertErrors, setIgnoreCertErrors] = useState(false)
   const [proxyUrl, setProxyUrl] = useState('')
+  const [clientCertificate, setClientCertificate] = useState<ClientCertificateConfig>({
+    enabled: false
+  })
   const [isGenerating, setIsGenerating] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [encryptOnSave, setEncryptOnSave] = useState(true)
@@ -59,6 +64,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       setUseJWTExpiration(selectedToken.useJWTExpiration || false)
       setIgnoreCertErrors(selectedToken.ignoreCertErrors || false)
       setProxyUrl(selectedToken.proxyUrl || '')
+      setClientCertificate(selectedToken.clientCertificate || { enabled: false })
       if (selectedToken.isEncrypted) {
         setClientId('••••••••')
         setClientSecret('••••••••')
@@ -124,7 +130,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         useFormEncoded,
         useJWTExpiration,
         ignoreCertErrors,
-        proxyUrl
+        proxyUrl,
+        clientCertificate: clientCertificate.enabled ? clientCertificate : undefined
       }
 
       setSavedTokens((current = []) => {
@@ -390,7 +397,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
         useFormEncoded,
         useJWTExpiration,
         ignoreCertErrors,
-        proxyUrl
+        proxyUrl,
+        clientCertificate: clientCertificate.enabled ? clientCertificate : undefined
       }
 
       setSavedTokens((current = []) => {
@@ -859,6 +867,23 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                   </AlertDescription>
                 </Alert>
               )}
+
+              <Accordion type="single" collapsible className="border rounded-lg">
+                <AccordionItem value="certificate" className="border-none">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Certificate size={16} className="text-muted-foreground" />
+                      <span className="text-sm font-semibold">Client Certificate (mTLS)</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <ClientCertificateSetup
+                      value={clientCertificate}
+                      onChange={setClientCertificate}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
               <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
                 <div className="flex items-center gap-2">

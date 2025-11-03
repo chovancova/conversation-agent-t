@@ -53,6 +53,13 @@ export type AgentAdvancedConfig = {
   responseConfig: AgentResponseConfig
 }
 
+export type ClientCertificateConfig = {
+  certificatePem?: string
+  privateKeyPem?: string
+  passphrase?: string
+  enabled: boolean
+}
+
 export type TokenConfig = {
   id: string
   name: string
@@ -66,6 +73,7 @@ export type TokenConfig = {
   useJWTExpiration?: boolean
   ignoreCertErrors?: boolean
   proxyUrl?: string
+  clientCertificate?: ClientCertificateConfig
 }
 
 export type EncryptedTokenConfig = {
