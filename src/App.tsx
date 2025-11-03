@@ -522,7 +522,7 @@ function App() {
         onOpenChange={setConversationSelectorOpen}
         conversations={conversations || []}
         onSelect={handleSelectSplitConversation}
-        currentConversationId={splitConversationId || null}
+        currentConversationId={splitConversationId}
         agentNames={agentNames || {}}
         title="Switch Conversation (Pane B)"
         description="Choose a different conversation to display in the split pane"
