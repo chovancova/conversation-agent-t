@@ -11,6 +11,7 @@ const shortcuts = [
   { key: '⌘/Ctrl + B', description: 'Toggle sidebar' },
   { key: '⌘/Ctrl + K', description: 'Focus search' },
   { key: '⌘/Ctrl + \\', description: 'Toggle split view' },
+  { key: '⌘/Ctrl + C', description: 'Compare conversations' },
   { key: 'Enter', description: 'Send message' },
   { key: 'Shift + Enter', description: 'New line in message' },
   { key: '?', description: 'Show keyboard shortcuts' },

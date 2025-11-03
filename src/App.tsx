@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh } from '@phosphor-icons/react'
+import { Plus, PaperPlaneRight, Export, Key, Gear, Robot, ShieldCheck, Trash, List, Palette, Columns, CaretDown, CaretUp, ChatsCircle, CloudSlash, Keyboard, SpeakerHigh, ArrowsLeftRight } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
@@ -25,6 +25,8 @@ import { ConversationPane } from '@/components/ConversationPane'
 import { ClientSideInfo } from '@/components/ClientSideInfo'
 import { ConversationSelector } from '@/components/ConversationSelector'
 import { KeyboardShortcuts } from '@/components/KeyboardShortcuts'
+import { ComparisonView } from '@/components/ComparisonView'
+import { ComparisonSelector } from '@/components/ComparisonSelector'
 import { Conversation, Message, AgentType, AccessToken, TokenConfig, AgentAdvancedConfig } from '@/lib/types'
 import { AGENTS, getAgentConfig, getAgentName } from '@/lib/agents'
 import { ThemeOption, applyTheme } from '@/lib/themes'
@@ -59,6 +61,9 @@ function App() {
   const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false)
   const [conversationSelectorOpen, setConversationSelectorOpen] = useState(false)
   const [keyboardShortcutsOpen, setKeyboardShortcutsOpen] = useState(false)
+  const [comparisonSelectorOpen, setComparisonSelectorOpen] = useState(false)
+  const [comparisonViewOpen, setComparisonViewOpen] = useState(false)
+  const [comparisonConversations, setComparisonConversations] = useState<{ a: Conversation | null; b: Conversation | null }>({ a: null, b: null })
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const activeConversation = (conversations || []).find((c) => c.id === activeConversationId)
@@ -132,6 +137,18 @@ function App() {
       key: '?',
       callback: () => setKeyboardShortcutsOpen(true),
       description: 'Show keyboard shortcuts',
+    },
+    {
+      key: 'c',
+      ctrlOrCmd: true,
+      callback: () => {
+        if (splitMode && activeConversation && splitConversation) {
+          handleCompareConversations(activeConversation, splitConversation)
+        } else if ((conversations?.length || 0) >= 2) {
+          handleOpenComparison()
+        }
+      },
+      description: 'Compare conversations',
     },
   ], true)
 
@@ -504,6 +521,15 @@ function App() {
     setSplitConversationId(conversationId)
   }
 
+  const handleOpenComparison = () => {
+    setComparisonSelectorOpen(true)
+  }
+
+  const handleCompareConversations = (conversationA: Conversation, conversationB: Conversation) => {
+    setComparisonConversations({ a: conversationA, b: conversationB })
+    setComparisonViewOpen(true)
+  }
+
   const hasActiveFilters = (searchQuery && searchQuery.trim() !== '') || (selectedAgentFilters && selectedAgentFilters.length > 0)
 
   const conversationToDeleteData = conversations?.find((c) => c.id === conversationToDelete)
@@ -528,6 +554,20 @@ function App() {
         description="Choose a different conversation to display in the split pane"
       />
       <KeyboardShortcuts open={keyboardShortcutsOpen} onOpenChange={setKeyboardShortcutsOpen} />
+      <ComparisonSelector 
+        open={comparisonSelectorOpen}
+        onOpenChange={setComparisonSelectorOpen}
+        conversations={conversations || []}
+        onCompare={handleCompareConversations}
+        agentNames={agentNames || {}}
+      />
+      <ComparisonView
+        open={comparisonViewOpen}
+        onOpenChange={setComparisonViewOpen}
+        conversationA={comparisonConversations.a}
+        conversationB={comparisonConversations.b}
+        agentNames={agentNames || {}}
+      />
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -629,6 +669,17 @@ function App() {
                 Sounds
               </Button>
             </div>
+
+            <Button 
+              onClick={handleOpenComparison} 
+              variant="outline" 
+              size="sm"
+              className="w-full h-9 mb-3"
+              disabled={(conversations?.length || 0) < 2}
+            >
+              <ArrowsLeftRight size={16} className="mr-1.5" />
+              Compare Conversations
+            </Button>
           </div>
 
           <div className="px-4 py-3 border-b border-border bg-muted/30 flex-shrink-0">
@@ -836,6 +887,20 @@ function App() {
                         title="New conversation in pane B"
                       >
                         <Plus size={16} weight="bold" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          if (activeConversation && splitConversation) {
+                            handleCompareConversations(activeConversation, splitConversation)
+                          }
+                        }}
+                        disabled={isLoading}
+                        className="h-8 w-8 rounded-lg"
+                        title="Compare pane A and B (Ctrl+C)"
+                      >
+                        <ArrowsLeftRight size={16} weight="bold" />
                       </Button>
                       <TokenStatusIcon
                         onClick={handleQuickTokenRefresh}
