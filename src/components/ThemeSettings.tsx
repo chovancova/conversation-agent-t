@@ -834,9 +834,8 @@ export function ThemeSettings({ open, onOpenChange }: ThemeSettingsProps) {
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="accessibility" className="mt-6">
             <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-6">
+                      <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-semibold mb-3">Contrast Analysis</h4>
                   <Card className="p-4">
