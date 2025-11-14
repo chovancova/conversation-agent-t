@@ -234,3 +234,246 @@ export const validateAgentConfiguration = (
     warnings
   }
 }
+
+export const validateEndpointSecurity = (endpoint: string): ValidationResult => {
+  const errors: string[] = []
+  const warnings: string[] = []
+
+  try {
+    const url = new URL(endpoint)
+
+    if (url.protocol === 'http:' && !['localhost', '127.0.0.1', '0.0.0.0'].includes(url.hostname)) {
+      warnings.push('Endpoint uses HTTP - credentials and data will be sent unencrypted')
+    }
+
+    if (url.port && ['21', '23', '25'].includes(url.port)) {
+      errors.push('Endpoint uses an insecure protocol port')
+    }
+
+    if (url.hostname.includes('test') || url.hostname.includes('dev') || url.hostname.includes('staging')) {
+      warnings.push('Endpoint appears to be a test/dev/staging environment')
+    }
+
+    if (url.pathname.includes('..') || url.pathname.includes('//')) {
+      errors.push('Endpoint path contains suspicious patterns')
+    }
+
+    const privateRanges = [
+      /^10\./,
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+      /^192\.168\./,
+      /^169\.254\./
+    ]
+
+    const isPrivateIP = privateRanges.some(pattern => pattern.test(url.hostname))
+    if (isPrivateIP) {
+      warnings.push('Endpoint uses a private IP address - ensure it is accessible from your network')
+    }
+
+  } catch (error) {
+    errors.push('Cannot validate endpoint security - invalid URL format')
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings
+  }
+}
+
+export const validateEndpointReachability = (endpoint: string): ValidationResult => {
+  const errors: string[] = []
+  const warnings: string[] = []
+
+  try {
+    const url = new URL(endpoint)
+
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+      warnings.push('Local endpoint - ensure the service is running on your machine')
+    }
+
+    if (!url.port && !['http:', 'https:'].includes(url.protocol)) {
+      warnings.push('No port specified - will use default for protocol')
+    }
+
+    if (url.hostname.includes('example.') || url.hostname === 'example.com') {
+      errors.push('Endpoint uses example domain - replace with actual endpoint')
+    }
+
+    if (!url.hostname.includes('.') && url.hostname !== 'localhost') {
+      warnings.push('Endpoint hostname has no TLD - ensure this is correct')
+    }
+
+  } catch (error) {
+    errors.push('Cannot validate endpoint reachability - invalid URL format')
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings
+  }
+}
+
+export const validateEndpointCompliance = (endpoint: string): ValidationResult => {
+  const errors: string[] = []
+  const warnings: string[] = []
+
+  try {
+    const url = new URL(endpoint)
+
+    if (url.username || url.password) {
+      errors.push('Endpoint contains credentials in URL - use Authorization header instead')
+    }
+
+    if (url.search && url.search.toLowerCase().includes('api_key')) {
+      warnings.push('API key detected in query string - consider using headers for sensitive data')
+    }
+
+    if (url.search && url.search.toLowerCase().includes('token')) {
+      warnings.push('Token detected in query string - consider using Authorization header')
+    }
+
+    const maxUrlLength = 2048
+    if (endpoint.length > maxUrlLength) {
+      warnings.push(`Endpoint URL exceeds ${maxUrlLength} characters - may cause issues in some browsers`)
+    }
+
+    if (url.pathname.length > 1 && !url.pathname.startsWith('/api') && !url.pathname.startsWith('/v')) {
+      warnings.push('Endpoint path does not follow common API conventions (/api/* or /v*/*)')
+    }
+
+  } catch (error) {
+    errors.push('Cannot validate endpoint compliance - invalid URL format')
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings
+  }
+}
+
+export const validateEndpointComprehensive = (endpoint: string): ValidationResult => {
+  const errors: string[] = []
+  const warnings: string[] = []
+
+  const basicResult = validateEndpoint(endpoint)
+  errors.push(...basicResult.errors)
+  warnings.push(...basicResult.warnings)
+
+  if (basicResult.valid) {
+    const securityResult = validateEndpointSecurity(endpoint)
+    errors.push(...securityResult.errors)
+    warnings.push(...securityResult.warnings)
+
+    const reachabilityResult = validateEndpointReachability(endpoint)
+    errors.push(...reachabilityResult.errors)
+    warnings.push(...reachabilityResult.warnings)
+
+    const complianceResult = validateEndpointCompliance(endpoint)
+    errors.push(...complianceResult.errors)
+    warnings.push(...complianceResult.warnings)
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors: [...new Set(errors)],
+    warnings: [...new Set(warnings)]
+  }
+}
+
+export const validateProxyConfiguration = (
+  proxyUrl: string,
+  requiresAuth: boolean,
+  username?: string,
+  password?: string
+): ValidationResult => {
+  const errors: string[] = []
+  const warnings: string[] = []
+
+  const urlResult = validateCorsProxyUrl(proxyUrl)
+  errors.push(...urlResult.errors)
+  warnings.push(...urlResult.warnings)
+
+  if (requiresAuth) {
+    if (!username || username.trim() === '') {
+      errors.push('Proxy requires authentication but username is missing')
+    }
+
+    if (!password || password.trim() === '') {
+      errors.push('Proxy requires authentication but password is missing')
+    }
+
+    if (username && username.length < 3) {
+      warnings.push('Proxy username is very short - ensure this is correct')
+    }
+
+    if (password && password.length < 6) {
+      warnings.push('Proxy password is short - consider using a stronger password')
+    }
+  }
+
+  try {
+    const url = new URL(proxyUrl)
+    
+    if (requiresAuth && url.protocol === 'http:' && !url.hostname.includes('localhost')) {
+      warnings.push('Using HTTP with authentication - credentials will be sent unencrypted')
+    }
+
+    if (url.hostname.includes('herokuapp.com') && !url.hostname.includes('cors-anywhere')) {
+      warnings.push('Using Heroku free tier proxy - may have rate limits or availability issues')
+    }
+
+  } catch (error) {
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings
+  }
+}
+
+export const validateBearerToken = (token: string): ValidationResult => {
+  const errors: string[] = []
+  const warnings: string[] = []
+
+  if (!token || token.trim() === '') {
+    errors.push('Bearer token is required')
+    return { valid: false, errors, warnings }
+  }
+
+  if (token.includes(' ') && !token.startsWith('Bearer ')) {
+    errors.push('Token contains spaces - ensure this is valid')
+  }
+
+  if (token.startsWith('Bearer ')) {
+    warnings.push('Token includes "Bearer " prefix - this will be added automatically')
+  }
+
+  if (token.length < 20) {
+    warnings.push('Token is very short - ensure this is a valid token')
+  }
+
+  if (token.length > 8192) {
+    warnings.push('Token is very long - may exceed header size limits')
+  }
+
+  const tokenPatterns = [
+    { pattern: /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/, type: 'JWT' },
+    { pattern: /^[A-Fa-f0-9]{32,}$/, type: 'Hexadecimal' },
+    { pattern: /^[A-Za-z0-9+/]+=*$/, type: 'Base64' },
+  ]
+
+  const matchedPattern = tokenPatterns.find(({ pattern }) => pattern.test(token.replace('Bearer ', '')))
+  if (matchedPattern) {
+    warnings.push(`Token appears to be in ${matchedPattern.type} format`)
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings
+  }
+}

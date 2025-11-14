@@ -6,22 +6,6 @@ A professional testing environment for conversation agents that enables secure i
 
 This application allows you to test and evaluate multiple conversation agents across different business domains (Account Opening, Payment, Moderator, Card, RAG) through a clean, efficient interface.
 
-## 🔐 100% Client-Side Architecture
-
-**⚠️ IMPORTANT: ALL data stays in your browser. ZERO server-side storage.**
-
-This is a completely client-side application:
-- ✅ All credentials stored in browser local storage only
-- ✅ All data encrypted with AES-256-GCM (optional)
-- ✅ Direct API calls from browser to agent endpoints
-- ✅ Zero data transmission to application server
-- ✅ Zero analytics, tracking, or logging
-
-**New Features:**
-- 🔒 **Certificate Error Handling**: Document certificate validation settings for development endpoints
-- 🌐 **Proxy Configuration**: Document proxy requirements for corporate networks
-- 📄 **Comprehensive Guides**: See [CERTIFICATE_AND_PROXY_GUIDE.md](./CERTIFICATE_AND_PROXY_GUIDE.md) and [CLIENT_SIDE_CONFIRMATION.md](./CLIENT_SIDE_CONFIRMATION.md)
-
 ## ✨ Key Features
 
 - **Multi-Agent Chat Interface**: Test different specialized agents in isolated conversations
@@ -124,42 +108,6 @@ Content-Type: application/json
 - **Card**: Card services and management
 - **RAG**: Retrieval-augmented generation for knowledge queries
 
-## 🔧 Troubleshooting
-
-### Certificate Errors (ERR_CERT_AUTHORITY_INVALID)
-
-If you see certificate validation errors:
-
-1. **Visit the endpoint directly in your browser**
-   - Navigate to the token/agent endpoint URL
-   - Accept the certificate warning
-   - Return to the app and try again
-
-2. **Enable "Ignore Certificate Errors" in Token Manager**
-   - This documents your intention to use self-signed certs
-   - Note: Browser still enforces validation (see guide below)
-
-3. **Install certificate in trust store**
-   - For permanent solution with self-signed certificates
-   - See [CERTIFICATE_AND_PROXY_GUIDE.md](./CERTIFICATE_AND_PROXY_GUIDE.md)
-
-### Proxy Configuration
-
-- Configure proxy at **system level** (OS/Browser settings)
-- The "Proxy URL" field in Token Manager is **documentation only**
-- Browser fetch API automatically uses system proxy
-- Cannot be overridden by JavaScript for security
-
-### Failed to Fetch Errors
-
-Common causes:
-1. Certificate validation failure (see above)
-2. CORS headers missing on agent endpoint
-3. Network/proxy blocking request
-4. Endpoint not accessible from browser
-
-**Solution**: Check browser console (F12) for specific error details
-
 ## 🛡️ Security Recommendations
 
 ### For Users
@@ -181,12 +129,8 @@ Common causes:
 
 ## 📖 Documentation
 
-- **[QUICK_REFERENCE_CERT_PROXY.md](./QUICK_REFERENCE_CERT_PROXY.md)** - Quick solutions for certificate and proxy issues
-- **[CERTIFICATE_AND_PROXY_GUIDE.md](./CERTIFICATE_AND_PROXY_GUIDE.md)** - Certificate validation and proxy configuration
-- **[CLIENT_SIDE_CONFIRMATION.md](./CLIENT_SIDE_CONFIRMATION.md)** - 100% client-side architecture verification
-- **[SECURITY.md](./SECURITY.md)** - Comprehensive security documentation
-- **[PRD.md](./PRD.md)** - Product requirements and design decisions
-- **[FEATURES.md](./FEATURES.md)** - Complete feature list and usage guide
+- See [SECURITY.md](./SECURITY.md) for comprehensive security documentation
+- See [PRD.md](./PRD.md) for product requirements and design decisions
 
 ## ⚠️ Important Notes
 

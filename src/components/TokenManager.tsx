@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning, CloudSlash, Certificate } from '@phosphor-icons/react'
+import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning, CloudSlash, Certificate, Info } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,6 +19,10 @@ import { getJWTExpiration } from '@/lib/jwt'
 import { validateEndpointSecurity } from '@/lib/security'
 import { ClientCertificateSetup } from '@/components/ClientCertificateSetup'
 import { buildProxiedUrl, COMMON_CORS_PROXIES } from '@/lib/corsProxy'
+import { CorsProxyValidator, ProxyProviderBadge } from '@/components/CorsProxyValidator'
+import { ValidationRulesGuide } from '@/components/ValidationRulesGuide'
+import { EndpointValidator } from '@/components/EndpointValidator'
+import { validateEndpointComprehensive } from '@/lib/validation'
 
 type TokenManagerProps = {
   open: boolean
@@ -57,7 +61,8 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [importedEncryptedData, setImportedEncryptedData] = useState<any>(null)
 
   const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
-  const endpointValidation = endpoint ? validateEndpointSecurity(endpoint) : null
+  const endpointValidation = endpoint ? validateEndpointComprehensive(endpoint) : null
+  const corsProxyValidation = useCorsProxy && corsProxy
 
   useEffect(() => {
     if (selectedToken) {
@@ -756,28 +761,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                   onChange={(e) => setEndpoint(e.target.value)}
                 />
                 {endpointValidation && (
-                  <>
-                    {endpointValidation.errors.length > 0 && (
-                      <Alert variant="destructive" className="mt-2">
-                        <ShieldWarning size={16} />
-                        <AlertDescription className="text-xs ml-2">
-                          {endpointValidation.errors.map((error, i) => (
-                            <div key={i}>• {error}</div>
-                          ))}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    {endpointValidation.warnings.length > 0 && (
-                      <Alert className="mt-2 border-amber-500/50 bg-amber-500/10">
-                        <Warning size={16} className="text-amber-500" />
-                        <AlertDescription className="text-xs ml-2 text-amber-900 dark:text-amber-200">
-                          {endpointValidation.warnings.map((warning, i) => (
-                            <div key={i}>• {warning}</div>
-                          ))}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </>
+                  <EndpointValidator result={endpointValidation} className="mt-2" />
                 )}
               </div>
 
@@ -927,9 +911,18 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                       <SelectContent>
                         {COMMON_CORS_PROXIES.map((proxy) => (
                           <SelectItem key={proxy.name} value={proxy.url || 'custom'}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{proxy.name}</span>
-                              <span className="text-xs text-muted-foreground">{proxy.description}</span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex flex-col flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-medium">{proxy.name}</span>
+                                  <ProxyProviderBadge 
+                                    requiresAuth={proxy.requiresAuth}
+                                    isLocal={proxy.url.includes('localhost')}
+                                    isPremium={proxy.requiresAuth && !proxy.url.includes('localhost')}
+                                  />
+                                </div>
+                                <span className="text-xs text-muted-foreground">{proxy.description}</span>
+                              </div>
                             </div>
                           </SelectItem>
                         ))}
@@ -950,17 +943,36 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                       <p className="text-xs text-muted-foreground">
                         Target URL will be appended to this proxy URL. Can include credentials (username:password@host)
                       </p>
+                      
+                      {corsProxy && (
+                        <CorsProxyValidator 
+                          proxyUrl={corsProxy}
+                          requiresAuth={false}
+                          className="mt-2"
+                        />
+                      )}
                     </div>
                     
-                    <Alert className="border-accent/50 bg-accent/10">
-                      <ShieldCheck size={16} className="text-accent" />
-                      <AlertDescription className="text-xs text-foreground">
-                        <div className="font-semibold mb-1">Common CORS Proxies:</div>
-                        {COMMON_CORS_PROXIES.filter(p => p.url).slice(0, 5).map((proxy, i) => (
-                          <div key={i}>• {proxy.name} - {proxy.description}</div>
-                        ))}
-                        <div className="mt-2 font-semibold">Custom proxy with credentials:</div>
-                        <div>• https://user:pass@myproxy.com/</div>
+                    <Alert className="border-blue-500/50 bg-blue-500/5">
+                      <Info size={16} className="text-blue-600" />
+                      <AlertDescription className="text-xs text-blue-800 dark:text-blue-300">
+                        <div className="font-semibold mb-2">Available CORS Proxy Providers:</div>
+                        <div className="space-y-1">
+                          {COMMON_CORS_PROXIES.filter(p => p.url).slice(0, 7).map((proxy, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <ProxyProviderBadge 
+                                requiresAuth={proxy.requiresAuth}
+                                isLocal={proxy.url.includes('localhost')}
+                                isPremium={proxy.requiresAuth && !proxy.url.includes('localhost')}
+                              />
+                              <span className="flex-1">{proxy.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-blue-500/20">
+                          <div className="font-semibold mb-1">With Credentials:</div>
+                          <code className="text-[10px]">https://user:pass@proxy.example.com/</code>
+                        </div>
                       </AlertDescription>
                     </Alert>
                   </div>
@@ -993,6 +1005,18 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                       value={clientCertificate}
                       onChange={setClientCertificate}
                     />
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="validation-rules" className="border-none border-t">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck size={16} className="text-muted-foreground" />
+                      <span className="text-sm font-semibold">Validation Rules & Guidelines</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <ValidationRulesGuide />
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>

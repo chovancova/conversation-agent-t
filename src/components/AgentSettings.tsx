@@ -17,7 +17,7 @@ import { AgentConfig, AgentAdvancedConfig, CustomHeader, AgentProtocol } from '@
 import { AGENTS } from '@/lib/agents'
 import { themes, ThemeOption, applyTheme } from '@/lib/themes'
 import { validateProtocolConfig, getProtocolDefaults, ValidationResult } from '@/lib/protocolValidation'
-import { validateEndpoint, validateAgentConfiguration } from '@/lib/validation'
+import { validateEndpoint, validateAgentConfiguration, validateEndpointComprehensive } from '@/lib/validation'
 import { EndpointValidator } from '@/components/EndpointValidator'
 import { ProtocolGuide } from '@/components/ProtocolGuide'
 
@@ -83,7 +83,7 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
       [agentType]: value
     }))
     
-    const validation = validateEndpoint(value)
+    const validation = value ? validateEndpointComprehensive(value) : validateEndpoint(value)
     setEndpointValidations(prev => ({
       ...prev,
       [agentType]: validation
