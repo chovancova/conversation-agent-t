@@ -403,13 +403,14 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
 
       toast.success('Access token generated successfully')
     } catch (error) {
-      let errorMessage = error instanceof Error ? error.message : 'Failed to generate token'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate token'
       
       if (errorMessage.includes('Failed to fetch') || errorMessage.includes('CORS')) {
-        errorMessage = 'CORS error: Enable "Use CORS Proxy" to bypass browser restrictions'
+        toast.error('CORS error: Enable "Use CORS Proxy" to bypass browser restrictions')
+      } else {
+        toast.error(errorMessage)
       }
       
-      toast.error(errorMessage)
       console.error('Token generation error:', error)
     } finally {
       setIsGenerating(false)
