@@ -494,3 +494,136 @@ export async function clearAllData(includeTokens: boolean = false): Promise<void
 
   await Promise.all(keysToDelete.map(key => window.spark.kv.delete(key)))
 }
+
+export type BatchImportResult = {
+  success: boolean
+  filesProcessed: number
+  filesSkipped: number
+  totalImported: {
+    conversations: number
+    agentSettings: number
+    tokenConfigs: number
+    preferences: number
+  }
+  totalSkipped: {
+    conversations: number
+    agentSettings: number
+    tokenConfigs: number
+  }
+  fileResults: Array<{
+    filename: string
+    success: boolean
+    imported: ImportResult['imported']
+    skipped: ImportResult['skipped']
+    errors: string[]
+    warnings: string[]
+  }>
+  errors: string[]
+  warnings: string[]
+}
+
+export async function importMultiplePackages(
+  files: File[],
+  options: ImportOptions
+): Promise<BatchImportResult> {
+  const result: BatchImportResult = {
+    success: false,
+    filesProcessed: 0,
+    filesSkipped: 0,
+    totalImported: {
+      conversations: 0,
+      agentSettings: 0,
+      tokenConfigs: 0,
+      preferences: 0
+    },
+    totalSkipped: {
+      conversations: 0,
+      agentSettings: 0,
+      tokenConfigs: 0
+    },
+    fileResults: [],
+    errors: [],
+    warnings: []
+  }
+
+  for (const file of files) {
+    try {
+      const text = await file.text()
+      const pkg = JSON.parse(text) as ExportDataPackage
+
+      if (!validateDataPackage(pkg)) {
+        result.fileResults.push({
+          filename: file.name,
+          success: false,
+          imported: { conversations: 0, agentSettings: 0, tokenConfigs: 0, preferences: 0 },
+          skipped: { conversations: 0, agentSettings: 0, tokenConfigs: 0 },
+          errors: ['Invalid data package format'],
+          warnings: []
+        })
+        result.filesSkipped++
+        continue
+      }
+
+      const importResult = await importDataPackage(pkg, options)
+
+      result.fileResults.push({
+        filename: file.name,
+        success: importResult.success,
+        imported: importResult.imported,
+        skipped: importResult.skipped,
+        errors: importResult.errors,
+        warnings: importResult.warnings
+      })
+
+      result.totalImported.conversations += importResult.imported.conversations
+      result.totalImported.agentSettings += importResult.imported.agentSettings
+      result.totalImported.tokenConfigs += importResult.imported.tokenConfigs
+      result.totalImported.preferences += importResult.imported.preferences
+
+      result.totalSkipped.conversations += importResult.skipped.conversations
+      result.totalSkipped.agentSettings += importResult.skipped.agentSettings
+      result.totalSkipped.tokenConfigs += importResult.skipped.tokenConfigs
+
+      if (importResult.success) {
+        result.filesProcessed++
+      } else {
+        result.filesSkipped++
+      }
+
+      if (importResult.errors.length > 0) {
+        result.errors.push(...importResult.errors.map(e => `${file.name}: ${e}`))
+      }
+      if (importResult.warnings.length > 0) {
+        result.warnings.push(...importResult.warnings.map(w => `${file.name}: ${w}`))
+      }
+
+    } catch (error) {
+      result.fileResults.push({
+        filename: file.name,
+        success: false,
+        imported: { conversations: 0, agentSettings: 0, tokenConfigs: 0, preferences: 0 },
+        skipped: { conversations: 0, agentSettings: 0, tokenConfigs: 0 },
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
+        warnings: []
+      })
+      result.filesSkipped++
+      result.errors.push(`${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  result.success = result.filesProcessed > 0 && result.errors.length === 0
+
+  return result
+}
+
+export async function exportMultipleConversationGroups(groups: Array<{
+  name: string
+  conversationIds: string[]
+}>): Promise<void> {
+  for (const group of groups) {
+    const pkg = await exportSelectedConversations(group.conversationIds)
+    const filename = `${group.name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${Date.now()}.json`
+    downloadExportPackage(pkg, filename)
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+}

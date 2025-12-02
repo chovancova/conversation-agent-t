@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Download, Upload, Database, Check, X as XIcon, FileArrowDown, FileArrowUp, Trash, Clock, HardDrives, WarningCircle, CheckCircle, Info } from '@phosphor-icons/react'
+import { Download, Upload, Database, Check, X as XIcon, FileArrowDown, FileArrowUp, Trash, Clock, HardDrives, WarningCircle, CheckCircle, Info, Files, FolderOpen } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -23,10 +23,12 @@ import {
   formatFileSize,
   exportSelectedConversations,
   clearAllData,
+  importMultiplePackages,
   type ImportOptions,
   type ImportResult,
   type BackupMetadata,
-  type ExportDataPackage
+  type ExportDataPackage,
+  type BatchImportResult
 } from '@/lib/dataManager'
 import { Conversation } from '@/lib/types'
 
@@ -51,15 +53,19 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
   const [importIncludeTokenConfigs, setImportIncludeTokenConfigs] = useState(false)
   const [importIncludePreferences, setImportIncludePreferences] = useState(true)
   const [importMergeStrategy, setImportMergeStrategy] = useState<'replace' | 'merge' | 'skip-duplicates'>('merge')
+  const [importMode, setImportMode] = useState<'single' | 'batch'>('single')
   const [importFile, setImportFile] = useState<File | null>(null)
+  const [importFiles, setImportFiles] = useState<File[]>([])
   const [importPreview, setImportPreview] = useState<ExportDataPackage | null>(null)
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  const [batchImportResult, setBatchImportResult] = useState<BatchImportResult | null>(null)
   
   const [backups, setBackups] = useState<BackupMetadata[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [clearIncludeTokens, setClearIncludeTokens] = useState(false)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const batchFileInputRef = useRef<HTMLInputElement>(null)
 
   const loadBackups = async () => {
     const backupsList = await getBackupsList()
@@ -112,6 +118,15 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
     reader.readAsText(file)
   }
 
+  const handleBatchFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    setImportFiles(files)
+    setBatchImportResult(null)
+    toast.success(`${files.length} file${files.length !== 1 ? 's' : ''} selected for batch import`)
+  }
+
   const handleImport = async () => {
     if (!importPreview) {
       toast.error('No file selected')
@@ -141,6 +156,42 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
       }
     } catch (error) {
       toast.error('Import failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleBatchImport = async () => {
+    if (importFiles.length === 0) {
+      toast.error('No files selected')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const options: ImportOptions = {
+        includeConversations: importIncludeConversations,
+        includeAgentSettings: importIncludeAgentSettings,
+        includeTokenConfigs: importIncludeTokenConfigs,
+        includePreferences: importIncludePreferences,
+        mergeStrategy: importMergeStrategy
+      }
+
+      const result = await importMultiplePackages(importFiles, options)
+      setBatchImportResult(result)
+      
+      if (result.success) {
+        toast.success(`Batch import completed: ${result.filesProcessed} file${result.filesProcessed !== 1 ? 's' : ''} processed`)
+        setTimeout(() => {
+          window.location.reload()
+        }, 2500)
+      } else if (result.filesProcessed > 0) {
+        toast.warning(`Batch import partially successful: ${result.filesProcessed} of ${importFiles.length} files processed`)
+      } else {
+        toast.error('Batch import failed')
+      }
+    } catch (error) {
+      toast.error('Batch import failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setIsLoading(false)
     }
@@ -402,56 +453,195 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
               <ScrollArea className="h-[400px] pr-4">
                 <div className="space-y-4">
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-sm">Select Import File</h3>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".json"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full"
-                    >
-                      <Upload size={16} className="mr-2" weight="bold" />
-                      {importFile ? importFile.name : 'Choose File'}
-                    </Button>
+                    <h3 className="font-semibold text-sm">Import Mode</h3>
+                    <RadioGroup value={importMode} onValueChange={(value) => setImportMode(value as 'single' | 'batch')}>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="single" id="import-single" />
+                        <Label htmlFor="import-single" className="flex items-center gap-2">
+                          <Upload size={16} />
+                          Single file import
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="batch" id="import-batch" />
+                        <Label htmlFor="import-batch" className="flex items-center gap-2">
+                          <Files size={16} />
+                          Batch import multiple files
+                        </Label>
+                      </div>
+                    </RadioGroup>
                   </div>
 
-                  {importPreview && (
+                  {importMode === 'single' && (
                     <>
-                      <div className="border rounded-lg p-4 space-y-2 bg-muted/30">
-                        <h3 className="font-semibold text-sm">Import Preview</h3>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Version:</span>
-                            <span className="ml-2 font-medium">{importPreview.version}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Exported:</span>
-                            <span className="ml-2 font-medium">
-                              {new Date(importPreview.exportedAt).toLocaleString()}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Conversations:</span>
-                            <span className="ml-2 font-medium">{importPreview.metadata.totalConversations}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Messages:</span>
-                            <span className="ml-2 font-medium">{importPreview.metadata.totalMessages}</span>
-                          </div>
-                        </div>
-                        {importPreview.exportedBy && (
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Exported by:</span>
-                            <span className="ml-2 font-medium">{importPreview.exportedBy}</span>
-                          </div>
-                        )}
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-sm">Select Import File</h3>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".json"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full"
+                        >
+                          <Upload size={16} className="mr-2" weight="bold" />
+                          {importFile ? importFile.name : 'Choose File'}
+                        </Button>
                       </div>
 
+                      {importPreview && (
+                        <>
+                          <div className="border rounded-lg p-4 space-y-2 bg-muted/30">
+                            <h3 className="font-semibold text-sm">Import Preview</h3>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Version:</span>
+                                <span className="ml-2 font-medium">{importPreview.version}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Exported:</span>
+                                <span className="ml-2 font-medium">
+                                  {new Date(importPreview.exportedAt).toLocaleString()}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Conversations:</span>
+                                <span className="ml-2 font-medium">{importPreview.metadata.totalConversations}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Messages:</span>
+                                <span className="ml-2 font-medium">{importPreview.metadata.totalMessages}</span>
+                              </div>
+                            </div>
+                            {importPreview.exportedBy && (
+                              <div className="text-sm">
+                                <span className="text-muted-foreground">Exported by:</span>
+                                <span className="ml-2 font-medium">{importPreview.exportedBy}</span>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {importMode === 'batch' && (
+                    <>
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-sm">Select Multiple Files</h3>
+                        <input
+                          ref={batchFileInputRef}
+                          type="file"
+                          accept=".json"
+                          multiple
+                          onChange={handleBatchFileSelect}
+                          className="hidden"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => batchFileInputRef.current?.click()}
+                          className="w-full"
+                        >
+                          <FolderOpen size={16} className="mr-2" weight="bold" />
+                          {importFiles.length > 0 ? `${importFiles.length} file${importFiles.length !== 1 ? 's' : ''} selected` : 'Choose Files'}
+                        </Button>
+                      </div>
+
+                      {importFiles.length > 0 && (
+                        <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto bg-muted/30">
+                          <h4 className="font-semibold text-sm">Selected Files:</h4>
+                          <div className="space-y-1">
+                            {importFiles.map((file, index) => (
+                              <div key={index} className="text-xs flex items-center gap-2">
+                                <Files size={12} className="text-muted-foreground" />
+                                <span className="truncate">{file.name}</span>
+                                <span className="text-muted-foreground ml-auto">
+                                  {formatFileSize(file.size)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {batchImportResult && (
+                        <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                          <div className="flex items-center gap-2">
+                            {batchImportResult.success ? (
+                              <>
+                                <CheckCircle size={20} weight="fill" className="text-green-500" />
+                                <h3 className="font-semibold text-sm">Batch Import Successful</h3>
+                              </>
+                            ) : batchImportResult.filesProcessed > 0 ? (
+                              <>
+                                <WarningCircle size={20} weight="fill" className="text-yellow-500" />
+                                <h3 className="font-semibold text-sm">Batch Import Partially Successful</h3>
+                              </>
+                            ) : (
+                              <>
+                                <WarningCircle size={20} weight="fill" className="text-destructive" />
+                                <h3 className="font-semibold text-sm">Batch Import Failed</h3>
+                              </>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Files processed:</span>
+                                <span className="ml-2 font-medium">{batchImportResult.filesProcessed}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Files skipped:</span>
+                                <span className="ml-2 font-medium">{batchImportResult.filesSkipped}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Conversations:</span>
+                                <span className="ml-2 font-medium">{batchImportResult.totalImported.conversations}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Agent settings:</span>
+                                <span className="ml-2 font-medium">{batchImportResult.totalImported.agentSettings}</span>
+                              </div>
+                            </div>
+                            {batchImportResult.fileResults.length > 0 && (
+                              <div className="space-y-1 max-h-32 overflow-y-auto border-t border-border pt-2 mt-2">
+                                <h4 className="font-semibold text-xs">File Results:</h4>
+                                {batchImportResult.fileResults.map((result, index) => (
+                                  <div key={index} className="text-xs flex items-start gap-2">
+                                    {result.success ? (
+                                      <CheckCircle size={12} className="text-green-500 mt-0.5 flex-shrink-0" weight="fill" />
+                                    ) : (
+                                      <XIcon size={12} className="text-destructive mt-0.5 flex-shrink-0" weight="bold" />
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="truncate font-medium">{result.filename}</div>
+                                      {result.success && (
+                                        <div className="text-muted-foreground">
+                                          {result.imported.conversations} conversation{result.imported.conversations !== 1 ? 's' : ''}
+                                        </div>
+                                      )}
+                                      {!result.success && result.errors.length > 0 && (
+                                        <div className="text-destructive truncate">
+                                          {result.errors[0]}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {(importMode === 'single' ? importPreview : importFiles.length > 0) && (
+                    <>
                       <div className="space-y-3">
                         <h3 className="font-semibold text-sm">Import Options</h3>
                         <div className="space-y-2">
@@ -507,45 +697,54 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
                           </div>
                         </RadioGroup>
                       </div>
-
-                      {importResult && (
-                        <div className="border rounded-lg p-4 space-y-2">
-                          <div className="flex items-center gap-2">
-                            {importResult.success ? (
-                              <>
-                                <CheckCircle size={20} weight="fill" className="text-green-500" />
-                                <h3 className="font-semibold text-sm">Import Successful</h3>
-                              </>
-                            ) : (
-                              <>
-                                <WarningCircle size={20} weight="fill" className="text-destructive" />
-                                <h3 className="font-semibold text-sm">Import Completed with Errors</h3>
-                              </>
-                            )}
-                          </div>
-                          <div className="text-sm space-y-1">
-                            <div>Conversations imported: {importResult.imported.conversations}</div>
-                            <div>Agent settings imported: {importResult.imported.agentSettings}</div>
-                            <div>Token configs imported: {importResult.imported.tokenConfigs}</div>
-                            {importResult.skipped.conversations > 0 && (
-                              <div className="text-muted-foreground">
-                                Conversations skipped: {importResult.skipped.conversations}
-                              </div>
-                            )}
-                            {importResult.errors.length > 0 && (
-                              <div className="text-destructive">
-                                Errors: {importResult.errors.join(', ')}
-                              </div>
-                            )}
-                            {importResult.warnings.length > 0 && (
-                              <div className="text-yellow-500">
-                                Warnings: {importResult.warnings.join(', ')}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </>
+                  )}
+
+                  {importMode === 'single' && importResult && (
+                    <div className="border rounded-lg p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        {importResult.success ? (
+                          <>
+                            <CheckCircle size={20} weight="fill" className="text-green-500" />
+                            <h3 className="font-semibold text-sm">Import Successful</h3>
+                          </>
+                        ) : (
+                          <>
+                            <WarningCircle size={20} weight="fill" className="text-destructive" />
+                            <h3 className="font-semibold text-sm">Import Completed with Errors</h3>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-sm space-y-1">
+                        <div>Conversations imported: {importResult.imported.conversations}</div>
+                        <div>Agent settings imported: {importResult.imported.agentSettings}</div>
+                        <div>Token configs imported: {importResult.imported.tokenConfigs}</div>
+                        {importResult.skipped.conversations > 0 && (
+                          <div className="text-muted-foreground">
+                            Conversations skipped: {importResult.skipped.conversations}
+                          </div>
+                        )}
+                        {importResult.errors.length > 0 && (
+                          <div className="text-destructive">
+                            Errors: {importResult.errors.join(', ')}
+                          </div>
+                        )}
+                        {importResult.warnings.length > 0 && (
+                          <div className="text-yellow-500">
+                            Warnings: {importResult.warnings.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {importMode === 'batch' && (
+                    <Alert>
+                      <Info size={16} className="text-primary" />
+                      <AlertDescription className="text-sm">
+                        Batch import allows you to import multiple export files at once. All files will be processed with the same merge strategy.
+                      </AlertDescription>
+                    </Alert>
                   )}
                 </div>
               </ScrollArea>
@@ -556,10 +755,17 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleImport} disabled={isLoading || !importPreview}>
-                  <Upload size={16} className="mr-2" weight="bold" />
-                  Import Data
-                </Button>
+                {importMode === 'single' ? (
+                  <Button onClick={handleImport} disabled={isLoading || !importPreview}>
+                    <Upload size={16} className="mr-2" weight="bold" />
+                    Import Data
+                  </Button>
+                ) : (
+                  <Button onClick={handleBatchImport} disabled={isLoading || importFiles.length === 0}>
+                    <Files size={16} className="mr-2" weight="bold" />
+                    Import {importFiles.length} File{importFiles.length !== 1 ? 's' : ''}
+                  </Button>
+                )}
               </div>
             </TabsContent>
 
