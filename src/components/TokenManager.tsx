@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning, CloudSlash, Certificate, Info } from '@phosphor-icons/react'
+import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning, CloudSlash, Certificate, Info, Keyboard } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Switch } from '@/components/ui/switch'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { Separator } from '@/components/ui/separator'
 import { TokenConfig, AccessToken, ClientCertificateConfig } from '@/lib/types'
 import { useCountdown } from '@/hooks/use-countdown'
 import { EncryptionPasswordDialog } from '@/components/EncryptionPasswordDialog'
@@ -59,6 +60,10 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [pendingAction, setPendingAction] = useState<'save' | 'export' | 'load' | 'import' | null>(null)
   const [tokenToDecrypt, setTokenToDecrypt] = useState<TokenConfig | null>(null)
   const [importedEncryptedData, setImportedEncryptedData] = useState<any>(null)
+  const [showManualToken, setShowManualToken] = useState(false)
+  const [manualToken, setManualToken] = useState('')
+  const [manualTokenExpiration, setManualTokenExpiration] = useState('15')
+  const [manualUseJWT, setManualUseJWT] = useState(true)
 
   const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
   const endpointValidation = endpoint ? validateEndpointComprehensive(endpoint) : null
@@ -508,6 +513,42 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     toast.success('Token cleared')
   }
 
+  const handleSetManualToken = () => {
+    if (!manualToken || manualToken.trim().length === 0) {
+      toast.error('Please enter a valid token')
+      return
+    }
+
+    let expiresAt = Date.now() + (15 * 60 * 1000)
+
+    if (manualUseJWT) {
+      const jwtExp = getJWTExpiration(manualToken)
+      if (jwtExp) {
+        expiresAt = jwtExp
+      } else {
+        toast.warning('Could not parse JWT expiration, using custom duration')
+        const minutes = parseInt(manualTokenExpiration) || 15
+        expiresAt = Date.now() + (minutes * 60 * 1000)
+      }
+    } else {
+      const minutes = parseInt(manualTokenExpiration) || 15
+      expiresAt = Date.now() + (minutes * 60 * 1000)
+    }
+
+    const newAccessToken: AccessToken = {
+      token: manualToken,
+      expiresAt,
+      generatedAt: Date.now()
+    }
+
+    setAccessToken(newAccessToken)
+    setManualToken('')
+    setShowManualToken(false)
+    toast.success('Manual token set successfully', {
+      description: `Expires in ${Math.round((expiresAt - Date.now()) / 60000)} minutes`
+    })
+  }
+
   const handleExportWithEncryption = async (encryptionPassword: string) => {
     if (!savedTokens || savedTokens.length === 0) {
       toast.error('No saved tokens to export')
@@ -684,6 +725,118 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
               </CardContent>
             </Card>
           )}
+
+          <Card className="border-primary/30 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Keyboard size={20} weight="duotone" className="text-primary" />
+                Manual Token Entry
+              </CardTitle>
+              <CardDescription>
+                Paste an existing Bearer token (OAuth2 JWT) directly
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!showManualToken ? (
+                <Button
+                  onClick={() => setShowManualToken(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Add Manual Token
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="manual-token">Access Token (Bearer JWT)</Label>
+                    <textarea
+                      id="manual-token"
+                      className="w-full min-h-[100px] p-3 text-xs font-mono bg-background border border-input rounded-md resize-y"
+                      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      value={manualToken}
+                      onChange={(e) => setManualToken(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Paste your Bearer token (JWT format) here
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                    <div className="flex flex-col flex-1">
+                      <Label htmlFor="manual-use-jwt" className="text-sm font-semibold cursor-pointer">
+                        Auto-detect JWT Expiration
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Parse token 'exp' claim for expiration time
+                      </p>
+                    </div>
+                    <Switch
+                      id="manual-use-jwt"
+                      checked={manualUseJWT}
+                      onCheckedChange={setManualUseJWT}
+                    />
+                  </div>
+
+                  {!manualUseJWT && (
+                    <div className="space-y-2">
+                      <Label htmlFor="manual-expiration">Token Expiration (minutes)</Label>
+                      <Input
+                        id="manual-expiration"
+                        type="number"
+                        min="1"
+                        max="1440"
+                        placeholder="15"
+                        value={manualTokenExpiration}
+                        onChange={(e) => setManualTokenExpiration(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Set how long until the token expires (default: 15 minutes)
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSetManualToken}
+                      disabled={!manualToken || manualToken.trim().length === 0}
+                      className="flex-1"
+                    >
+                      <Key size={16} className="mr-2" />
+                      Set Token
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setShowManualToken(false)
+                        setManualToken('')
+                      }}
+                      variant="ghost"
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+
+                  <Alert className="border-blue-500/50 bg-blue-500/5">
+                    <Info size={16} className="text-blue-600" />
+                    <AlertDescription className="text-xs text-blue-800 dark:text-blue-300">
+                      <strong>Manual Token Entry:</strong> Use this when you already have a Bearer token from another source. 
+                      If the token is a JWT, we can auto-detect its expiration. Otherwise, set a custom expiration time.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="relative">
+            <Separator className="my-4" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-background px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Or Generate Token
+              </span>
+            </div>
+          </div>
 
           <div className="flex items-center gap-2">
             <Select value={selectedTokenId || 'new'} onValueChange={(value) => value === 'new' ? handleNewToken() : handleSelectToken(value)}>
