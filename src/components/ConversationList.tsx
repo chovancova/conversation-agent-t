@@ -154,7 +154,7 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
         const hasMessages = conversation.messages.length > 0
         const isDragging = draggedId === conversation.id
         const isDragOver = dragOverId === conversation.id
-        const agentDisplayName = agent?.name ?? conversation.agentType
+        const agentDisplayName = agent?.name || conversation.agentType
         
         return (
           <div

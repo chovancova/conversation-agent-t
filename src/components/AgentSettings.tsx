@@ -424,15 +424,15 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
           <TabsContent value="agents" className="pt-4">
             <Tabs defaultValue={AGENTS[0]?.type || 'account-opening'}>
               <TabsList className="grid w-full grid-cols-5">
-                {AGENTS.filter(Boolean).map(agent => (
+                {AGENTS.filter(agent => agent && agent.type && agent.name).map(agent => (
                   <TabsTrigger key={agent.type} value={agent.type} className="text-xs">
                     <Robot size={14} className="mr-1" />
-                    {((names[agent.type] || agent?.name) || agent.type).split(' ')[0]}
+                    {(names[agent.type] || agent.name || agent.type).split(' ')[0]}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
-              {AGENTS.filter(Boolean).map(agent => {
+              {AGENTS.filter(agent => agent && agent.type).map(agent => {
                 const config = getConfig(agent.type)
                 const validation = validationResults[agent.type]
                 
@@ -489,12 +489,12 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
                       <Input
                         id={`name-${agent.type}`}
                         type="text"
-                        placeholder={agent.name}
+                        placeholder={agent?.name || 'Agent'}
                         value={names[agent.type] || ''}
                         onChange={(e) => handleNameChange(agent.type, e.target.value)}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Give this agent a custom name (leave empty to use default: {agent.name})
+                        Give this agent a custom name (leave empty to use default: {agent?.name || agent.type})
                       </p>
                     </div>
 
