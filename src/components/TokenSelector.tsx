@@ -53,11 +53,11 @@ export function TokenSelector({
               <span className="text-xs">Default Token</span>
             </div>
           </SelectItem>
-          {savedTokens.map((token) => (
+          {savedTokens?.filter(t => t && t.id).map((token) => (
             <SelectItem key={token.id} value={token.id}>
               <div className="flex items-center gap-2">
                 <Key size={14} weight="bold" className="text-accent" />
-                <span className="text-xs">{token.name}</span>
+                <span className="text-xs">{token?.name || 'Unnamed Token'}</span>
               </div>
             </SelectItem>
           ))}
@@ -86,15 +86,15 @@ export function TokenSelector({
             </span>
           </div>
         </SelectItem>
-        {savedTokens.map((token) => (
+        {savedTokens?.filter(t => t && t.id).map((token) => (
           <SelectItem key={token.id} value={token.id}>
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2">
                 <Key size={14} weight="bold" className="text-accent" />
-                <span className="text-sm font-medium">{token.name}</span>
+                <span className="text-sm font-medium">{token?.name || 'Unnamed Token'}</span>
               </div>
               <span className="text-xs text-muted-foreground ml-5 truncate max-w-[180px]">
-                {token.endpoint.length > 40 ? `${token.endpoint.slice(0, 40)}...` : token.endpoint}
+                {(token?.endpoint || '').length > 40 ? `${(token?.endpoint || '').slice(0, 40)}...` : (token?.endpoint || 'No endpoint')}
               </span>
             </div>
           </SelectItem>

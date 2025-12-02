@@ -154,6 +154,7 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
         const hasMessages = conversation.messages.length > 0
         const isDragging = draggedId === conversation.id
         const isDragOver = dragOverId === conversation.id
+        const agentDisplayName = agent?.name || conversation.agentType
         
         return (
           <div
@@ -268,7 +269,7 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                           : 'bg-muted/80 text-muted-foreground'
                       }`}
                     >
-                      {agent?.name || conversation.agentType}
+                      {agentDisplayName}
                     </Badge>
                     {hasMessages && (
                       <div className={`flex items-center gap-1 text-[11px] flex-shrink-0 ${

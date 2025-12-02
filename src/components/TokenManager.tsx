@@ -845,11 +845,11 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="new">+ New Token Configuration</SelectItem>
-                {savedTokens?.map(token => (
+                {savedTokens?.filter(t => t && t.id).map(token => (
                   <SelectItem key={token.id} value={token.id}>
                     <span className="flex items-center gap-2">
-                      {token.name}
-                      {token.isEncrypted && (
+                      {token?.name || 'Unnamed Token'}
+                      {token?.isEncrypted && (
                         <Lock size={12} className="text-accent" weight="fill" />
                       )}
                     </span>

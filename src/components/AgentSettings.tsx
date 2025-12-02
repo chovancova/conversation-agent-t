@@ -355,6 +355,7 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
               <div className="grid gap-4">
                 {(Object.keys(themes) as ThemeOption[]).map((themeKey) => {
                   const theme = themes[themeKey]
+                  if (!theme) return null
                   const isSelected = selectedTheme === themeKey
                   
                   return (
@@ -376,7 +377,7 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
                           <div className="flex items-start gap-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold">{theme.name}</h3>
+                                <h3 className="font-semibold">{theme?.name || themeKey}</h3>
                                 {isSelected && (
                                   <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary">
                                     <Check size={14} weight="bold" className="text-primary-foreground" />
@@ -384,28 +385,28 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
                                 )}
                               </div>
                               <p className="text-sm text-muted-foreground mb-4">
-                                {theme.description}
+                                {theme?.description || 'Custom theme'}
                               </p>
                               
                               <div className="flex gap-2">
                                 <div 
                                   className="w-10 h-10 rounded-lg border-2 border-border shadow-sm"
-                                  style={{ backgroundColor: theme.colors.background }}
+                                  style={{ backgroundColor: theme?.colors?.background || '#000' }}
                                   title="Background"
                                 />
                                 <div 
                                   className="w-10 h-10 rounded-lg border-2 border-border shadow-sm"
-                                  style={{ backgroundColor: theme.colors.primary }}
+                                  style={{ backgroundColor: theme?.colors?.primary || '#0f0' }}
                                   title="Primary"
                                 />
                                 <div 
                                   className="w-10 h-10 rounded-lg border-2 border-border shadow-sm"
-                                  style={{ backgroundColor: theme.colors.accent }}
+                                  style={{ backgroundColor: theme?.colors?.accent || '#00f' }}
                                   title="Accent"
                                 />
                                 <div 
                                   className="w-10 h-10 rounded-lg border-2 border-border shadow-sm"
-                                  style={{ backgroundColor: theme.colors.card }}
+                                  style={{ backgroundColor: theme?.colors?.card || '#111' }}
                                   title="Card"
                                 />
                               </div>
@@ -421,12 +422,12 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
           </TabsContent>
 
           <TabsContent value="agents" className="pt-4">
-            <Tabs defaultValue={AGENTS[0].type}>
+            <Tabs defaultValue={AGENTS[0]?.type || 'account-opening'}>
               <TabsList className="grid w-full grid-cols-5">
                 {AGENTS.map(agent => (
                   <TabsTrigger key={agent.type} value={agent.type} className="text-xs">
                     <Robot size={14} className="mr-1" />
-                    {(names[agent.type] || agent.name).split(' ')[0]}
+                    {((names[agent.type] || agent.name) || agent.type).split(' ')[0]}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -438,8 +439,8 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
                 return (
                   <TabsContent key={agent.type} value={agent.type} className="space-y-4 pt-4">
                     <div>
-                      <h3 className="font-semibold text-lg mb-1">{names[agent.type] || agent.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">{agent.description}</p>
+                      <h3 className="font-semibold text-lg mb-1">{names[agent.type] || agent?.name || agent.type}</h3>
+                      <p className="text-sm text-muted-foreground mb-4">{agent?.description || 'Agent configuration'}</p>
                     </div>
 
                     {validation && (
