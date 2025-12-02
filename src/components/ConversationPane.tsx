@@ -152,7 +152,9 @@ export function ConversationPane({
           )}
           <Select value={conversation.agentType} onValueChange={(value) => onAgentChange(conversation.id, value as AgentType)}>
             <SelectTrigger className="w-[150px] h-8 rounded-lg text-xs">
-              <SelectValue />
+              <SelectValue>
+                {getAgentName(conversation.agentType, agentNames)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {AGENTS.map(agent => (
