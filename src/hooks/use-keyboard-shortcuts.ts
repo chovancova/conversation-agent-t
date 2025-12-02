@@ -15,9 +15,8 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[], enabled: boole
 
     const handleKeyDown = (event: KeyboardEvent) => {
       for (const shortcut of shortcuts) {
-        const ctrlOrCmdMatch = shortcut.ctrlOrCmd
-          ? (event.metaKey || event.ctrlKey)
-          : true
+        const ctrlOrCmdPressed = event.metaKey || event.ctrlKey
+        const ctrlOrCmdMatch = shortcut.ctrlOrCmd ? ctrlOrCmdPressed : !ctrlOrCmdPressed
         const shiftMatch = shortcut.shift ? event.shiftKey : !event.shiftKey
         const altMatch = shortcut.alt ? event.altKey : !event.altKey
 
@@ -27,8 +26,10 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[], enabled: boole
           shiftMatch &&
           altMatch
         ) {
-          if (!event.target || 
-              !['INPUT', 'TEXTAREA'].includes((event.target as HTMLElement).tagName)) {
+          const target = event.target as HTMLElement
+          const isTyping = target && ['INPUT', 'TEXTAREA'].includes(target.tagName)
+          
+          if (!isTyping || ctrlOrCmdPressed) {
             event.preventDefault()
             shortcut.callback()
           }

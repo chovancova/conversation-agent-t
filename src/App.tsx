@@ -217,6 +217,16 @@ function App() {
     toast.success('Session continued')
   }
 
+  const handleQuickAgentSwitch = (agentType: AgentType) => {
+    if (!activeConversation) {
+      createNewConversation(agentType)
+      toast.success(`Created new conversation with ${getAgentName(agentType, agentNames || {})}`)
+    } else {
+      handleAgentChange(activeConversation.id, agentType)
+      toast.success(`Switched to ${getAgentName(agentType, agentNames || {})}`)
+    }
+  }
+
   useKeyboardShortcuts([
     {
       key: 'n',
@@ -280,6 +290,36 @@ function App() {
       shift: true,
       callback: () => setAnalyticsDashboardOpen(true),
       description: 'Open Analytics Dashboard',
+    },
+    {
+      key: '1',
+      ctrlOrCmd: true,
+      callback: () => handleQuickAgentSwitch('account-opening'),
+      description: 'Switch to Agent 1 (Account Opening)',
+    },
+    {
+      key: '2',
+      ctrlOrCmd: true,
+      callback: () => handleQuickAgentSwitch('payment'),
+      description: 'Switch to Agent 2 (Payment)',
+    },
+    {
+      key: '3',
+      ctrlOrCmd: true,
+      callback: () => handleQuickAgentSwitch('moderator'),
+      description: 'Switch to Agent 3 (Moderator)',
+    },
+    {
+      key: '4',
+      ctrlOrCmd: true,
+      callback: () => handleQuickAgentSwitch('card'),
+      description: 'Switch to Agent 4 (Card)',
+    },
+    {
+      key: '5',
+      ctrlOrCmd: true,
+      callback: () => handleQuickAgentSwitch('rag'),
+      description: 'Switch to Agent 5 (RAG)',
     },
   ], true)
 
