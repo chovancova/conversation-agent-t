@@ -89,7 +89,7 @@ export const ConversationSearch = forwardRef<HTMLInputElement, ConversationSearc
                 )}
               </div>
               <div className="space-y-1.5">
-                {AGENTS.filter(agent => agent && agent.type).map((agent) => {
+                {Object.values(AGENTS).filter(agent => agent && agent.type).map((agent) => {
                   const isSelected = selectedAgents.includes(agent.type)
                   return (
                     <button

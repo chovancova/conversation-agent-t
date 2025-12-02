@@ -157,7 +157,7 @@ export function ConversationPane({
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {AGENTS.filter(agent => agent && agent.type).map(agent => (
+              {Object.values(AGENTS).filter(agent => agent && agent.type).map(agent => (
                 <SelectItem key={agent.type} value={agent.type}>
                   <div className="flex items-center gap-2">
                     <Robot size={14} />
