@@ -3,13 +3,18 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { MagnifyingGlass, X as XIcon, Funnel } from '@phosphor-icons/react'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { MagnifyingGlass, X as XIcon, Funnel, ChatCircle, FileText } from '@phosphor-icons/react'
 import { AgentType } from '@/lib/types'
 import { AGENTS } from '@/lib/agents'
+
+export type SearchScope = 'all' | 'titles' | 'messages'
 
 type ConversationSearchProps = {
   searchQuery: string
   onSearchChange: (query: string) => void
+  searchScope: SearchScope
+  onSearchScopeChange: (scope: SearchScope) => void
   selectedAgents: AgentType[]
   onAgentToggle: (agent: AgentType) => void
   onClearFilters: () => void
@@ -19,12 +24,25 @@ type ConversationSearchProps = {
 export const ConversationSearch = forwardRef<HTMLInputElement, ConversationSearchProps>(({
   searchQuery,
   onSearchChange,
+  searchScope,
+  onSearchScopeChange,
   selectedAgents,
   onAgentToggle,
   onClearFilters,
   hasActiveFilters
 }, ref) => {
   const [filterOpen, setFilterOpen] = useState(false)
+
+  const getPlaceholder = () => {
+    switch (searchScope) {
+      case 'titles':
+        return 'Search conversation titles...'
+      case 'messages':
+        return 'Search message content...'
+      default:
+        return 'Search conversations and messages...'
+    }
+  }
 
   return (
     <div className="space-y-2">
@@ -37,7 +55,7 @@ export const ConversationSearch = forwardRef<HTMLInputElement, ConversationSearc
         <Input
           ref={ref}
           type="text"
-          placeholder="Search conversations..."
+          placeholder={getPlaceholder()}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-9 pr-9 h-9 bg-background border-border"
@@ -53,6 +71,24 @@ export const ConversationSearch = forwardRef<HTMLInputElement, ConversationSearc
           </Button>
         )}
       </div>
+
+      {searchQuery && (
+        <Tabs value={searchScope} onValueChange={(value) => onSearchScopeChange(value as SearchScope)} className="w-full">
+          <TabsList className="w-full h-8 bg-muted/50">
+            <TabsTrigger value="all" className="flex-1 text-xs h-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="titles" className="flex-1 text-xs h-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <FileText size={12} className="mr-1" />
+              Titles
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex-1 text-xs h-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <ChatCircle size={12} className="mr-1" />
+              Messages
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
 
       <div className="flex items-center gap-2">
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>

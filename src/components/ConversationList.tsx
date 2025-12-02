@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getAgentConfig } from '@/lib/agents'
-import { Chat, Robot, Trash, Columns, PencilSimple, Check, X, ChatCircle, Clock, DotsSixVertical } from '@phosphor-icons/react'
+import { Chat, Robot, Trash, Columns, PencilSimple, Check, X, ChatCircle, Clock, DotsSixVertical, Quotes } from '@phosphor-icons/react'
 
 type ConversationListProps = {
   conversations: Conversation[]
@@ -16,14 +16,49 @@ type ConversationListProps = {
   onReorder?: (conversationId: string, newIndex: number) => void
   onSelectForSplit?: (id: string) => void
   splitMode?: boolean
+  searchQuery?: string
+  messageMatches?: Map<string, number>
 }
 
-export function ConversationList({ conversations, activeId, splitId, onSelect, onDelete, onRename, onReorder, onSelectForSplit, splitMode }: ConversationListProps) {
+export function ConversationList({ conversations, activeId, splitId, onSelect, onDelete, onRename, onReorder, onSelectForSplit, splitMode, searchQuery, messageMatches }: ConversationListProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  
+  const highlightText = (text: string, query: string) => {
+    if (!query || !query.trim()) return text
+    
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+    const parts = text.split(regex)
+    
+    return parts.map((part, i) => 
+      regex.test(part) ? <mark key={i} className="bg-primary/30 text-foreground rounded px-0.5">{part}</mark> : part
+    )
+  }
+  
+  const getMatchingMessagePreview = (conversation: Conversation, query: string): string | null => {
+    if (!query || !query.trim()) return null
+    
+    const lowerQuery = query.toLowerCase()
+    const matchingMessage = conversation.messages.find(msg => 
+      msg.content.toLowerCase().includes(lowerQuery)
+    )
+    
+    if (!matchingMessage) return null
+    
+    const content = matchingMessage.content
+    const matchIndex = content.toLowerCase().indexOf(lowerQuery)
+    const start = Math.max(0, matchIndex - 40)
+    const end = Math.min(content.length, matchIndex + query.length + 40)
+    
+    let preview = content.slice(start, end)
+    if (start > 0) preview = '...' + preview
+    if (end < content.length) preview = preview + '...'
+    
+    return preview
+  }
 
   useEffect(() => {
     if (editingId && inputRef.current) {
@@ -155,6 +190,8 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
         const isDragging = draggedId === conversation.id
         const isDragOver = dragOverId === conversation.id
         const agentDisplayName = agent?.name || conversation.agentType
+        const matchCount = messageMatches?.get(conversation.id) || 0
+        const messagePreview = searchQuery ? getMatchingMessagePreview(conversation, searchQuery) : null
         
         return (
           <div
@@ -255,8 +292,22 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                         ? 'text-foreground'
                         : 'text-foreground/90'
                     }`}>
-                      {conversation.title}
+                      {searchQuery ? highlightText(conversation.title, searchQuery) : conversation.title}
                     </h3>
+                  )}
+                  {messagePreview && (
+                    <div className={`text-xs leading-relaxed mb-2 line-clamp-2 ${
+                      isActive 
+                        ? 'text-foreground/70' 
+                        : isInSplit
+                        ? 'text-foreground/70'
+                        : 'text-muted-foreground'
+                    }`}>
+                      <div className="flex items-start gap-1.5">
+                        <Quotes size={12} weight="fill" className="flex-shrink-0 mt-0.5 opacity-60" />
+                        <span>{searchQuery ? highlightText(messagePreview, searchQuery) : messagePreview}</span>
+                      </div>
+                    </div>
                   )}
                   <div className="flex items-center gap-2 mb-1.5">
                     <Badge 
@@ -282,6 +333,20 @@ export function ConversationList({ conversations, activeId, splitId, onSelect, o
                         <ChatCircle size={12} weight="fill" />
                         <span className="font-medium">{conversation.messages.length}</span>
                       </div>
+                    )}
+                    {matchCount > 0 && (
+                      <Badge 
+                        variant="secondary" 
+                        className={`text-[10px] px-1.5 py-0.5 font-bold h-5 flex-shrink-0 ${
+                          isActive 
+                            ? 'bg-primary/30 text-primary border-0' 
+                            : isInSplit
+                            ? 'bg-accent/35 text-accent border-0'
+                            : 'bg-primary/15 text-primary border-0'
+                        }`}
+                      >
+                        {matchCount} match{matchCount !== 1 ? 'es' : ''}
+                      </Badge>
                     )}
                   </div>
                   <div className={`flex items-center gap-1 text-[11px] ${

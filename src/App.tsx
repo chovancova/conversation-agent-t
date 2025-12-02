@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ChatMessage } from '@/components/ChatMessage'
 import { TypingIndicator } from '@/components/TypingIndicator'
 import { ConversationList } from '@/components/ConversationList'
-import { ConversationSearch } from '@/components/ConversationSearch'
+import { ConversationSearch, SearchScope } from '@/components/ConversationSearch'
 import { EmptyState } from '@/components/EmptyState'
 import { TokenManager } from '@/components/TokenManager'
 import { TokenStatus } from '@/components/TokenStatus'
@@ -54,6 +54,7 @@ function App() {
   const [selectedTheme] = useKV<ThemeOption>('selected-theme', 'dark')
   const [customTheme] = useKV<any>('custom-theme', null)
   const [searchQuery, setSearchQuery] = useKV<string>('search-query', '')
+  const [searchScope, setSearchScope] = useKV<SearchScope>('search-scope', 'all')
   const [selectedAgentFilters, setSelectedAgentFilters] = useKV<AgentType[]>('selected-agent-filters', [])
   const [isLoading, setIsLoading] = useState(false)
   const [loadingConversationId, setLoadingConversationId] = useState<string | null>(null)
@@ -104,10 +105,18 @@ function App() {
 
     if (searchQuery && searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(conv => 
-        conv.title.toLowerCase().includes(query) ||
-        conv.messages.some(msg => msg.content.toLowerCase().includes(query))
-      )
+      filtered = filtered.filter(conv => {
+        const titleMatch = conv.title.toLowerCase().includes(query)
+        const messageMatch = conv.messages.some(msg => msg.content.toLowerCase().includes(query))
+        
+        if (searchScope === 'titles') {
+          return titleMatch
+        } else if (searchScope === 'messages') {
+          return messageMatch
+        } else {
+          return titleMatch || messageMatch
+        }
+      })
     }
 
     if (selectedAgentFilters && selectedAgentFilters.length > 0) {
@@ -117,7 +126,28 @@ function App() {
     }
 
     return filtered
-  }, [conversations, searchQuery, selectedAgentFilters])
+  }, [conversations, searchQuery, searchScope, selectedAgentFilters])
+
+  const messageMatches = useMemo(() => {
+    if (!searchQuery || !searchQuery.trim() || searchScope === 'titles') {
+      return new Map<string, number>()
+    }
+
+    const matches = new Map<string, number>()
+    const query = searchQuery.toLowerCase()
+
+    filteredConversations.forEach(conv => {
+      const count = conv.messages.filter(msg => 
+        msg.content.toLowerCase().includes(query)
+      ).length
+
+      if (count > 0) {
+        matches.set(conv.id, count)
+      }
+    })
+
+    return matches
+  }, [filteredConversations, searchQuery, searchScope])
 
   useEffect(() => {
     if (selectedTheme) {
@@ -704,6 +734,7 @@ function App() {
 
   const handleClearFilters = () => {
     setSearchQuery('')
+    setSearchScope('all')
     setSelectedAgentFilters([])
   }
 
@@ -1011,6 +1042,8 @@ function App() {
                     <ConversationSearch
                       searchQuery={searchQuery || ''}
                       onSearchChange={setSearchQuery}
+                      searchScope={searchScope || 'all'}
+                      onSearchScopeChange={setSearchScope}
                       selectedAgents={selectedAgentFilters || []}
                       onAgentToggle={handleAgentFilterToggle}
                       onClearFilters={handleClearFilters}
@@ -1058,6 +1091,8 @@ function App() {
                       onDelete={handleDeleteRequest}
                       onReorder={!hasActiveFilters ? handleReorderConversation : undefined}
                       splitMode={splitMode || false}
+                      searchQuery={searchQuery || ''}
+                      messageMatches={messageMatches}
                     />
                   )}
                 </div>
