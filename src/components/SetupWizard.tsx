@@ -51,6 +51,10 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
   const [clientCertificate, setClientCertificate] = useState<ClientCertificateConfig>({
     enabled: false
   })
+  const [useManualToken, setUseManualToken] = useState(false)
+  const [manualToken, setManualToken] = useState('')
+  const [showManualToken, setShowManualToken] = useState(false)
+  const [tokenExpiryMinutes, setTokenExpiryMinutes] = useState(15)
 
   const [selectedAgent, setSelectedAgent] = useState<AgentType>('account-opening')
   const [agentEndpoint, setAgentEndpoint] = useState('')
@@ -69,6 +73,43 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
       setCurrentStep('complete')
     }
   }, [open, setupComplete])
+
+  const handleManualTokenSave = async () => {
+    if (!manualToken.trim()) {
+      toast.error('Please enter a Bearer token')
+      return
+    }
+
+    try {
+      const newAccessToken: AccessToken = {
+        token: manualToken,
+        expiresAt: Date.now() + (tokenExpiryMinutes * 60 * 1000)
+      }
+
+      await setAccessToken(newAccessToken)
+
+      const tokenConfig: TokenConfig = {
+        id: Date.now().toString(),
+        name: 'Manual Bearer Token',
+        endpoint: '',
+        clientId: '',
+        clientSecret: '',
+        username: '',
+        password: '',
+        isEncrypted: false,
+        ignoreCertErrors: false
+      }
+
+      await setSavedTokens([tokenConfig])
+      await setSelectedTokenId(tokenConfig.id)
+
+      setTokenGenerated(true)
+      toast.success('Bearer token saved successfully!')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save token')
+      console.error('Token save error:', error)
+    }
+  }
 
   const handleGenerateToken = async () => {
     if (!tokenEndpoint.trim() || !clientId.trim() || !clientSecret.trim() || !username.trim() || !password.trim()) {
@@ -424,170 +465,264 @@ export function SetupWizard({ open, onOpenChange, onComplete }: SetupWizardProps
               <div className="flex items-start gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5">
                 <Info size={20} weight="fill" className="text-primary flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-semibold mb-1">Generate Access Token</p>
+                  <p className="font-semibold mb-1">Authentication Setup</p>
                   <p className="text-muted-foreground text-xs">
-                    Enter your OAuth credentials to generate a Bearer token for API authentication. This token will be used to communicate with your AI agents.
+                    Choose to generate a new Bearer token from OAuth credentials or manually enter an existing JWT token.
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="token-endpoint">Token Endpoint *</Label>
-                  <Input
-                    id="token-endpoint"
-                    placeholder="https://api.example.com/oauth/token"
-                    value={tokenEndpoint}
-                    onChange={(e) => setTokenEndpoint(e.target.value)}
-                    disabled={tokenGenerated}
-                  />
-                </div>
+              <div className="flex gap-3 p-1 rounded-xl border border-border bg-muted/50">
+                <Button
+                  variant={!useManualToken ? "default" : "ghost"}
+                  className="flex-1 h-10"
+                  onClick={() => setUseManualToken(false)}
+                  disabled={tokenGenerated}
+                >
+                  <Key size={16} weight="bold" className="mr-2" />
+                  Generate Token
+                </Button>
+                <Button
+                  variant={useManualToken ? "default" : "ghost"}
+                  className="flex-1 h-10"
+                  onClick={() => setUseManualToken(true)}
+                  disabled={tokenGenerated}
+                >
+                  <Key size={16} weight="fill" className="mr-2" />
+                  Manual Entry
+                </Button>
+              </div>
 
-                <div className="grid grid-cols-2 gap-4">
+              {!useManualToken ? (
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="client-id">Client ID *</Label>
+                    <Label htmlFor="token-endpoint">Token Endpoint *</Label>
                     <Input
-                      id="client-id"
-                      placeholder="your-client-id"
-                      value={clientId}
-                      onChange={(e) => setClientId(e.target.value)}
+                      id="token-endpoint"
+                      placeholder="https://api.example.com/oauth/token"
+                      value={tokenEndpoint}
+                      onChange={(e) => setTokenEndpoint(e.target.value)}
                       disabled={tokenGenerated}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="client-secret">Client Secret *</Label>
-                    <div className="relative">
-                      <Input
-                        id="client-secret"
-                        type={showClientSecret ? 'text' : 'password'}
-                        placeholder="your-client-secret"
-                        value={clientSecret}
-                        onChange={(e) => setClientSecret(e.target.value)}
-                        disabled={tokenGenerated}
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowClientSecret(!showClientSecret)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        disabled={tokenGenerated}
-                      >
-                        {showClientSecret ? <EyeSlash size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username *</Label>
-                    <Input
-                      id="username"
-                      placeholder="your-username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      disabled={tokenGenerated}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password *</Label>
-                    <div className="relative">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="client-id">Client ID *</Label>
                       <Input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="your-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        id="client-id"
+                        placeholder="your-client-id"
+                        value={clientId}
+                        onChange={(e) => setClientId(e.target.value)}
                         disabled={tokenGenerated}
-                        className="pr-10"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        disabled={tokenGenerated}
-                      >
-                        {showPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
-                      </button>
                     </div>
-                  </div>
-                </div>
-
-                <Accordion type="single" collapsible className="border rounded-lg">
-                  <AccordionItem value="advanced" className="border-none">
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <Gear size={16} className="text-muted-foreground" />
-                        <span className="text-sm font-semibold">Advanced Options</span>
+                    <div className="space-y-2">
+                      <Label htmlFor="client-secret">Client Secret *</Label>
+                      <div className="relative">
+                        <Input
+                          id="client-secret"
+                          type={showClientSecret ? 'text' : 'password'}
+                          placeholder="your-client-secret"
+                          value={clientSecret}
+                          onChange={(e) => setClientSecret(e.target.value)}
+                          disabled={tokenGenerated}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowClientSecret(!showClientSecret)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          disabled={tokenGenerated}
+                        >
+                          {showClientSecret ? <EyeSlash size={16} /> : <Eye size={16} />}
+                        </button>
                       </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4 space-y-4">
-                      <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
-                        <div className="flex flex-col flex-1">
-                          <Label htmlFor="setup-ignore-cert-errors" className="text-sm font-semibold cursor-pointer">
-                            Ignore Certificate Errors
-                          </Label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username *</Label>
+                      <Input
+                        id="username"
+                        placeholder="your-username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        disabled={tokenGenerated}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password *</Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="your-password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          disabled={tokenGenerated}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          disabled={tokenGenerated}
+                        >
+                          {showPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Accordion type="single" collapsible className="border rounded-lg">
+                    <AccordionItem value="advanced" className="border-none">
+                      <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                        <div className="flex items-center gap-2">
+                          <Gear size={16} className="text-muted-foreground" />
+                          <span className="text-sm font-semibold">Advanced Options</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4 pb-4 space-y-4">
+                        <div className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30">
+                          <div className="flex flex-col flex-1">
+                            <Label htmlFor="setup-ignore-cert-errors" className="text-sm font-semibold cursor-pointer">
+                              Ignore Certificate Errors
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              Enable for self-signed certs or ERR_CERT_AUTHORITY_INVALID errors
+                            </p>
+                          </div>
+                          <Switch
+                            id="setup-ignore-cert-errors"
+                            checked={ignoreCertErrors}
+                            onCheckedChange={setIgnoreCertErrors}
+                            disabled={tokenGenerated}
+                          />
+                        </div>
+
+                        {ignoreCertErrors && (
+                          <Alert className="border-amber-500/50 bg-amber-500/10">
+                            <Warning size={16} className="text-amber-500" />
+                            <AlertDescription className="text-xs text-amber-900 dark:text-amber-200">
+                              This is a client-side app running in your browser. Certificate validation is controlled by your browser's security settings. Self-signed certificates may still require you to accept them manually in your browser.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        <div className="space-y-2">
+                          <Label htmlFor="proxy-url">Proxy URL (Optional)</Label>
+                          <Input
+                            id="proxy-url"
+                            placeholder="https://proxy.example.com"
+                            value={proxyUrl}
+                            onChange={(e) => setProxyUrl(e.target.value)}
+                            disabled={tokenGenerated}
+                          />
                           <p className="text-xs text-muted-foreground">
-                            Enable for self-signed certs or ERR_CERT_AUTHORITY_INVALID errors
+                            If your token endpoint requires a proxy, enter the proxy URL here
                           </p>
                         </div>
-                        <Switch
-                          id="setup-ignore-cert-errors"
-                          checked={ignoreCertErrors}
-                          onCheckedChange={setIgnoreCertErrors}
-                          disabled={tokenGenerated}
+
+                        <Separator />
+
+                        <ClientCertificateSetup
+                          value={clientCertificate}
+                          onChange={setClientCertificate}
                         />
-                      </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
 
-                      {ignoreCertErrors && (
-                        <Alert className="border-amber-500/50 bg-amber-500/10">
-                          <Warning size={16} className="text-amber-500" />
-                          <AlertDescription className="text-xs text-amber-900 dark:text-amber-200">
-                            This is a client-side app running in your browser. Certificate validation is controlled by your browser's security settings. Self-signed certificates may still require you to accept them manually in your browser.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      <div className="space-y-2">
-                        <Label htmlFor="proxy-url">Proxy URL (Optional)</Label>
-                        <Input
-                          id="proxy-url"
-                          placeholder="https://proxy.example.com"
-                          value={proxyUrl}
-                          onChange={(e) => setProxyUrl(e.target.value)}
-                          disabled={tokenGenerated}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          If your token endpoint requires a proxy, enter the proxy URL here
-                        </p>
-                      </div>
-
-                      <Separator />
-
-                      <ClientCertificateSetup
-                        value={clientCertificate}
-                        onChange={setClientCertificate}
-                      />
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-
-                {tokenGenerated ? (
-                  <div className="flex items-center gap-2 p-4 rounded-xl border border-primary bg-primary/5">
-                    <CheckCircle size={20} weight="fill" className="text-primary" />
-                    <span className="text-sm font-medium">Token generated successfully!</span>
+                  {tokenGenerated ? (
+                    <div className="flex items-center gap-2 p-4 rounded-xl border border-primary bg-primary/5">
+                      <CheckCircle size={20} weight="fill" className="text-primary" />
+                      <span className="text-sm font-medium">Token generated successfully!</span>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleGenerateToken}
+                      disabled={isGeneratingToken}
+                      className="w-full"
+                      size="lg"
+                    >
+                      {isGeneratingToken ? 'Generating...' : 'Generate Token'}
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 rounded-xl border border-accent/20 bg-accent/5">
+                    <Info size={20} weight="fill" className="text-accent flex-shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-semibold mb-1">Enter Bearer Token (OAuth2 JWT)</p>
+                      <p className="text-muted-foreground text-xs">
+                        Paste your existing JWT Bearer token for authentication. This is useful if you've already obtained a token from your OAuth provider.
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <Button
-                    onClick={handleGenerateToken}
-                    disabled={isGeneratingToken}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {isGeneratingToken ? 'Generating...' : 'Generate Token'}
-                  </Button>
-                )}
-              </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="manual-token">Bearer Token (JWT) *</Label>
+                    <div className="relative">
+                      <Textarea
+                        id="manual-token"
+                        placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        value={manualToken}
+                        onChange={(e) => setManualToken(e.target.value)}
+                        disabled={tokenGenerated}
+                        className={`pr-10 min-h-[120px] font-mono text-xs ${!showManualToken && manualToken ? 'text-security-disc' : ''}`}
+                        style={!showManualToken && manualToken ? { WebkitTextSecurity: 'disc' } as React.CSSProperties : {}}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowManualToken(!showManualToken)}
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                        disabled={tokenGenerated}
+                      >
+                        {showManualToken ? <EyeSlash size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Enter the complete JWT token string starting with "eyJ..."
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="token-expiry">Token Expiry (minutes)</Label>
+                    <Input
+                      id="token-expiry"
+                      type="number"
+                      min="1"
+                      max="1440"
+                      placeholder="15"
+                      value={tokenExpiryMinutes}
+                      onChange={(e) => setTokenExpiryMinutes(Number(e.target.value) || 15)}
+                      disabled={tokenGenerated}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      How long until the token expires (default: 15 minutes)
+                    </p>
+                  </div>
+
+                  {tokenGenerated ? (
+                    <div className="flex items-center gap-2 p-4 rounded-xl border border-primary bg-primary/5">
+                      <CheckCircle size={20} weight="fill" className="text-primary" />
+                      <span className="text-sm font-medium">Bearer token saved successfully!</span>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleManualTokenSave}
+                      disabled={!manualToken.trim()}
+                      className="w-full"
+                      size="lg"
+                    >
+                      Save Bearer Token
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
