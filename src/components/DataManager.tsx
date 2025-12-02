@@ -39,6 +39,7 @@ type DataManagerProps = {
 
 export function DataManager({ open, onOpenChange }: DataManagerProps) {
   const [conversations] = useKV<Conversation[]>('conversations', [])
+  const [searchHistory, setSearchHistory] = useKV<any[]>('search-history', [])
   const [activeTab, setActiveTab] = useState('export')
   
   const [exportIncludeConversations, setExportIncludeConversations] = useState(true)
@@ -299,6 +300,11 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleClearSearchHistory = async () => {
+    setSearchHistory([])
+    toast.success('Search history cleared')
   }
 
   return (
@@ -901,6 +907,22 @@ export function DataManager({ open, onOpenChange }: DataManagerProps) {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm">Quick Actions</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearSearchHistory}
+                      disabled={(searchHistory || []).length === 0}
+                      className="w-full justify-start"
+                    >
+                      <Trash size={14} className="mr-2" weight="bold" />
+                      Clear Search History ({(searchHistory || []).length} {(searchHistory || []).length === 1 ? 'entry' : 'entries'})
+                    </Button>
                   </div>
 
                   <Separator />
