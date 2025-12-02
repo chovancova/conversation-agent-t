@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
-import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning, CloudSlash, Certificate, Info, Keyboard } from '@phosphor-icons/react'
+import { Key, X as XIcon, CheckCircle, XCircle, Clock, FloppyDisk, Trash, Export, Download, Warning, ShieldCheck, Plus, PencilSimple, Lock, LockOpen, ShieldWarning, CloudSlash, Certificate, Info, Keyboard, Gear } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,7 @@ import { CorsProxyValidator, ProxyProviderBadge } from '@/components/CorsProxyVa
 import { ValidationRulesGuide } from '@/components/ValidationRulesGuide'
 import { EndpointValidator } from '@/components/EndpointValidator'
 import { validateEndpointComprehensive } from '@/lib/validation'
+import { CorsProxySettings } from '@/components/CorsProxySettings'
 
 type TokenManagerProps = {
   open: boolean
@@ -64,6 +65,7 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
   const [manualToken, setManualToken] = useState('')
   const [manualTokenExpiration, setManualTokenExpiration] = useState('15')
   const [manualUseJWT, setManualUseJWT] = useState(true)
+  const [corsProxySettingsOpen, setCorsProxySettingsOpen] = useState(false)
 
   const selectedToken = savedTokens?.find(t => t.id === selectedTokenId)
   const endpointValidation = endpoint ? validateEndpointComprehensive(endpoint) : null
@@ -547,6 +549,16 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
     toast.success('Manual token set successfully', {
       description: `Expires in ${Math.round((expiresAt - Date.now()) / 60000)} minutes`
     })
+  }
+
+  const handleCorsProxySettingsSave = (config: {
+    useCorsProxy: boolean
+    corsProxy: string
+    proxyUsername?: string
+    proxyPassword?: string
+  }) => {
+    setUseCorsProxy(config.useCorsProxy)
+    setCorsProxy(config.corsProxy)
   }
 
   const handleExportWithEncryption = async (encryptionPassword: string) => {
@@ -1105,26 +1117,24 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
                         />
                       )}
                     </div>
+
+                    <Button
+                      variant="outline"
+                      onClick={() => setCorsProxySettingsOpen(true)}
+                      className="w-full"
+                    >
+                      <Gear size={16} className="mr-2" />
+                      Advanced CORS Proxy Settings
+                    </Button>
                     
                     <Alert className="border-blue-500/50 bg-blue-500/5">
                       <Info size={16} className="text-blue-600" />
                       <AlertDescription className="text-xs text-blue-800 dark:text-blue-300">
-                        <div className="font-semibold mb-2">Available CORS Proxy Providers:</div>
+                        <div className="font-semibold mb-2">Quick Setup:</div>
                         <div className="space-y-1">
-                          {COMMON_CORS_PROXIES.filter(p => p.url).slice(0, 7).map((proxy, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <ProxyProviderBadge 
-                                requiresAuth={proxy.requiresAuth}
-                                isLocal={proxy.url.includes('localhost')}
-                                isPremium={proxy.requiresAuth && !proxy.url.includes('localhost')}
-                              />
-                              <span className="flex-1">{proxy.name}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-2 pt-2 border-t border-blue-500/20">
-                          <div className="font-semibold mb-1">With Credentials:</div>
-                          <code className="text-[10px]">https://user:pass@proxy.example.com/</code>
+                          <div>• Click "Advanced CORS Proxy Settings" for guided configuration</div>
+                          <div>• Test proxy connectivity before saving</div>
+                          <div>• Choose from {COMMON_CORS_PROXIES.length}+ pre-configured providers</div>
                         </div>
                       </AlertDescription>
                     </Alert>
@@ -1361,6 +1371,14 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
           mode="decrypt"
           title="Decrypt Import"
           description="Enter the password used to encrypt this export file"
+        />
+
+        <CorsProxySettings
+          open={corsProxySettingsOpen}
+          onOpenChange={setCorsProxySettingsOpen}
+          currentProxyUrl={corsProxy}
+          onSave={handleCorsProxySettingsSave}
+          testEndpoint={endpoint}
         />
       </DialogContent>
     </Dialog>
