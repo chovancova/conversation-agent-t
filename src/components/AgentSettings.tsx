@@ -197,7 +197,7 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
     const allValidationResults: Record<string, ValidationResult> = {}
     let hasErrors = false
     
-    AGENTS.forEach(agent => {
+    AGENTS.filter(agent => agent && agent.type).forEach(agent => {
       const config = advancedConfigs[agent.type] || getDefaultConfig()
       const endpoint = endpoints[agent.type] || ''
       const result = validateProtocolConfig(config, endpoint)
@@ -424,10 +424,10 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
           <TabsContent value="agents" className="pt-4">
             <Tabs defaultValue={AGENTS[0]?.type || 'account-opening'}>
               <TabsList className="grid w-full grid-cols-5">
-                {AGENTS.filter(agent => agent && agent.type && agent.name).map(agent => (
+                {AGENTS.filter(agent => agent && agent.type).map(agent => (
                   <TabsTrigger key={agent.type} value={agent.type} className="text-xs">
                     <Robot size={14} className="mr-1" />
-                    {(names[agent.type] || agent.name || agent.type).split(' ')[0]}
+                    {(names[agent.type] || agent?.name || agent.type).split(' ')[0]}
                   </TabsTrigger>
                 ))}
               </TabsList>

@@ -89,7 +89,7 @@ export const ConversationSearch = forwardRef<HTMLInputElement, ConversationSearc
                 )}
               </div>
               <div className="space-y-1.5">
-                {AGENTS.filter(agent => agent && agent.type && agent.name).map((agent) => {
+                {AGENTS.filter(agent => agent && agent.type).map((agent) => {
                   const isSelected = selectedAgents.includes(agent.type)
                   return (
                     <button
@@ -102,7 +102,7 @@ export const ConversationSearch = forwardRef<HTMLInputElement, ConversationSearc
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span>{agent.name}</span>
+                        <span>{agent?.name || agent.type}</span>
                         {isSelected && (
                           <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                         )}
