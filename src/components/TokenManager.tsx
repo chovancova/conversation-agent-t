@@ -344,7 +344,6 @@ export function TokenManager({ open, onOpenChange }: TokenManagerProps) {
       const finalEndpoint = useCorsProxy && corsProxy 
         ? buildProxiedUrl(endpoint, corsProxy)
         : endpoint
-
       const headers: Record<string, string> = {}
       let body: string
 
