@@ -34,13 +34,15 @@ export const AGENTS: AgentConfig[] = [
 ]
 
 export const getAgentConfig = (type: string): AgentConfig | undefined => {
-  return AGENTS.find(agent => agent.type === type)
+  if (!type) return undefined
+  return AGENTS.find(agent => agent?.type === type)
 }
 
 export const getAgentName = (type: string, customNames?: Record<string, string>): string => {
-  if (customNames && customNames[type]) {
+  if (!type) return 'Unknown Agent'
+  if (customNames?.[type]) {
     return customNames[type]
   }
   const agent = getAgentConfig(type)
-  return agent?.name || type
+  return agent?.name ?? type
 }

@@ -424,15 +424,15 @@ export function AgentSettings({ open, onOpenChange }: AgentSettingsProps) {
           <TabsContent value="agents" className="pt-4">
             <Tabs defaultValue={AGENTS[0]?.type || 'account-opening'}>
               <TabsList className="grid w-full grid-cols-5">
-                {AGENTS.map(agent => (
+                {AGENTS.filter(Boolean).map(agent => (
                   <TabsTrigger key={agent.type} value={agent.type} className="text-xs">
                     <Robot size={14} className="mr-1" />
-                    {((names[agent.type] || agent.name) || agent.type).split(' ')[0]}
+                    {((names[agent.type] || agent?.name) || agent.type).split(' ')[0]}
                   </TabsTrigger>
                 ))}
               </TabsList>
 
-              {AGENTS.map(agent => {
+              {AGENTS.filter(Boolean).map(agent => {
                 const config = getConfig(agent.type)
                 const validation = validationResults[agent.type]
                 
